@@ -29,9 +29,9 @@
 import { freshnessBudgetHours } from './freshness_budget.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { redactEmails, runLogged } from '../_shared/run_logged.ts'
-import { isServiceCaller } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { buildApprovalDigest, renderApprovalDigest } from '../_shared/approval_digest.ts'
 import { artisanCoverageFindings } from './artisan_coverage.ts'
 import {
@@ -227,6 +227,10 @@ interface HealthFinding {
 
 serve(runLogged('health-watchdog', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only pg_cron (health-watchdog-daily, service key) may run this: every call
+  // emails the owner, files strategist_signals and inserts a seo_tasks row. The
+  // gateway's verify_jwt admits the public anon key, so check the caller here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
@@ -840,11 +844,6 @@ serve(runLogged('health-watchdog', async (req, _log) => {
   }
   return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings, signals })
 }, {
-  // This function has no caller check of its own (the gateway's verify_jwt
-  // admits the public anon key), so only the service-role caller, i.e. the
-  // daily cron, is logged. Anyone else still gets the same run, unlogged, so
-  // they cannot add rows to system_logs. Behaviour is unchanged either way.
-  skip: async (req) => !(await isServiceCaller(req)),
   // Findings are the watchdog's OUTPUT, not its failure: a run that found
   // problems still ends 'success', so the runtime sentinel (which reads
   // system_logs) never reports the watchdog for doing its job. Only counts and

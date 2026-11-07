@@ -71,6 +71,13 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   'woo-stock-check': { cases: svc({}), preflight: false },
   'woo-products-enrich': { cases: svc({}) },
   'ga4-sync': { cases: svc({ diagnostic: true }) },
+  // verify_jwt is on, but the gateway admits the anon key: every run emails the owner.
+  'health-watchdog': {
+    cases: [
+      ...svc({}),
+      { name: '?action=approval_digest', path: '?action=approval_digest', body: {}, allow: SERVICE_ONLY },
+    ],
+  },
   'meta-publish': { cases: adm({ action: 'publish_now', type: 'feed', image_url: 'https://example.test/a.png', caption: 'x' }) },
   'email-automation-scheduler': { cases: adm({ test_send: 'someone@example.test' }) },
   'google-exchange-token': { cases: adm({ code: 'x', redirect_uri: 'https://example.test' }) },
