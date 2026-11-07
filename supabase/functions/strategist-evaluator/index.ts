@@ -18,6 +18,7 @@ import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot
 import { STRATEGIST_MODEL, STRATEGIST_EFFORT, estimateUsd } from '../seo-agent/strategistConfig.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { critiqueDrafts } from './critique.ts'
 
@@ -169,7 +170,7 @@ async function evaluate(supabase: SupabaseClient): Promise<Response> {
   return json({ ok: true, evaluated: due.length, resolved: resolved.length, results })
 }
 
-serve(async (req) => {
+serve(runLogged('strategist-evaluator', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   // Only cron (and other functions) run this. The gateway's verify_jwt still
   // admits the public anon key, so the caller is checked here.
@@ -185,4 +186,28 @@ serve(async (req) => {
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
   }
-})
+}, {
+  scope: async (req) => {
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
+    const action = (body as { action?: unknown })?.action ?? new URL(req.url).searchParams.get('action')
+    return { action: action === 'critique_draft' ? 'critique_draft' : 'evaluate' }
+  },
+  judge: (out, _res, scope) => {
+    // Counts only: results carry thesis text and draft detail.
+    const T = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    const critic = scope.action === 'critique_draft'
+    if (critic && out?.idle) return { drop: true, status: 'success' }   // critic ticks every 10 min
+    const results: Array<{ status?: string }> = Array.isArray(out?.results) ? out.results : []
+    const byStatus: Record<string, number> = {}
+    for (const r of results) if (typeof r?.status === 'string') byStatus[r.status] = (byStatus[r.status] ?? 0) + 1
+    const unrecorded = byStatus['unrecorded'] ?? 0
+    return {
+      status: out?.ok === true && unrecorded > 0 ? 'partial' : undefined,
+      summary: {
+        idle: out?.idle ? true : undefined, evaluated: out?.evaluated, resolved: out?.resolved,
+        critiqued: out?.critiqued, swept_stale: out?.swept_stale, ...(critic ? { by_status: byStatus } : {}),
+      },
+      warnings: unrecorded > 0 ? [T('critique.unrecorded', `${unrecorded} critique verdict(s) not recorded`, { unrecorded })] : [],
+    }
+  },
+}))

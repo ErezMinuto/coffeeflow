@@ -25,6 +25,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { callClaude, MODEL_SCOUT, parseClaudeJson } from '../seo-agent/claude.ts'
 import { getSystemConfig } from '../seo-agent/db.ts'
@@ -65,7 +66,7 @@ interface UrgentSignal {
   priority_score:   number         // higher = more urgent; used to cap MAX_TASKS_PER_TICK
 }
 
-serve(async (req) => {
+serve(runLogged('scout-tick', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -162,7 +163,21 @@ serve(async (req) => {
     task_ids:      created,
     scout_run_id:  runId,
   })
-})
+}, {
+  judge: (out) => {
+    const T = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    const lost = (Number(out?.signals_found) || 0) - (Number(out?.tasks_created) || 0)
+    return {
+      // Counts only: signal summaries quote other accounts' posts and articles.
+      status: out?.ok === true && lost > 0 ? 'partial' : undefined,
+      summary: {
+        signals_found: out?.signals_found, tasks_created: out?.tasks_created,
+        probed_meta: out?.probed?.meta, probed_industry: out?.probed?.industry, scout_run_id: out?.scout_run_id,
+      },
+      warnings: lost > 0 ? [T('signals.not_queued', `${lost} signal(s) found but no task was created`, { lost })] : [],
+    }
+  },
+}))
 
 // ─────────────────────────────────────────────────────────────────────────
 // Signal detector — Meta organic engagement spike.

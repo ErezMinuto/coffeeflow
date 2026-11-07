@@ -42,7 +42,14 @@ export interface RunJudgement {
 }
 
 export interface RunLoggedOptions {
-  judge?: (out: any, res: Response) => RunJudgement | undefined
+  judge?: (out: any, res: Response, scope: Record<string, unknown>) => RunJudgement | undefined
+  /** Decide BEFORE the handler runs whether this request is logged at all,
+   *  from a clone of the request (so it may read the body). Return null to
+   *  write no rows; return an object to log the run, and that object (keep it
+   *  to safe labels such as an agent name) is added to the summary and passed
+   *  to judge. For endpoints where only some calls are scheduled work. The
+   *  handler must not log on a path scope rejects. */
+  scope?: (req: Request) => Promise<Record<string, unknown> | null> | Record<string, unknown> | null
   /** Extra "don't log this request" rule (e.g. a public route, or a function
    *  with no caller check of its own). Checked after the handler returns, so it
    *  may only read request headers/URL, never the body. The handler must not
@@ -114,6 +121,13 @@ export function runLogged(
       finish: (st, d) => base.finish(st, d),
       flush: () => base.flush(),
     }
+    let scoped: Record<string, unknown> = {}
+    if (opts.scope && req.method !== 'OPTIONS') {
+      let picked: Record<string, unknown> | null = {}
+      try { picked = await opts.scope(req.clone()) } catch { picked = {} /* a broken scope rule logs the run */ }
+      if (picked === null) return handler(req, log)
+      scoped = picked
+    }
     let res: Response
     try {
       res = await handler(req, log)
@@ -133,7 +147,7 @@ export function runLogged(
       if (isJson) { try { out = await res.clone().json() } catch { out = null } }
 
       let j: RunJudgement | undefined
-      try { j = opts.judge?.(out, res) } catch (e) {
+      try { j = opts.judge?.(out, res, scoped) } catch (e) {
         // A judge bug must not cost the run its terminal row.
         log.warn('run.judge.fail', 'judge threw; using the default status', undefined, e)
       }
@@ -149,14 +163,17 @@ export function runLogged(
         const msg = typeof out?.error === 'string' ? out.error : `HTTP ${res.status}`
         log.error('run.fail', redactEmails(String(msg)).slice(0, 500), { http_status: res.status })
       }
-      await log.finish(status, { http_status: res.status, ...(j?.summary ?? {}) })
+      await log.finish(status, { http_status: res.status, ...scoped, ...(j?.summary ?? {}) })
 
       const headers = new Headers(res.headers)
       headers.set('x-run-id', log.runId)
       if (out && typeof out === 'object' && !Array.isArray(out)) {
         // The body grows by run_id; a copied Content-Length would truncate it.
         headers.delete('content-length')
-        return new Response(JSON.stringify({ ...out, run_id: log.runId }), { status: res.status, statusText: res.statusText, headers })
+        // Never overwrite a run_id the handler returns itself (strategist-brain
+        // returns its strategist_runs id); the log id then goes in log_run_id.
+        const idKey = 'run_id' in out ? 'log_run_id' : 'run_id'
+        return new Response(JSON.stringify({ ...out, [idKey]: log.runId }), { status: res.status, statusText: res.statusText, headers })
       }
       return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
     } catch (e) {

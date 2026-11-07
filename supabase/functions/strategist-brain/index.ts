@@ -31,6 +31,7 @@ import {
 import { BRAIN_TOOLS, dispatchTool, type ToolContext } from './tools.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
@@ -314,7 +315,7 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-serve(async (req) => {
+serve(runLogged('strategist-brain', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   // Only cron (and other functions) run this. The gateway's verify_jwt still
   // admits the public anon key, so the caller is checked here.
@@ -337,4 +338,25 @@ serve(async (req) => {
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
   }
-})
+}, {
+  scope: (req) => ({ mode: new URL(req.url).searchParams.get('mode') ?? 'body' }),
+  judge: (out, _res, scope) => {
+    // Counts and ids only: mtd_usd (spend) and the brief stay out.
+    const T = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    if (out?.idle) return { drop: true, status: 'success' }   // advance ticks every 5 min with nothing to do
+    if (out?.skipped === 'budget_ceiling_reached') {
+      return { status: 'success', summary: { skipped: out.skipped }, warnings: [T('budget.ceiling', 'monthly strategist budget reached; no run started')] }
+    }
+    if (typeof out?.skipped === 'string') return { status: 'success', summary: { skipped: out.skipped.slice(0, 80) } }
+    const failure = typeof out?.failure === 'string' && out.failure ? out.failure.slice(0, 200) : undefined
+    return {
+      status: failure ? 'error' : undefined,
+      summary: {
+        mode: scope.mode, started: out?.started, week_start: out?.week_start,
+        strategist_run_id: out?.run_id, steps_taken: out?.steps_taken, status: out?.status,
+        concluded: out?.concluded, brief_id: out?.brief_id, cost_calls: out?.cost_calls,
+      },
+      warnings: failure ? [T('strategist.run_failed', `strategist run ended failed: ${failure}`, { strategist_run_id: out?.run_id })] : [],
+    }
+  },
+}))
