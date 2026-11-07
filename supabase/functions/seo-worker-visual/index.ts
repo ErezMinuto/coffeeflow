@@ -761,7 +761,7 @@ async function handleShot(
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
         body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect, exclude_photos: recent }),
-        signal: AbortSignal.timeout(budget.remainingMs()),
+        signal: AbortSignal.timeout(budget.hopMs()),
       })
     } catch (e: any) {
       qaAttempts.push({ attempt: a, render_error: `visual-test: ${e?.message ?? e}` })
