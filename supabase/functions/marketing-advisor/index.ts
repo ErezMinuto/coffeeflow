@@ -2664,8 +2664,8 @@ ${dataSection}`;
           system: [{ type: "text", text: sysPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userMsg }],
         }, 150000);
-      if (jr.error) throw new Error(jr.error.message ?? "Claude error");
-      const rawText = (jr.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
+      if (json.error) throw new Error(json.error.message ?? "Claude error");
+      const rawText = (json.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
 
       // Parse the plan JSON — strip fences, else extract the first {...} block.
       let plan: any = null;
