@@ -332,9 +332,13 @@ serve(runLogged('seo-worker-visual', async (req, log) => {
   // hand-crafted brief.
   //
   // Cost / latency envelope per task (worst case = 3 attempts):
-  //   3 × render (~30-60s) + 3 × eval (~10-15s) ≈ 120-225s. Fits the
-  //   240s cron timeout in 20260527_seo_worker_visual_cron.sql.
+  //   3 × render (~30-60s) + 3 × eval (~10-15s) ≈ 120-225s. The 240s cron
+  //   wait is the bound, so the loop shares the shot path's deadline
+  //   (shotBudget, 220s): a retry starts only if one more attempt like the
+  //   last still fits, and each render call is capped at budget.hopMs().
   const MAX_QA_ATTEMPTS = 3
+  const budget = shotBudget()
+  let lastAttemptMs = 0
   let imageUrl = ''
   let renderResponse: Record<string, unknown> = {}
   let workingSceneBrief = brief.scene_brief
@@ -353,6 +357,13 @@ serve(runLogged('seo-worker-visual', async (req, log) => {
   let lastCritique: VisualCritique | null = null
 
   for (let qaAttempt = 1; qaAttempt <= MAX_QA_ATTEMPTS; qaAttempt++) {
+    // A retry that cannot finish must not start: the image already in hand
+    // goes to review (review_required) instead of the run being killed.
+    if (imageUrl && !budget.fits(lastAttemptMs)) {
+      console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt}/${MAX_QA_ATTEMPTS} skipped: last took ${lastAttemptMs}ms, ${budget.remainingMs()}ms left`)
+      break
+    }
+    const attemptStart = Date.now()
     // 4a. Decide this attempt's render_mode + scene_brief based on prior
     // critiques. First attempt = caller's choices. Subsequent attempts
     // apply the escalation ladder.
@@ -399,6 +410,7 @@ serve(runLogged('seo-worker-visual', async (req, log) => {
         sceneBrief:  workingSceneBrief,
         aspect,
         productName: brief.product_name,
+        signal:      AbortSignal.timeout(budget.hopMs()),
       })
       imageUrl       = rendered.url
       renderResponse = rendered.raw
@@ -455,6 +467,7 @@ serve(runLogged('seo-worker-visual', async (req, log) => {
       prompt_doc:  typeof rendered.raw.prompt_doc === 'string' ? rendered.raw.prompt_doc : undefined,
     })
     lastCritique = critique
+    lastAttemptMs = Date.now() - attemptStart
 
     if (critique.passes) {
       qaPassed = true
