@@ -321,8 +321,13 @@ export const CRASH_WINDOW_HOURS = 24
  * The longest edge run on record is ~133s, so anything older than this is dead.
  */
 export const INCOMPLETE_GRACE_MINUTES = 15
-/** Supabase edge wall clock. Runs past this share of it are one slow API away from being killed. */
-export const EDGE_WALL_CLOCK_MS = 150_000
+/**
+ * Supabase edge wall clock on the Pro plan (the org's plan since early Nov 2026;
+ * Free was 150s). Runs past this share of it are one slow API away from being
+ * killed. The 150s request idle timeout every plan has does not stop a running
+ * worker: visual task 2026-11-07 14:32 UTC ran 157s and completed.
+ */
+export const EDGE_WALL_CLOCK_MS = 400_000
 export const TIMEOUT_RISK_RATIO = 0.85
 /** One crash is an alert; a repeat in the window is a bug for the fixer. */
 export const CRASH_SIGNAL_MIN = 2

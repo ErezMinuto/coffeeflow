@@ -141,9 +141,9 @@ const hoursAgo = (h: number) => new Date(NOW - h * 3600 * 1000).toISOString();
 
   check('a crash older than 24h is ignored', edgeCrashFindings([run('1', 'meta-sync', 'error', 30)], thrown('1'), NOW).length === 0);
 
-  const slow = edgeCrashFindings([run('1', 'meta-sync', 'success', 1, 132_923)], [], NOW);
-  check('a 133s success → timeout-risk WARN, no signal', slow.length === 1 && slow[0].category === 'edge_timeout_risk' && slow[0].severity === 'WARN' && !slow[0].signal, JSON.stringify(slow));
-  check('a 120s success is fine', edgeCrashFindings([run('1', 'google-sync', 'success', 1, 120_277)], [], NOW).length === 0);
+  const slow = edgeCrashFindings([run('1', 'meta-sync', 'success', 1, 345_000)], [], NOW);
+  check('a 345s success (over 85% of the 400s Pro wall clock) → timeout-risk WARN, no signal', slow.length === 1 && slow[0].category === 'edge_timeout_risk' && slow[0].severity === 'WARN' && !slow[0].signal, JSON.stringify(slow));
+  check('a 144s success is fine on Pro', edgeCrashFindings([run('1', 'seo-worker-visual', 'success', 1, 143_657)], [], NOW).length === 0);
 }
 
 // ── signal dedupe ───────────────────────────────────────────────────────────
