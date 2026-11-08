@@ -1079,6 +1079,7 @@ async function renderOnce(args: {
   sceneBrief:  string
   aspect:      string
   productName?: string
+  signal?:     AbortSignal
 }): Promise<{ url: string; raw: Record<string, unknown> }> {
   // BOTH modes now render through Gemini (visual-test). The bag is placed
   // by passing use_reference:true + product_name — visual-test resolves the
@@ -1097,6 +1098,7 @@ async function renderOnce(args: {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
     body:    JSON.stringify(body),
+    signal:  args.signal,
   })
   const json = await res.json().catch(() => ({})) as Record<string, unknown>
   if (!res.ok || !json.url || typeof json.url !== 'string') {
@@ -1208,7 +1210,10 @@ async function handleCarousel(
   // competitor bags, stray hands, and off-brand frames are CAUGHT here rather
   // than surfaced to the admin as "ready to approve". Slides run concurrently
   // so the carousel's wall-clock ≈ the slowest single slide (~one image's
-  // worth of attempts), keeping it inside the 240s cron budget.
+  // worth of attempts), keeping it inside the 240s cron budget. The slides
+  // share one shotBudget (the same deadline as the single-image path), so a
+  // slide's QA retries stop once another attempt would not fit.
+  const budget = shotBudget()
   let slideResults: Array<{
     rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
     qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
@@ -1216,7 +1221,7 @@ async function handleCarousel(
     mode:        'no_bag' | 'bag_hero'
   }>
   try {
-    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId, carouselRenderMode, productName)))
+    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId, carouselRenderMode, productName, budget)))
   } catch (e: any) {
     // Any slide render/overlay INFRA failure (HTTP/API outage) fails the whole
     // carousel — a partial carousel is not publishable. Linear retry via
@@ -1291,12 +1296,17 @@ async function handleCarousel(
 //   3: same, re-augmented from attempt 2's critique
 // On all-fail we still overlay the best-effort background so there's a viewable
 // slide, but `passed:false` bubbles up and flags the carousel review_required.
+// Kept back from a carousel slide's budget for the visual-overlay call that
+// follows its last attempt.
+const CAROUSEL_OVERLAY_RESERVE_MS = 15_000
+
 async function renderCarouselSlideWithQA(
   slide: { scene_brief: string; heading: string; body?: string },
   slideIndex: number,
   workerId: string,
   carouselRenderMode: 'no_bag' | 'bag_hero',
   productName: string | undefined,
+  budget:      ReturnType<typeof shotBudget>,
 ): Promise<{
   rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
   qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
@@ -1315,8 +1325,17 @@ async function renderCarouselSlideWithQA(
   const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique; prompt_doc?: string }> = []
   let bgUrl = ''
   let passed = false
+  let lastAttemptMs = 0
 
   for (let a = 1; a <= MAX_SLIDE_QA_ATTEMPTS; a++) {
+    // A retry starts only if one more attempt like the last, plus the overlay,
+    // still fits the run's deadline. The slide then keeps its best-effort
+    // image and is flagged for review, instead of the run being killed.
+    if (a > 1 && !budget.fits(lastAttemptMs + CAROUSEL_OVERLAY_RESERVE_MS)) {
+      console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} qa-attempt ${a}/${MAX_SLIDE_QA_ATTEMPTS} skipped: last took ${lastAttemptMs}ms, ${budget.remainingMs()}ms left`)
+      break
+    }
+    const attemptStart = Date.now()
     // Attempt 1 = the strategist's brief. Attempts 2-3 fold in the prior
     // critique's directives (buildAugmentedSceneBrief is generic — safe for
     // any slide scene). The mode-appropriate guard wraps every attempt: bag
@@ -1333,6 +1352,7 @@ async function renderCarouselSlideWithQA(
       sceneBrief:  guardedBrief,
       aspect:      'feed_portrait',
       productName: slideMode === 'bag_hero' ? productName : undefined,
+      signal:      AbortSignal.timeout(budget.hopMs()),
     })
     bgUrl = bg.url
 
@@ -1354,6 +1374,7 @@ async function renderCarouselSlideWithQA(
       critique = { passes: true, missing: [], issues: [], suggested_adjustment: '' } as VisualCritique
     }
     attempts.push({ attempt: a, image_url: bgUrl, scene_brief: baseBrief, critique, prompt_doc: typeof bg.raw.prompt_doc === 'string' ? bg.raw.prompt_doc : undefined })
+    lastAttemptMs = Date.now() - attemptStart
     console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} qa-attempt ${a}/${MAX_SLIDE_QA_ATTEMPTS} ${critique.passes ? 'PASSED' : `FAILED missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`}`)
     if (critique.passes) { passed = true; break }
   }
