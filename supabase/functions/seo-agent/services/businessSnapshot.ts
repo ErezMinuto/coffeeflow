@@ -404,7 +404,7 @@ export async function assembleBusinessSnapshot(
   // Inventory is large + mostly healthy; surface only the actionable subset so
   // the prefix stays lean. (Healthy SKUs carry no strategic signal.)
   const inventoryAlerts = Array.isArray(inventory)
-    ? (inventory as InventoryAlert[]).filter(i => i.state !== 'healthy').sort((a, b) => a.packed_stock - b.packed_stock)
+    ? (inventory as InventoryAlert[]).filter(i => i.state !== 'healthy').sort((a, b) => a.store_stock - b.store_stock)
     : inventory
 
   const snapshot: BusinessSnapshot = {
