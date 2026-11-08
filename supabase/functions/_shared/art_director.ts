@@ -17,7 +17,7 @@ import { PHOTO_EXCLUDE } from './shot_library.ts'
 
 export const AD_MODEL = 'claude-opus-5-5'
 export const AD_CRITIC_MODEL = 'gemini-3.1-pro-preview'
-export const AD_PROMPT_VERSION = 'art-director-v1'
+export const AD_PROMPT_VERSION = 'art-director-v2'
 
 // Owner-approved 2026-11-07 ("List is right"). How each action REALLY looks;
 // the art director must follow it and the critic checks it.
@@ -57,14 +57,22 @@ export const AD_SYSTEM = `You are Minuto's art director for Instagram. Minuto is
 
 What makes a great Minuto image: a real moment caught mid-work at Minuto's own bar or roastery. Candid, hand-held, a natural angle, warm natural light, soft background, film grain. A person in the middle of doing something real is better than a staged still life. The viewer should feel they are standing at Minuto's bar.
 
+Real-world sense (the most important part of your job). You have worked years of shifts behind Minuto's bar and on roast days, and you write only what you would really see on a shift. The image model takes every word literally and fills anything you leave unsaid with a guess, so leave no hand and no object to chance:
+- Every visible hand has a job at that exact second, the job a trained barista or roaster really does in this action: holding a tool by its handle, turning a knob, pulling a lever, setting a cup down. A hand with no real job stays out of frame. Hands do not rest, lean or pose on equipment for the camera.
+- Working equipment is hot: the roaster's drum, its front plate, door and exhaust, the group heads, the steam wand, a kettle's body, a moka pot on the burner. People touch hot equipment only by its handles, knobs and levers.
+- Gravity and flow: every object rests on a surface or is held by a hand you described. Liquid and beans leave only from a spout, chute or door, and fall down into something.
+- The logic of the moment: equipment is in the state this moment needs (a roaster mid-roast is running with its drum door shut, milk is steamed before it is poured), and nothing is in two places or two states at once.
+- When you are unsure whether something happens in real life, choose the simpler, more common version.
+
 How you work:
 1. Read the caption and goal. The image serves the caption.
 2. Look at the recent posts and do something different from them in subject, action, angle and time of day.
 3. Propose 3 genuinely different concepts in one line each. Creativity lives in the story: who, when, why (a regular's first order at 7am, roast day, a new origin arriving, end-of-day clean-down, rain on the window). Pick the strongest for this caption and say why in one sentence.
 4. Choose the physical action from the action list. Follow its realism note exactly; it is how this action really looks. If no action fits, you may define a new one: set "new_action": true and write its realism note yourself.
 5. Choose 1 or 2 reference photos by key from the photo index. Prefer photos without flags. Each reference gets one role sentence: what the model must copy from it (e.g. "the exact design of the espresso machine", "how the barista's hands hold the pitcher"), and nothing else.
-6. Write the prompt (120-220 words) in this order: shot style; anchor (what each reference controls); action; props; setting; light; camera and texture; brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
-7. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
+6. Stage the scene: list every visible person, every visible hand and every object that is held or moving, one line each, saying exactly what it does or rests on and why a professional would do that at this second. Check each line against real-world sense.
+7. Write the prompt (120-220 words) so it matches your staging exactly, in this order: shot style; anchor (what each reference controls); action; props; setting; light; camera and texture; brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
+8. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
 
 Brand facts (always true):
 - The espresso machine is a 2-group La Marzocco Strada X: slate-grey body, curved side panels with pale-blue glass. It carries only its own maker's mark.
@@ -75,7 +83,7 @@ Brand facts (always true):
 - People appear as hands, forearms and torsos, or as soft out-of-focus figures in the background, faces turned away or blurred.
 
 Reply with JSON only, exactly this shape:
-{"concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
+{"concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "staging": ["...", "..."], "prompt": "...", "qa": ["...", "..."]}`
 
 export interface RecentPost { date: string; caption: string; concept?: string; action?: string }
 
@@ -99,6 +107,7 @@ export interface ArtDirection {
   new_action: boolean
   new_action_note: string
   references: Array<{ key: string; role: string }>
+  staging: string[]
   prompt: string
   qa: string[]
 }
@@ -175,6 +184,8 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
     if (!r.role) errors.push(`reference "${r.key}" needs a role sentence`)
   }
   if (new Set(references.map(r => r.key)).size !== references.length) errors.push('the two references must be different photos')
+  const staging = Array.isArray(d.staging) ? d.staging.map(String).filter(l => l.trim()) : []
+  if (staging.length < 1) errors.push('staging must list every visible person, hand and held or moving object, one line each')
   const prompt = typeof d.prompt === 'string' ? d.prompt.trim() : ''
   const words = prompt.split(/\s+/).filter(Boolean).length
   if (words < 60) errors.push(`the prompt has ${words} words; write 120-220`)
@@ -187,7 +198,7 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
     ok: true, warnings,
     value: {
       concepts, choice, why: String(d.why ?? ''), action, new_action: newAction,
-      new_action_note: String(d.new_action_note ?? ''), references, prompt, qa: qa.slice(0, 3),
+      new_action_note: String(d.new_action_note ?? ''), references, staging, prompt, qa: qa.slice(0, 3),
     },
   }
 }
@@ -209,6 +220,7 @@ export const AD_BLOCKING_QUESTIONS = [
 export const AD_NOTE_QUESTIONS = [
   'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
   'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
+  'Is everyone doing what a trained barista or roaster really does, with hands touching hot equipment only by its handles, knobs or levers?',
 ]
 
 export interface CriticQuestions { blocking: string[]; notes: string[] }
@@ -258,4 +270,50 @@ export function parseCritic(text: string, questions: string[], blockingCount = q
     notes,
     correction: typeof d.correction === 'string' ? d.correction : '',
   }
+}
+
+// ── Brief review, before any render ─────────────────────────────────────────
+// Owner, 2026-11-08: a story showed the operator's palm flat on the roaster's
+// front plate mid-roast. The art director had written it ("the left hand rests
+// flat on the front panel"). A rule per mistake would never end, so a second
+// model reads the written brief as a working barista and roaster would, before
+// a render is spent, and the art director fixes what it flags. Text only.
+
+export const BRIEF_REVIEW_SYSTEM = `You are a head barista and head roaster with 15 years on the job at a specialty coffee roastery. A photographer hands you the brief for one photo before the shoot. An image model will render the brief literally, word for word.
+Flag anything in it that a real professional would not do, or that could not happen in real life: touching hot equipment anywhere but its handles, knobs or levers (roaster drum, front plate, door and exhaust, group heads, steam wand, kettle body, moka pot on the burner); a hand resting, leaning or posing on equipment; a visible hand with no stated job; improper or unsafe technique; an object with nothing holding or supporting it; liquid or beans coming from the wrong place or moving the wrong way; equipment in the wrong state for the moment; two parts of the brief that contradict each other.
+Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
+Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong in real life", "fix": "how a real professional would do it, said positively"}]}`
+
+export function briefReviewMessage(ad: ArtDirection): string {
+  const note = ACTIONS[ad.action] ?? ad.new_action_note
+  return [
+    `ACTION: ${ad.action}: ${note}`,
+    '', 'STAGING:', ...ad.staging.map(l => `- ${l}`),
+    '', 'PROMPT:', ad.prompt,
+  ].join('\n')
+}
+
+export interface BriefProblem { quote: string; why: string; fix: string }
+
+/** Unreadable output counts as no problems: the review is a safety net, and a
+ *  reviewer outage should not stop the post. */
+export function parseBriefReview(text: string): BriefProblem[] {
+  try {
+    const s = text.indexOf('{'), e = text.lastIndexOf('}')
+    const d = JSON.parse(text.slice(s, e + 1))
+    const list = Array.isArray(d.problems) ? d.problems as Array<Record<string, unknown>> : []
+    return list
+      .map(p => ({ quote: String(p?.quote ?? '').trim(), why: String(p?.why ?? '').trim(), fix: String(p?.fix ?? '').trim() }))
+      .filter(p => p.why)
+  } catch {
+    return []
+  }
+}
+
+export function adBriefFixMessage(problems: BriefProblem[]): string {
+  return [
+    'A head barista and roaster read your brief before the shoot and flagged these as things that would not happen on a real shift:',
+    ...problems.map(p => `- "${p.quote}": ${p.why} Fix: ${p.fix}`),
+    'Keep the concept, action and references. Rewrite the staging and the prompt so every flagged detail is done the way a real professional does it, described positively. Same JSON shape as before.',
+  ].join('\n')
 }

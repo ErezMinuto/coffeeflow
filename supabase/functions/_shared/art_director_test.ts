@@ -1,7 +1,8 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, isRealRejection, parseArtDirection,
-  parseCritic, referenceCandidates, type ArtDirection,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage, adUserMessage,
+  briefReviewMessage, criticQuestions, isRealRejection, parseArtDirection, parseBriefReview, parseCritic, referenceCandidates,
+  type ArtDirection,
 } from './art_director.ts'
 import { PHOTO_INDEX } from './photo_index.ts'
 import { PHOTO_EXCLUDE } from './shot_library.ts'
@@ -13,7 +14,8 @@ const prompt = 'A candid lifestyle photograph at Minuto, '.repeat(20)
 function reply(over: Record<string, unknown> = {}): string {
   return JSON.stringify({
     concepts: ['a', 'b', 'c'], choice: 1, why: 'fits', action: 'steaming_milk', new_action: false, new_action_note: '',
-    references: [{ key: someKey, role: 'the exact design of the espresso machine' }], prompt, qa: ['Is the pitcher held?'], ...over,
+    references: [{ key: someKey, role: 'the exact design of the espresso machine' }],
+    staging: ['right hand: holds the pitcher by its handle under the steam wand'], prompt, qa: ['Is the pitcher held?'], ...over,
   })
 }
 
@@ -50,6 +52,8 @@ Deno.test('bad replies are rejected with reasons the art director can fix', () =
     [{ references: [] }, '1 or 2'],
     [{ prompt: 'too short' }, 'words'],
     [{ references: [{ key: someKey, role: 'x' }, { key: someKey, role: 'y' }] }, 'different photos'],
+    [{ staging: [] }, 'staging'],
+    [{ staging: undefined }, 'staging'],
   ]
   for (const [over, needle] of cases) {
     const r = parseArtDirection(reply(over), keys)
@@ -117,4 +121,29 @@ Deno.test('owner verdicts reach the art director; bulk queue clean-ups do not co
   })
   assert(m.includes('REJECTED ("filter with milk, image looks really bad")') && m.includes('PUBLISHED: image: roastery'))
   assert(adUserMessage({ caption: 'x', aspect: 'story', recent: [], learnings: [] }).includes('OWNER VERDICTS ON RECENT IMAGES'))
+})
+
+Deno.test('the art director stages every hand and knows hot equipment is touched only by its handles', () => {
+  assert(AD_SYSTEM.includes('Every visible hand has a job'))
+  assert(AD_SYSTEM.includes('touch hot equipment only by its handles'))
+  assert(AD_SYSTEM.includes('"staging"'))
+  const r = parseArtDirection(reply(), keys)
+  assert(r.ok && r.value.staging.length === 1)
+})
+
+Deno.test('the brief review reads the action, the staging and the prompt', () => {
+  const ad = JSON.parse(reply()) as ArtDirection
+  const m = briefReviewMessage(ad)
+  assert(m.includes(ACTIONS.steaming_milk) && m.includes('holds the pitcher by its handle') && m.includes(prompt.trim()))
+  assert(BRIEF_REVIEW_SYSTEM.includes('hot equipment') && BRIEF_REVIEW_SYSTEM.includes('JSON only'))
+})
+
+Deno.test('brief review problems parse; unreadable output counts as none', () => {
+  const p = parseBriefReview('{"problems":[{"quote":"the left hand rests flat on the front panel","why":"the front plate is hot mid-roast","fix":"the left hand stays out of frame"},{"quote":"x","why":"","fix":""}]}')
+  assertEquals(p.length, 1)
+  assertEquals(p[0].quote, 'the left hand rests flat on the front panel')
+  assertEquals(parseBriefReview('{"problems":[]}'), [])
+  assertEquals(parseBriefReview('garbage'), [])
+  const fix = adBriefFixMessage(p)
+  assert(fix.includes('the front plate is hot mid-roast') && fix.includes('the left hand stays out of frame') && fix.includes('Same JSON shape'))
 })

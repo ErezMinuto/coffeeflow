@@ -961,7 +961,7 @@ async function handleArtDirected(
     art_direction: {
       concept: ad.concepts[ad.choice], concepts: ad.concepts, why: ad.why, action: ad.action,
       new_action: ad.new_action, new_action_note: ad.new_action_note || undefined,
-      references: ad.references, prompt: ad.prompt, qa: ad.qa, planner_hint: plannerHint,
+      references: ad.references, staging: ad.staging, prompt: ad.prompt, qa: ad.qa, planner_hint: plannerHint,
     },
     render_response:  pickRenderSummary(renderRaw),
     qa_passed:        qaPassed,
