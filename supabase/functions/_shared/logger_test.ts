@@ -7,7 +7,15 @@
 // to regress: that errors are written immediately rather than buffered, that
 // a run always gets a terminal row, and that nothing in here can throw into
 // the calling function.
-import { createLogger } from './logger.ts'
+//
+// logger.ts reads SUPABASE_URL when it is loaded, so point it at the fake
+// server first and import it after. A static import would load it with the
+// shell's real SUPABASE_URL, and the test rows would land in production
+// system_logs (where the watchdog reports them as test-fn crashes).
+Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:8799')
+Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-key')
+Deno.env.set('LOG_TO_DB', 'true')
+const { createLogger } = await import('./logger.ts')
 
 const received: any[] = []
 let failNext = false

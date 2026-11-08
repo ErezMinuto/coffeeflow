@@ -185,6 +185,7 @@ const EXPECTED_FRESH_DATA: Array<{
   column:         string   // timestamptz or date column whose max() = freshness
   max_age_hours:  number
   saturday_max_age_hours?: number
+  sunday_max_age_hours?:   number
   required:       boolean
   label:          string
 }> = [
@@ -208,13 +209,15 @@ const EXPECTED_FRESH_DATA: Array<{
   // returning new documents. Minuto sells every day across POS + EcoSite +
   // back office, so a 12h budget catches a freeze within half a day without
   // false-positiving on a quiet evening. Saturday gets 36h: the Friday-to-first-
-  // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy.
+  // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy. Sunday
+  // gets 24h: Saturday-evening to first-Sunday-sale was 16.3h on 2026-11-08,
+  // again with the sync healthy.
   // Google data the agents plan from. Synced twice daily by GitHub Actions
   // (google-sync-daily.yml); 36h allows for GitHub's schedule delays. Search
   // Console went unsynced for 6 months before this check existed.
   { table: 'google_search_console', column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Search Console keywords (SEO agent + strategist)' },
   { table: 'google_ads',            column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Ads performance (advisor + strategist)' },
-  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
+  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, sunday_max_age_hours: 24, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
 interface HealthFinding {
