@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 const DEFAULT_ROAST_KG = 15;
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
@@ -171,11 +172,14 @@ export default function RoastingList({
   // before comparing against the daily-consumption critical threshold.
   // Otherwise the system keeps recommending roasting an origin even when
   // that origin is already living inside dozens of packed bags.
+  // Bags allocated to a B2B customer are NOT available — they already belong to
+  // someone (see reservedStock.js) — so only store stock counts here.
 
+  const reserved          = reservedBagsByProduct(data.bagAllocations);
   const packedKgByOrigin  = {};
   const packedKgByProfile = {};
   for (const product of (data.products || [])) {
-    const bags    = product.packed_stock || 0;
+    const bags    = storeStock(product, reserved);
     const sizeKg  = (product.size || 0) / 1000;
     const recipe  = Array.isArray(product.recipe) ? product.recipe : [];
     if (bags <= 0 || sizeKg <= 0 || recipe.length === 0) continue;
