@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
-import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
+import { reservedBagsByProduct, storeStock, webOwed } from '../../lib/reservedStock';
 import PackingList from './PackingList';
 import B2BAllocations from './B2BAllocations';
 
@@ -140,7 +140,10 @@ export default function Packaging() {
       if (product) {
         const { error: prodErr } = await supabase
           .from('products')
-          .update({ packed_stock: Math.max(0, (product.packed_stock || 0) + diff) })
+          // A correction exactly reverses part of a logged packing, so no floor:
+          // bags that were never packed cannot pay off a website back-order.
+          // packed_stock is signed (negative = owed to website orders).
+          .update({ packed_stock: (product.packed_stock || 0) + diff })
           .eq('id', log.product_id);
         if (prodErr) throw prodErr;
       }
@@ -249,6 +252,12 @@ export default function Packaging() {
                 {reservedBags > 0 && (
                   <div style={{ fontSize: '11px', color: '#6B3A1F', marginTop: '4px' }}>
                     🏷️ +{reservedBags} מוקצות ל-B2B
+                  </div>
+                )}
+                {webOwed(product) > 0 && (
+                  <div style={{ fontSize: '11px', color: '#B45309', marginTop: '4px', fontWeight: '500' }}
+                       title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
+                    🌐 {webOwed(product)} חסרות להזמנות אתר
                   </div>
                 )}
                 {minStock > 0 && (
