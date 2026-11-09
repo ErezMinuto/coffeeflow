@@ -7,6 +7,8 @@
 // Keep this file dependency-free. No DB client imports, no fetch calls —
 // just types. Otherwise the module becomes a hairball.
 
+import type { AutomationActivity } from '../_shared/email_activity.ts'
+
 // ── Lifecycle ────────────────────────────────────────────────────────────
 
 export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed'
@@ -624,6 +626,10 @@ export interface EmailPerformance {
   avg_open_rate:   number  // delivered-weighted, 0..1
   avg_click_rate:  number  // delivered-weighted, 0..1
   recent:          EmailCampaignPerf[]
+  // campaigns_sent / total_* above count one-off campaigns only. Automated
+  // lifecycle sends (email_automations) are counted here, separately.
+  automations:     AutomationActivity | SnapshotError
+  note:            string
 }
 
 /** An active driver-hypothesis read back into the brain's prompt (its memory). */

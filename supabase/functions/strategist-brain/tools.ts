@@ -18,6 +18,9 @@ import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
 import {
   computeSegmentFacts, emailRecProblems, fetchOptedInEmails, fetchSegmentFacts, type SegmentFacts,
 } from '../_shared/segment_facts.ts'
+import {
+  automationGateProblems, belowMinimumSendProblems, emailDormancyProblems, fetchAutomationActivity, type AutomationActivity,
+} from '../_shared/email_activity.ts'
 import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
 import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword } from '../_shared/blog_keyword_gate.ts'
 import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
@@ -329,7 +332,14 @@ async function drilldownEmailAttribution(
     if (error) return { error: error.message }
     campaigns = (data ?? []) as CampaignRow[]
     if (campaigns.length === 0) {
-      return { method: 'recipient_match_within_window', window_days: lookback, campaigns_sent: 0, note: 'no sent email campaigns in window' }
+      // Campaigns only: automated sends are a different channel, shown so a
+      // zero here is not read as "no email went out".
+      const automations = await fetchAutomationActivity(supabase, lookback).catch((e: unknown) => ({ error: e instanceof Error ? e.message : String(e) }))
+      return {
+        method: 'recipient_match_within_window', window_days: lookback, campaigns_sent: 0,
+        note: 'no sent email campaigns in window. This counts campaigns only; automated lifecycle sends are in automations.',
+        automations,
+      }
     }
   }
 
@@ -537,17 +547,41 @@ async function handleConcludeBrief(
   // Email recommendations: a real segment, described as the data describes it,
   // sized by who can actually be emailed. Checked against the facts this run's
   // snapshot carried AND a fresh read (rfm-sync may have run since kickoff).
-  if (recsIn.some(r => r.action_type === 'email_campaign')) {
-    const sets: SegmentFacts[] = []
+  // The minimum audience is for new campaign / segment sends only: automations
+  // are never gated by it, and a segment below it is not routed around the gate
+  // as advice or a manual send (2026-11-09).
+  const minReachable = (await readLoopConfig(supabase)).min_email_reachable
+  const segmentFactsOut = (facts?: SegmentFacts) => facts?.segments.map(f => ({ segment: f.segment, definition: f.definition, total: f.total, opted_in_reachable: f.opted_in_reachable, lapsed_90d_reachable: f.lapsed_90d_reachable, bean_buyer_share: f.bean_buyer_share }))
+  const sets: SegmentFacts[] = []
+  {
     const snap = await snapshotSegmentFacts(supabase, ctx.runId)
     if (snap) sets.push(snap)
     try { sets.push(await fetchSegmentFacts(supabase)) } catch (e) { console.warn(`[strategist] segment facts read failed: ${e instanceof Error ? e.message : String(e)}`) }
-    const problems = emailRecProblems(recsIn, sets, (await readLoopConfig(supabase)).min_email_reachable)
+  }
+  if (recsIn.some(r => r.action_type === 'email_campaign')) {
+    const problems = emailRecProblems(recsIn, sets, minReachable)
     if (problems.length) {
-      const facts = sets[sets.length - 1]
       return { result: {
         error: `conclude_brief NOT saved — email_campaign recommendations: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
-        segment_facts: facts?.segments.map(f => ({ segment: f.segment, definition: f.definition, total: f.total, opted_in_reachable: f.opted_in_reachable, lapsed_90d_reachable: f.lapsed_90d_reachable, bean_buyer_share: f.bean_buyer_share })),
+        segment_facts: segmentFactsOut(sets[sets.length - 1]),
+      } }
+    }
+  }
+  {
+    let automations: AutomationActivity | null = null
+    try { automations = await fetchAutomationActivity(supabase, 90) } catch (e) { console.warn(`[strategist] automation activity read failed: ${e instanceof Error ? e.message : String(e)}`) }
+    const freshest = sets[sets.length - 1]
+    const problems = [
+      ...emailDormancyProblems(input, automations),
+      ...(freshest ? belowMinimumSendProblems(input, freshest.segments, minReachable) : []),
+      ...automationGateProblems(input, minReachable, automations?.by_trigger.map(t => t.trigger_type) ?? []),
+    ]
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — email channel: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        email_automations_90d: automations ? { sent_total: automations.sent_total, by_trigger: automations.by_trigger.map(t => ({ trigger_type: t.trigger_type, sent: t.sent })) } : 'unavailable',
+        min_email_reachable: minReachable,
+        segment_facts: segmentFactsOut(freshest),
       } }
     }
   }
@@ -781,7 +815,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
               title: { type: 'string' },
               rationale: { type: 'string' },
               action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment (an RFM segment from customer_segments.by_segment), reachable_opted_in (the opted_in_reachable of that segment, copied from the data), angle, products[], subject_he}; the title or rationale states the reachable count. conclude_brief checks the segment, reachable_opted_in, every customer count in the text and the audience description against the segment data, and refuses a segment below ops_profile.strategist_loop.min_email_reachable opted-in customers. content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment (an RFM segment from customer_segments.by_segment), reachable_opted_in (the opted_in_reachable of that segment, copied from the data), angle, products[], subject_he}; the title or rationale states the reachable count. conclude_brief checks the segment, reachable_opted_in, every customer count in the text and the audience description against the segment data, and refuses a segment below ops_profile.strategist_loop.min_email_reachable opted-in customers. That minimum applies only to new campaign / segment sends: the automations in email.automations are not subject to it. A segment below the minimum is not recommended in any other form (action_type none, out_of_hands, a manual send). content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
