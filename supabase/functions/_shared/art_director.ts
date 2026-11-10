@@ -17,7 +17,7 @@ import { PHOTO_EXCLUDE } from './shot_library.ts'
 
 export const AD_MODEL = 'claude-opus-5-5'
 export const AD_CRITIC_MODEL = 'gemini-3.1-pro-preview'
-export const AD_PROMPT_VERSION = 'art-director-v1'
+export const AD_PROMPT_VERSION = 'art-director-v2'
 
 // Owner-approved 2026-11-07 ("List is right"). How each action REALLY looks;
 // the art director must follow it and the critic checks it.
@@ -57,17 +57,23 @@ export const AD_SYSTEM = `You are Minuto's art director for Instagram. Minuto is
 
 What makes a great Minuto image: a real moment caught mid-work at Minuto's own bar or roastery. Candid, hand-held, a natural angle, warm natural light, soft background, film grain. A person in the middle of doing something real is better than a staged still life. The viewer should feel they are standing at Minuto's bar.
 
+Real-world rules (hard rules; a brief that breaks one is rewritten before it is rendered):
+- The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
+- Hot equipment (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust) is touched only by its handles, knobs and levers.
+- Every object rests on something or is held; liquid, steam and beans come only from where they really come from.
+- A scene that shows a machine at medium or wide framing uses a reference that shows that whole machine, so its parts stay attached. A close-up reference never sets an object's size in a wider shot.
+
 How you work:
 1. Read the caption and goal. The image serves the caption.
 2. Look at the recent posts and do something different from them in subject, action, angle and time of day.
 3. Propose 3 genuinely different concepts in one line each. Creativity lives in the story: who, when, why (a regular's first order at 7am, roast day, a new origin arriving, end-of-day clean-down, rain on the window). Pick the strongest for this caption and say why in one sentence.
 4. Choose the physical action from the action list. Follow its realism note exactly; it is how this action really looks. If no action fits, you may define a new one: set "new_action": true and write its realism note yourself.
 5. Choose 1 or 2 reference photos by key from the photo index. Prefer photos without flags. Each reference gets one role sentence: what the model must copy from it (e.g. "the exact design of the espresso machine", "how the barista's hands hold the pitcher"), and nothing else.
-6. Write the prompt (120-220 words) in this order: shot style; anchor (what each reference controls); action; props; setting; light; camera and texture; brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
+6. Write the prompt (120-220 words) as one flowing paragraph of plain description, the way a photographer describes a shot, with no labels or headings. Cover, in roughly this order: the shot style, what each reference controls, the action, the props, the setting, the light, the camera and texture, and the brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
 7. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
 
 Brand facts (always true):
-- The espresso machine is a 2-group La Marzocco Strada X: slate-grey body, curved side panels with pale-blue glass. It carries only its own maker's mark.
+- The espresso machine is a 2-group La Marzocco Strada X: slate-grey body; its curved side panels are clear, see-through glass with a light pale-blue tint, and what stands behind them shows through. Its only lettering is the small "La Marzocco" name on the front edge of the drip tray and a small chrome "strada" script badge on the grey metal body above the glass; the glass side panels carry no lettering or logo. In the prompt, never mention logos, marks, lettering or brand names for the machine, not even to say there are none: naming them makes the image model paint them on, and the reference already carries the real ones. Describe the side panels as clear pale-blue glass. When the machine's side is in the shot, use a reference that shows the side (tag strada_x_side).
 - Minuto's bar: stainless counter and wooden cabinets, colourful ceramic cups stacked on top of the machine, a big street window, pendant lamps, plants. Surfaces are warm wood or stainless steel. Baristas often have tattooed forearms and dark aprons.
 - Roasting happens on a Coffee-Tech drum roaster with a round cooling bin. Minuto roasts weekly.
 - Coffee beans shown are always roasted (light-cinnamon to medium brown). Green coffee and resold brands are never the subject, and beans are never hand-sorted.
@@ -192,23 +198,41 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
   }
 }
 
+// Structural checks (owner + Gemini, 2026-11-10). Calibrated on the owner's
+// 13 good + 10 bad images, each judged twice: the attachment, steam-source
+// and merged-parts questions failed 12 of 12 good images, so they are notes.
+// Skin on hot equipment failed only bad images (hand on the roaster, hand on
+// the trier's tube), so it blocks: a failure buys one re-render, and if the
+// last attempt still fails the owner sees it in red.
+export const HOT_EQUIPMENT_VETO = 'Is all skin clear of steam wands, group heads, kettle bodies, the roaster drum front and the metal tube of a sample trier, with hands touching that equipment only by handles, knobs or levers? (yes if no hands)'
+export const STRUCTURAL_NOTES = [
+  'Is every steam wand, group head, portafilter and sample trier attached to its machine or held in a hand, with none floating or growing out of another object? (yes if none)',
+  'Does steam come only from a steam wand tip, hot milk, a hot drink, a kettle, a brewer or the roaster, with none rising out of a drip tray, counter or machine panel? (yes if no steam)',
+  'Is every object whole and single, with no duplicated or merged parts (a pitcher with two handles, a wand splitting in two)?',
+]
+
 // What blocks: only OBJECTIVE brand rules (owner, 2026-11-07). Calibrated on
 // 20 images: the critic's hand and "physically absurd" judgements disagreed
 // with the owner on most images he called good, and also caught his rejects,
 // so they behaved like a coin flip. They are notes now: recorded for the
 // owner, no badge, no retry. The owner's review is the quality check.
 export const AD_BLOCKING_QUESTIONS = [
-  "Does the espresso machine carry only its own maker's mark, with no painted café name or extra logo? (yes if no machine)",
+  // Owner 2026-11-10: renders kept painting "La Marzocco" across the side
+  // glass. On the real machine the only lettering is the name on the drip
+  // tray's front edge and a small chrome "strada" badge on the metal body.
+  'Is the espresso machine free of lettering and logos except a small name on the front edge of its drip tray and a small script badge on its metal body, with nothing printed on its glass side panels? (yes if no espresso machine)',
   'Are all coffee beans roasted brown, none green? (yes if no beans)',
   'Is the image free of coffee bags and jars?',
   'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
   'Is every object resting on a surface or held, with nothing visibly floating in the air?',
+  HOT_EQUIPMENT_VETO,
 ]
 
 // Subjective checks the owner reads as notes.
 export const AD_NOTE_QUESTIONS = [
   'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
   'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
+  ...STRUCTURAL_NOTES,
 ]
 
 export interface CriticQuestions { blocking: string[]; notes: string[] }
@@ -258,4 +282,61 @@ export function parseCritic(text: string, questions: string[], blockingCount = q
     notes,
     correction: typeof d.correction === 'string' ? d.correction : '',
   }
+}
+
+// ── Brief review, before any render ─────────────────────────────────────────
+// Owner, 2026-11-08/10: a palm flat on the roaster's hot front plate, then a
+// palm on the steam wand. Both came from the brief: the art director added a
+// hand gesture no reference showed, and the image model put it on hot metal.
+// A second model reads the brief before a render is spent, checks every hand
+// against what the chosen references actually show, and the art director
+// fixes what it flags. Text only. Agreed with Gemini 2026-11-10.
+
+export const BRIEF_REVIEW_SYSTEM = `You are a head barista and head roaster with 15 years on the job at a specialty coffee roastery. A photographer hands you the brief for one photo before the shoot. An image model will render it literally, using the reference photos listed with it. The image model can only draw a grip, a tool's size and which way round it goes when a reference shows them.
+Flag:
+1. Any hand that holds, touches or operates something that none of the references' "actions" show being done that way, including extra gestures (a resting palm, a hand on a surface, a second hand added to a one-hand action).
+2. Skin touching hot equipment anywhere but its handles, knobs or levers (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust).
+3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, equipment in the wrong state for the moment, two parts of the brief that contradict each other.
+4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
+5. Any logo, mark, brand name or lettering asked for on the espresso machine or the roaster (the references carry the real ones; asking for a mark makes the image model paint one on).
+Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
+Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong", "fix": "how to do it instead, said positively (e.g. keep that hand out of frame)"}]}`
+
+export function briefReviewMessage(ad: ArtDirection, index: IndexedPhoto[] = PHOTO_INDEX): string {
+  const note = ACTIONS[ad.action] ?? ad.new_action_note
+  const byKey = new Map(index.map(p => [p.key, p]))
+  return [
+    `ACTION: ${ad.action}: ${note}`,
+    '', 'REFERENCES:',
+    ...ad.references.map((r, i) => {
+      const p = byKey.get(r.key)
+      return `${i + 1}. ${r.key}: ${p?.desc ?? '(not in the index)'}\n   used for: ${r.role}\n   actions: ${p?.actions?.length ? p.actions.join(' | ') : '(no hands in this photo)'}`
+    }),
+    '', 'PROMPT:', ad.prompt,
+  ].join('\n')
+}
+
+export interface BriefProblem { quote: string; why: string; fix: string }
+
+/** Unreadable output counts as no problems: the review is a safety net, and a
+ *  reviewer outage should not stop the post. */
+export function parseBriefReview(text: string): BriefProblem[] {
+  try {
+    const s = text.indexOf('{'), e = text.lastIndexOf('}')
+    const d = JSON.parse(text.slice(s, e + 1))
+    const list = Array.isArray(d.problems) ? d.problems as Array<Record<string, unknown>> : []
+    return list
+      .map(p => ({ quote: String(p?.quote ?? '').trim(), why: String(p?.why ?? '').trim(), fix: String(p?.fix ?? '').trim() }))
+      .filter(p => p.why)
+  } catch {
+    return []
+  }
+}
+
+export function adBriefFixMessage(problems: BriefProblem[]): string {
+  return [
+    'A head barista and roaster read your brief before the shoot and flagged these:',
+    ...problems.map(p => `- "${p.quote}": ${p.why} Fix: ${p.fix}`),
+    'Keep the concept and action if you can; change references if a flag needs a photo that shows the action. Rewrite the prompt so every flagged detail is fixed, described positively, as one flowing paragraph. Same JSON shape as before.',
+  ].join('\n')
 }

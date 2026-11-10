@@ -1,11 +1,13 @@
 // The art director loop (docs/image-pipeline/art-director-design.md), kept
 // out of index.ts so it can be driven end-to-end without claiming a task:
-// art director (Opus) → one render (visual-test) → critic (Gemini) → one
-// positive revision on FAIL if the run budget allows.
+// art director (Opus) → brief review (Gemini, text only) → one render
+// (visual-test) → critic (Gemini) → one positive revision on FAIL if the run
+// budget allows.
 import { callClaude } from '../seo-agent/claude.ts'
 import {
-  AD_CRITIC_MODEL, AD_CRITIC_SYSTEM, AD_MODEL, AD_SYSTEM, adRevisionMessage, criticQuestions, criticUserMessage,
-  parseArtDirection, parseCritic, type ArtDirection, type CriticVerdict,
+  AD_CRITIC_MODEL, AD_CRITIC_SYSTEM, AD_MODEL, AD_SYSTEM, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage,
+  briefReviewMessage, criticQuestions, criticUserMessage, parseArtDirection, parseBriefReview, parseCritic,
+  type ArtDirection, type BriefProblem, type CriticVerdict,
 } from '../_shared/art_director.ts'
 import type { shotBudget } from './shotBudget.ts'
 
@@ -36,6 +38,28 @@ const CRITIC_SCHEMA = {
     correction: { type: 'string' },
   },
   required: ['description', 'answers', 'correction'],
+}
+
+const BRIEF_REVIEW_SCHEMA = {
+  type: 'object',
+  properties: {
+    problems: { type: 'array', items: { type: 'object', properties: { quote: { type: 'string' }, why: { type: 'string' }, fix: { type: 'string' } }, required: ['quote', 'why', 'fix'] } },
+  },
+  required: ['problems'],
+}
+
+// The review runs only when a render and its check still fit afterwards: one
+// attempt (art director + render + critic) has taken ~70 s in prod, the review
+// ~20 s, a fix round ~30 s.
+export const BRIEF_REVIEW_MIN_REMAINING_MS = 150_000
+
+async function briefReview(ad: ArtDirection, budget: Budget): Promise<BriefProblem[]> {
+  const res = await callClaude({
+    sourceFn: 'seo-worker-visual', model: AD_CRITIC_MODEL, system: BRIEF_REVIEW_SYSTEM,
+    messages: [{ role: 'user', content: briefReviewMessage(ad) }],
+    maxTokens: 16000, responseSchema: BRIEF_REVIEW_SCHEMA, timeoutMs: Math.min(45_000, budget.remainingMs()),
+  })
+  return parseBriefReview(res.text)
 }
 
 async function criticCheck(imageUrl: string, ad: ArtDirection, budget: Budget): Promise<CriticVerdict> {
@@ -90,14 +114,43 @@ export async function runArtDirector(opts: {
       qaAttempts.push({ attempt: a, art_director_error: String(e?.message ?? e) })
       break
     }
+    // Brief review: catch what a real barista or roaster would never do before
+    // a render is spent on it. One fix round; the fixed brief is not re-reviewed.
+    let review: Record<string, unknown> | undefined
+    if (budget.remainingMs() > BRIEF_REVIEW_MIN_REMAINING_MS) {
+      try {
+        const problems = await briefReview(ad, budget)
+        review = { problems, revised: false }
+        if (problems.length) {
+          log(`brief review flagged ${problems.length}: ${JSON.stringify(problems.map(p => p.quote.slice(0, 60)))}`)
+          conversation.push({ role: 'user', content: adBriefFixMessage(problems) })
+          try {
+            const fixed = await askArtDirector(conversation, allowed, budget)
+            review = { problems, revised: true, before: { prompt: ad.prompt, references: ad.references } }
+            ad = fixed.ad
+            conversation.push({ role: 'assistant', content: fixed.raw })
+          } catch (e: any) {
+            // Keep the unfixed brief rather than lose the post; the flags stay on record.
+            conversation.pop()
+            review = { problems, revised: false, fix_error: String(e?.message ?? e) }
+          }
+        }
+      } catch (e: any) {
+        review = { error: String(e?.message ?? e) }
+        log(`brief review skipped: ${review.error}`)
+      }
+    }
     let json: Record<string, unknown> = {}
     try {
       const res = await opts.render({ aspect, art_direction: { prompt: ad.prompt, references: ad.references } }, budget.hopMs())
       json = res.json
       if (!res.ok || typeof json.url !== 'string') throw new Error(String(json.error ?? `HTTP ${res.status}`))
     } catch (e: any) {
-      qaAttempts.push({ attempt: a, art_direction: ad, render_error: `visual-test: ${e?.message ?? e}` })
+      const renderError = `visual-test: ${e?.message ?? e}`
+      qaAttempts.push({ attempt: a, art_direction: ad, brief_review: review, render_error: renderError })
       lastAttemptMs = Date.now() - attemptStart
+      // The conversation must end with a user turn before the next call.
+      conversation.push({ role: 'user', content: `The render failed: ${renderError}. Fix the cause (for example choose a different reference photo) and reply with the full JSON again.` })
       continue
     }
     imageUrl = json.url as string
@@ -108,7 +161,7 @@ export async function runArtDirector(opts: {
       verdict = { passes: false, description: '', failed: [{ q: 'QA could not run', why: String(e?.message ?? e) }], notes: [], correction: '' }
     }
     qaAttempts.push({
-      attempt: a, image_url: imageUrl, art_direction: ad, prompt_doc: json.prompt_doc,
+      attempt: a, image_url: imageUrl, art_direction: ad, brief_review: review, prompt_doc: json.prompt_doc,
       critique: { passes: verdict.passes, description: verdict.description, issues: verdict.failed.map(f => `${f.q} → no: ${f.why}`), notes: verdict.notes.map(f => `${f.q} → no: ${f.why}`), correction: verdict.correction },
     })
     lastAttemptMs = Date.now() - attemptStart
