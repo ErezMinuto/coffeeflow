@@ -146,8 +146,11 @@ export async function runArtDirector(opts: {
       json = res.json
       if (!res.ok || typeof json.url !== 'string') throw new Error(String(json.error ?? `HTTP ${res.status}`))
     } catch (e: any) {
-      qaAttempts.push({ attempt: a, art_direction: ad, brief_review: review, render_error: `visual-test: ${e?.message ?? e}` })
+      const renderError = `visual-test: ${e?.message ?? e}`
+      qaAttempts.push({ attempt: a, art_direction: ad, brief_review: review, render_error: renderError })
       lastAttemptMs = Date.now() - attemptStart
+      // The conversation must end with a user turn before the next call.
+      conversation.push({ role: 'user', content: `The render failed: ${renderError}. Fix the cause (for example choose a different reference photo) and reply with the full JSON again.` })
       continue
     }
     imageUrl = json.url as string
