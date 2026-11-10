@@ -48,7 +48,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   // Every rendered attempt of the image behind the post being reviewed, so
   // the owner can choose which one goes out, not only the last.
-  const [attemptChoices, setAttemptChoices] = useState<Array<{ attempt: number; image_url: string }>>([])
+  // issues = the structural/brand checks that attempt failed (art director
+  // veto list); shown in red so a broken image is a one-click reject.
+  const [attemptChoices, setAttemptChoices] = useState<Array<{ attempt: number; image_url: string; issues: string[] }>>([])
 
   useEffect(() => {
     setAttemptChoices([])
@@ -57,11 +59,15 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     supabase.from('seo_tasks').select('result_data').eq('id', viewing.parent_task_id).maybeSingle()
       .then(({ data }) => {
         if (stale) return
-        const attempts = ((data?.result_data as Record<string, unknown> | null)?.qa_attempts ?? []) as Array<{ attempt?: number; image_url?: string }>
+        const attempts = ((data?.result_data as Record<string, unknown> | null)?.qa_attempts ?? []) as Array<{ attempt?: number; image_url?: string; critique?: { issues?: unknown } }>
         const seen = new Set<string>()
         const choices = attempts
           .filter(a => typeof a.image_url === 'string' && a.image_url && !seen.has(a.image_url) && seen.add(a.image_url))
-          .map(a => ({ attempt: Number(a.attempt ?? 0), image_url: a.image_url as string }))
+          .map(a => ({
+            attempt: Number(a.attempt ?? 0),
+            image_url: a.image_url as string,
+            issues: Array.isArray(a.critique?.issues) ? (a.critique!.issues as unknown[]).map(String) : [],
+          }))
         setAttemptChoices(choices)
       })
     return () => { stale = true }
@@ -484,6 +490,18 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       </div>
                     )}
 
+                    {(() => {
+                      const shown = attemptChoices.find(c => c.image_url === single)
+                      return shown && shown.issues.length > 0 ? (
+                        <div className="rounded border border-red-300 bg-red-50 p-2.5 text-[12px] leading-relaxed text-red-900">
+                          <div className="font-semibold flex items-center gap-1"><AlertTriangle size={12} /> Structural problem in this image</div>
+                          <ul className="list-disc pl-4 mt-1">
+                            {shown.issues.map((x, i) => <li key={i}>{x.split(' → no: ').pop()}</li>)}
+                          </ul>
+                        </div>
+                      ) : null
+                    })()}
+
                     {images.length > 0 ? (
                       <div className={carousel.length > 0 ? 'flex gap-2 overflow-x-auto pb-1' : ''}>
                         {images.map((src, i) => (
@@ -512,6 +530,11 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                                 <a href={c.image_url} target="_blank" rel="noreferrer">
                                   <img src={c.image_url} alt={`Attempt ${c.attempt}`} className="h-40 rounded object-contain bg-surface-50" loading="lazy" />
                                 </a>
+                                {c.issues.length > 0 && (
+                                  <div className="mt-1 max-w-[9rem] text-[10px] leading-snug text-red-800" title={c.issues.join('\n')}>
+                                    <AlertTriangle size={10} className="inline mr-0.5" />{c.issues[0].split(' → no: ').pop()}
+                                  </div>
+                                )}
                                 <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
                                   <span>Attempt {c.attempt}</span>
                                   {current ? (

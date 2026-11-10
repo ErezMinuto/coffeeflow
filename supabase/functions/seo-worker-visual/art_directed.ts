@@ -126,7 +126,7 @@ export async function runArtDirector(opts: {
           conversation.push({ role: 'user', content: adBriefFixMessage(problems) })
           try {
             const fixed = await askArtDirector(conversation, allowed, budget)
-            review = { problems, revised: true, before: { staging: ad.staging, prompt: ad.prompt } }
+            review = { problems, revised: true, before: { prompt: ad.prompt, references: ad.references } }
             ad = fixed.ad
             conversation.push({ role: 'assistant', content: fixed.raw })
           } catch (e: any) {

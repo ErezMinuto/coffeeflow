@@ -57,12 +57,11 @@ export const AD_SYSTEM = `You are Minuto's art director for Instagram. Minuto is
 
 What makes a great Minuto image: a real moment caught mid-work at Minuto's own bar or roastery. Candid, hand-held, a natural angle, warm natural light, soft background, film grain. A person in the middle of doing something real is better than a staged still life. The viewer should feel they are standing at Minuto's bar.
 
-Real-world sense (the most important part of your job). You have worked years of shifts behind Minuto's bar and on roast days, and you write only what you would really see on a shift. The image model takes every word literally and fills anything you leave unsaid with a guess, so leave no hand and no object to chance:
-- Every visible hand has a job at that exact second, the job a trained barista or roaster really does in this action: holding a tool by its handle, turning a knob, pulling a lever, setting a cup down. A hand with no real job stays out of frame. Hands do not rest, lean or pose on equipment for the camera.
-- Working equipment is hot: the roaster's drum, its front plate, door and exhaust, the group heads, the steam wand, a kettle's body, a moka pot on the burner. People touch hot equipment only by its handles, knobs and levers.
-- Gravity and flow: every object rests on a surface or is held by a hand you described. Liquid and beans leave only from a spout, chute or door, and fall down into something.
-- The logic of the moment: equipment is in the state this moment needs (a roaster mid-roast is running with its drum door shut, milk is steamed before it is poured), and nothing is in two places or two states at once.
-- When you are unsure whether something happens in real life, choose the simpler, more common version.
+Real-world rules (hard rules; a brief that breaks one is rewritten before it is rendered):
+- The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
+- Hot equipment (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust) is touched only by its handles, knobs and levers.
+- Every object rests on something or is held; liquid, steam and beans come only from where they really come from.
+- A scene that shows a machine at medium or wide framing uses a reference that shows that whole machine, so its parts stay attached. A close-up reference never sets an object's size in a wider shot.
 
 How you work:
 1. Read the caption and goal. The image serves the caption.
@@ -70,9 +69,8 @@ How you work:
 3. Propose 3 genuinely different concepts in one line each. Creativity lives in the story: who, when, why (a regular's first order at 7am, roast day, a new origin arriving, end-of-day clean-down, rain on the window). Pick the strongest for this caption and say why in one sentence.
 4. Choose the physical action from the action list. Follow its realism note exactly; it is how this action really looks. If no action fits, you may define a new one: set "new_action": true and write its realism note yourself.
 5. Choose 1 or 2 reference photos by key from the photo index. Prefer photos without flags. Each reference gets one role sentence: what the model must copy from it (e.g. "the exact design of the espresso machine", "how the barista's hands hold the pitcher"), and nothing else.
-6. Stage the scene: list every visible person, every visible hand and every object that is held or moving, one line each, saying exactly what it does or rests on and why a professional would do that at this second. Check each line against real-world sense.
-7. Write the prompt (120-220 words) so it matches your staging exactly, in this order: shot style; anchor (what each reference controls); action; props; setting; light; camera and texture; brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
-8. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
+6. Write the prompt (120-220 words) as one flowing paragraph of plain description, the way a photographer describes a shot, with no labels or headings. Cover, in roughly this order: the shot style, what each reference controls, the action, the props, the setting, the light, the camera and texture, and the brand details. Describe only what should be in the picture, all positively. Do not use the words "no", "not", "never", "without" or "avoid" in the prompt.
+7. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
 
 Brand facts (always true):
 - The espresso machine is a 2-group La Marzocco Strada X: slate-grey body, curved side panels with pale-blue glass. It carries only its own maker's mark.
@@ -83,7 +81,7 @@ Brand facts (always true):
 - People appear as hands, forearms and torsos, or as soft out-of-focus figures in the background, faces turned away or blurred.
 
 Reply with JSON only, exactly this shape:
-{"concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "staging": ["...", "..."], "prompt": "...", "qa": ["...", "..."]}`
+{"concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
 
 export interface RecentPost { date: string; caption: string; concept?: string; action?: string }
 
@@ -107,7 +105,6 @@ export interface ArtDirection {
   new_action: boolean
   new_action_note: string
   references: Array<{ key: string; role: string }>
-  staging: string[]
   prompt: string
   qa: string[]
 }
@@ -184,8 +181,6 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
     if (!r.role) errors.push(`reference "${r.key}" needs a role sentence`)
   }
   if (new Set(references.map(r => r.key)).size !== references.length) errors.push('the two references must be different photos')
-  const staging = Array.isArray(d.staging) ? d.staging.map(String).filter(l => l.trim()) : []
-  if (staging.length < 1) errors.push('staging must list every visible person, hand and held or moving object, one line each')
   const prompt = typeof d.prompt === 'string' ? d.prompt.trim() : ''
   const words = prompt.split(/\s+/).filter(Boolean).length
   if (words < 60) errors.push(`the prompt has ${words} words; write 120-220`)
@@ -198,10 +193,23 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
     ok: true, warnings,
     value: {
       concepts, choice, why: String(d.why ?? ''), action, new_action: newAction,
-      new_action_note: String(d.new_action_note ?? ''), references, staging, prompt, qa: qa.slice(0, 3),
+      new_action_note: String(d.new_action_note ?? ''), references, prompt, qa: qa.slice(0, 3),
     },
   }
 }
+
+// Structural checks (owner + Gemini, 2026-11-10). Calibrated on the owner's
+// 13 good + 10 bad images, each judged twice: the attachment, steam-source
+// and merged-parts questions failed 12 of 12 good images, so they are notes.
+// Skin on hot equipment failed only bad images (hand on the roaster, hand on
+// the trier's tube), so it blocks: a failure buys one re-render, and if the
+// last attempt still fails the owner sees it in red.
+export const HOT_EQUIPMENT_VETO = 'Is all skin clear of steam wands, group heads, kettle bodies, the roaster drum front and the metal tube of a sample trier, with hands touching that equipment only by handles, knobs or levers? (yes if no hands)'
+export const STRUCTURAL_NOTES = [
+  'Is every steam wand, group head, portafilter and sample trier attached to its machine or held in a hand, with none floating or growing out of another object? (yes if none)',
+  'Does steam come only from a steam wand tip, hot milk, a hot drink, a kettle, a brewer or the roaster, with none rising out of a drip tray, counter or machine panel? (yes if no steam)',
+  'Is every object whole and single, with no duplicated or merged parts (a pitcher with two handles, a wand splitting in two)?',
+]
 
 // What blocks: only OBJECTIVE brand rules (owner, 2026-11-07). Calibrated on
 // 20 images: the critic's hand and "physically absurd" judgements disagreed
@@ -214,13 +222,14 @@ export const AD_BLOCKING_QUESTIONS = [
   'Is the image free of coffee bags and jars?',
   'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
   'Is every object resting on a surface or held, with nothing visibly floating in the air?',
+  HOT_EQUIPMENT_VETO,
 ]
 
 // Subjective checks the owner reads as notes.
 export const AD_NOTE_QUESTIONS = [
   'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
   'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
-  'Is everyone doing what a trained barista or roaster really does, with hands touching hot equipment only by its handles, knobs or levers?',
+  ...STRUCTURAL_NOTES,
 ]
 
 export interface CriticQuestions { blocking: string[]; notes: string[] }
@@ -273,22 +282,32 @@ export function parseCritic(text: string, questions: string[], blockingCount = q
 }
 
 // ── Brief review, before any render ─────────────────────────────────────────
-// Owner, 2026-11-08: a story showed the operator's palm flat on the roaster's
-// front plate mid-roast. The art director had written it ("the left hand rests
-// flat on the front panel"). A rule per mistake would never end, so a second
-// model reads the written brief as a working barista and roaster would, before
-// a render is spent, and the art director fixes what it flags. Text only.
+// Owner, 2026-11-08/10: a palm flat on the roaster's hot front plate, then a
+// palm on the steam wand. Both came from the brief: the art director added a
+// hand gesture no reference showed, and the image model put it on hot metal.
+// A second model reads the brief before a render is spent, checks every hand
+// against what the chosen references actually show, and the art director
+// fixes what it flags. Text only. Agreed with Gemini 2026-11-10.
 
-export const BRIEF_REVIEW_SYSTEM = `You are a head barista and head roaster with 15 years on the job at a specialty coffee roastery. A photographer hands you the brief for one photo before the shoot. An image model will render the brief literally, word for word.
-Flag anything in it that a real professional would not do, or that could not happen in real life: touching hot equipment anywhere but its handles, knobs or levers (roaster drum, front plate, door and exhaust, group heads, steam wand, kettle body, moka pot on the burner); a hand resting, leaning or posing on equipment; a visible hand with no stated job; improper or unsafe technique; an object with nothing holding or supporting it; liquid or beans coming from the wrong place or moving the wrong way; equipment in the wrong state for the moment; two parts of the brief that contradict each other.
+export const BRIEF_REVIEW_SYSTEM = `You are a head barista and head roaster with 15 years on the job at a specialty coffee roastery. A photographer hands you the brief for one photo before the shoot. An image model will render it literally, using the reference photos listed with it. The image model can only draw a grip, a tool's size and which way round it goes when a reference shows them.
+Flag:
+1. Any hand that holds, touches or operates something that none of the references' "actions" show being done that way, including extra gestures (a resting palm, a hand on a surface, a second hand added to a one-hand action).
+2. Skin touching hot equipment anywhere but its handles, knobs or levers (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust).
+3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, equipment in the wrong state for the moment, two parts of the brief that contradict each other.
+4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
 Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
-Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong in real life", "fix": "how a real professional would do it, said positively"}]}`
+Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong", "fix": "how to do it instead, said positively (e.g. keep that hand out of frame)"}]}`
 
-export function briefReviewMessage(ad: ArtDirection): string {
+export function briefReviewMessage(ad: ArtDirection, index: IndexedPhoto[] = PHOTO_INDEX): string {
   const note = ACTIONS[ad.action] ?? ad.new_action_note
+  const byKey = new Map(index.map(p => [p.key, p]))
   return [
     `ACTION: ${ad.action}: ${note}`,
-    '', 'STAGING:', ...ad.staging.map(l => `- ${l}`),
+    '', 'REFERENCES:',
+    ...ad.references.map((r, i) => {
+      const p = byKey.get(r.key)
+      return `${i + 1}. ${r.key}: ${p?.desc ?? '(not in the index)'}\n   used for: ${r.role}\n   actions: ${p?.actions?.length ? p.actions.join(' | ') : '(no hands in this photo)'}`
+    }),
     '', 'PROMPT:', ad.prompt,
   ].join('\n')
 }
@@ -312,8 +331,8 @@ export function parseBriefReview(text: string): BriefProblem[] {
 
 export function adBriefFixMessage(problems: BriefProblem[]): string {
   return [
-    'A head barista and roaster read your brief before the shoot and flagged these as things that would not happen on a real shift:',
+    'A head barista and roaster read your brief before the shoot and flagged these:',
     ...problems.map(p => `- "${p.quote}": ${p.why} Fix: ${p.fix}`),
-    'Keep the concept, action and references. Rewrite the staging and the prompt so every flagged detail is done the way a real professional does it, described positively. Same JSON shape as before.',
+    'Keep the concept and action if you can; change references if a flag needs a photo that shows the action. Rewrite the prompt so every flagged detail is fixed, described positively, as one flowing paragraph. Same JSON shape as before.',
   ].join('\n')
 }
