@@ -140,7 +140,8 @@ Deno.test('skin on hot equipment blocks; the other structural checks are notes (
   assert(AD_BLOCKING_QUESTIONS.includes(HOT_EQUIPMENT_VETO))
   const { blocking, notes } = criticQuestions(JSON.parse(reply()) as ArtDirection)
   assert(blocking.some(q => q.includes('skin')))
-  assert(!blocking.some(q => q.includes('drip tray') || q.includes('merged parts')))
+  assert(!blocking.some(q => q.includes('rising out of a drip tray') || q.includes('merged parts')))
+  assert(blocking.some(q => q.includes('side panels')))
   for (const q of STRUCTURAL_NOTES) assert(notes.includes(q), q)
 })
 

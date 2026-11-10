@@ -73,7 +73,7 @@ How you work:
 7. Write 2-3 yes/no questions a checker can answer by looking at the image, each phrased so that "yes" means correct, about the PHYSICAL details most likely to go wrong in YOUR scene: what touches what, which hand holds what, whether liquid comes from the right place, whether equipment is whole. Leave composition, framing, angles, exact degrees and colours out of the questions; a photo that differs from your plan in those ways is still a good photo.
 
 Brand facts (always true):
-- The espresso machine is a 2-group La Marzocco Strada X: slate-grey body, curved side panels with pale-blue glass. It carries only its own maker's mark.
+- The espresso machine is a 2-group La Marzocco Strada X: slate-grey body; its curved side panels are clear, see-through glass with a light pale-blue tint, and what stands behind them shows through. Its only lettering is the small "La Marzocco" name on the front edge of the drip tray and a small chrome "strada" script badge on the grey metal body above the glass; the glass side panels carry no lettering or logo. In the prompt, ask for no logo, mark or brand name on the machine at all (the reference already carries the real one), and describe the side panels as clear pale-blue glass. When the machine's side is in the shot, use a reference that shows the side (tag strada_x_side).
 - Minuto's bar: stainless counter and wooden cabinets, colourful ceramic cups stacked on top of the machine, a big street window, pendant lamps, plants. Surfaces are warm wood or stainless steel. Baristas often have tattooed forearms and dark aprons.
 - Roasting happens on a Coffee-Tech drum roaster with a round cooling bin. Minuto roasts weekly.
 - Coffee beans shown are always roasted (light-cinnamon to medium brown). Green coffee and resold brands are never the subject, and beans are never hand-sorted.
@@ -217,7 +217,10 @@ export const STRUCTURAL_NOTES = [
 // so they behaved like a coin flip. They are notes now: recorded for the
 // owner, no badge, no retry. The owner's review is the quality check.
 export const AD_BLOCKING_QUESTIONS = [
-  "Does the espresso machine carry only its own maker's mark, with no painted café name or extra logo? (yes if no machine)",
+  // Owner 2026-11-10: renders kept painting "La Marzocco" across the side
+  // glass. On the real machine the only lettering is the name on the drip
+  // tray's front edge and a small chrome "strada" badge on the metal body.
+  'Is the espresso machine free of lettering and logos except a small name on the front edge of its drip tray and a small script badge on its metal body, with nothing printed on its glass side panels? (yes if no espresso machine)',
   'Are all coffee beans roasted brown, none green? (yes if no beans)',
   'Is the image free of coffee bags and jars?',
   'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
@@ -295,6 +298,7 @@ Flag:
 2. Skin touching hot equipment anywhere but its handles, knobs or levers (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust).
 3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, equipment in the wrong state for the moment, two parts of the brief that contradict each other.
 4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
+5. Any logo, mark, brand name or lettering asked for on the espresso machine or the roaster (the references carry the real ones; asking for a mark makes the image model paint one on).
 Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
 Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong", "fix": "how to do it instead, said positively (e.g. keep that hand out of frame)"}]}`
 
