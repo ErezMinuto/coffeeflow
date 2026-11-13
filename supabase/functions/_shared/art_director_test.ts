@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, HOT_EQUIPMENT_VETO, STRUCTURAL_NOTES, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage, adUserMessage,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, SPACE_QUESTIONS, rankCandidates, HOT_EQUIPMENT_VETO, STRUCTURAL_NOTES, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage, adUserMessage,
   briefReviewMessage, criticQuestions, isRealRejection, parseArtDirection, parseBriefReview, parseCritic, referenceCandidates,
   type ArtDirection,
 } from './art_director.ts'
@@ -13,7 +13,7 @@ const prompt = 'A candid lifestyle photograph at Minuto, '.repeat(20)
 
 function reply(over: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    concepts: ['a', 'b', 'c'], choice: 1, why: 'fits', action: 'steaming_milk', new_action: false, new_action_note: '',
+    space: 'bar', concepts: ['a', 'b', 'c'], choice: 1, why: 'fits', action: 'steaming_milk', new_action: false, new_action_note: '',
     references: [{ key: someKey, role: 'the exact design of the espresso machine' }], prompt, qa: ['Is the pitcher held?'], ...over,
   })
 }
@@ -49,6 +49,8 @@ Deno.test('bad replies are rejected with reasons the art director can fix', () =
     [{ action: 'juggling' }, 'not in the action list'],
     [{ references: [{ key: 'coffee_bags/GUJI.png', role: 'the bag' }] }, 'not a key'],
     [{ references: [] }, '1 or 2'],
+    [{ space: 'lounge' }, 'space must be'],
+    [{ space: undefined }, 'space must be'],
     [{ prompt: 'too short' }, 'words'],
     [{ references: [{ key: someKey, role: 'x' }, { key: someKey, role: 'y' }] }, 'different photos'],
   ]
@@ -152,4 +154,20 @@ Deno.test('brief review problems parse; unreadable output counts as none', () =>
   assertEquals(parseBriefReview('garbage'), [])
   const fix = adBriefFixMessage(p)
   assert(fix.includes('no reference shows a second hand') && fix.includes('keep the second hand out of frame') && fix.includes('Same JSON shape'))
+})
+
+Deno.test('every image lives in one space; the space check reaches the critic as a note', () => {
+  assert(AD_SYSTEM.includes('spaces never mix') && AD_SYSTEM.includes('Ghibli R15'))
+  for (const sp of ['roastery', 'bar', 'product', 'craft'] as const) {
+    const r = parseArtDirection(reply({ space: sp }), keys)
+    assert(r.ok, sp)
+    if (r.ok) assert(criticQuestions(r.value).notes.includes(SPACE_QUESTIONS[sp]), sp)
+  }
+  assert(SPACE_QUESTIONS.roastery.includes('café chairs'))
+})
+
+Deno.test('candidates rank: passing first, then fewest notes, then render order', () => {
+  const c = [{ id: 'a', passes: false, notes: 0 }, { id: 'b', passes: true, notes: 3 }, { id: 'c', passes: true, notes: 1 }, { id: 'd', passes: true, notes: 1 }]
+  assertEquals(rankCandidates(c).map(x => x.id), ['c', 'd', 'b', 'a'])
+  assertEquals(rankCandidates([]), [])
 })

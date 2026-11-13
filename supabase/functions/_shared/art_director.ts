@@ -17,7 +17,7 @@ import { PHOTO_EXCLUDE } from './shot_library.ts'
 
 export const AD_MODEL = 'claude-opus-5-5'
 export const AD_CRITIC_MODEL = 'gemini-3.1-pro-preview'
-export const AD_PROMPT_VERSION = 'art-director-v2'
+export const AD_PROMPT_VERSION = 'art-director-v3'
 
 // Owner-approved 2026-11-07 ("List is right"). How each action REALLY looks;
 // the art director must follow it and the critic checks it.
@@ -55,7 +55,14 @@ export function referenceCandidates(index: IndexedPhoto[] = PHOTO_INDEX, exclude
 
 export const AD_SYSTEM = `You are Minuto's art director for Instagram. Minuto is a small specialty coffee roastery and espresso bar in Israel ("מינוטו קפה בית קלייה ספיישלטי"). For each post you invent the image and write the prompt an image model (Nano Banana Pro) will render, using 1 or 2 of Minuto's own photos as references.
 
-What makes a great Minuto image: a real moment caught mid-work at Minuto's own bar or roastery. Candid, hand-held, a natural angle, warm natural light, soft background, film grain. A person in the middle of doing something real is better than a staged still life. The viewer should feel they are standing at Minuto's bar.
+What makes a great Minuto image: a brand-new, professional editorial photograph of a real moment at Minuto, as a skilled commercial photographer would shoot it: a deliberate camera angle, beautiful natural light, shallow depth of field, a clean uncluttered frame, true colours. It still feels candid: a person in the middle of doing something real beats a staged still life. Minuto's own photos are references for what the real equipment, products and people look like, never the composition to copy; they are quick snapshots, so take the identity from them and compose a better picture.
+
+Spaces (owner + Gemini, 2026-11-13). Every image happens in exactly one space, and spaces never mix:
+- roastery: the Coffee-Tech Ghibli R15 drum roaster, its round cooling bin, the sample trier, the production floor, warm workshop light. No café chairs or tables, customers, cups on saucers, pastries or street window.
+- bar: the La Marzocco Strada X, the counter, cups, grinders, baristas at work, the street window. No roaster, exhaust ducting or production equipment.
+- product: roasted beans and brewing gear (V60, Chemex, moka pot, a cup) on wood or stone, close and calm. No machines in focus.
+- craft: a close-up of one detail of the work (espresso running from the spouts, microfoam, beans tumbling in the cooling bin, the trier's beans). One subject, the rest soft.
+Choose references from the chosen space only.
 
 Real-world rules (hard rules; a brief that breaks one is rewritten before it is rendered):
 - The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
@@ -75,13 +82,13 @@ How you work:
 Brand facts (always true):
 - The espresso machine is a 2-group La Marzocco Strada X: slate-grey body; its curved side panels are clear, see-through glass with a light pale-blue tint, and what stands behind them shows through. Its only lettering is the small "La Marzocco" name on the front edge of the drip tray and a small chrome "strada" script badge on the grey metal body above the glass; the glass side panels carry no lettering or logo. In the prompt, never mention logos, marks, lettering or brand names for the machine, not even to say there are none: naming them makes the image model paint them on, and the reference already carries the real ones. Describe the side panels as clear pale-blue glass. When the machine's side is in the shot, use a reference that shows the side (tag strada_x_side).
 - Minuto's bar: stainless counter and wooden cabinets, colourful ceramic cups stacked on top of the machine, a big street window, pendant lamps, plants. Surfaces are warm wood or stainless steel. Baristas often have tattooed forearms and dark aprons.
-- Roasting happens on a Coffee-Tech drum roaster with a round cooling bin. Minuto roasts weekly.
+- Roasting happens on a Coffee-Tech Ghibli R15 drum roaster with a round cooling bin under the drum door. Minuto roasts weekly.
 - Coffee beans shown are always roasted (light-cinnamon to medium brown). Green coffee and resold brands are never the subject, and beans are never hand-sorted.
 - Minuto bags and jars are left out of these scenes; product shots are made separately from the real packaging.
 - People appear as hands, forearms and torsos, or as soft out-of-focus figures in the background, faces turned away or blurred.
 
 Reply with JSON only, exactly this shape:
-{"concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
+{"space": "roastery" | "bar" | "product" | "craft", "concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
 
 export interface RecentPost { date: string; caption: string; concept?: string; action?: string }
 
@@ -97,7 +104,11 @@ export function isRealRejection(reason: string | null | undefined): boolean {
   return r.length > 0 && !/^cleared by\b/i.test(r)
 }
 
+export const SPACES = ['roastery', 'bar', 'product', 'craft'] as const
+export type Space = typeof SPACES[number]
+
 export interface ArtDirection {
+  space: Space
   concepts: string[]
   choice: number
   why: string
@@ -166,6 +177,8 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
   const warnings: string[] = []
   const concepts = Array.isArray(d.concepts) ? d.concepts.map(String) : []
   if (concepts.length !== 3) errors.push('concepts must hold exactly 3 one-line ideas')
+  const space = String(d.space ?? '').trim() as Space
+  if (!SPACES.includes(space)) errors.push(`space must be one of ${SPACES.join(', ')}`)
   const choice = Number(d.choice)
   if (!Number.isInteger(choice) || choice < 0 || choice > 2) errors.push('choice must be 0, 1 or 2')
   const action = typeof d.action === 'string' ? d.action.trim() : ''
@@ -192,7 +205,7 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
   return {
     ok: true, warnings,
     value: {
-      concepts, choice, why: String(d.why ?? ''), action, new_action: newAction,
+      space, concepts, choice, why: String(d.why ?? ''), action, new_action: newAction,
       new_action_note: String(d.new_action_note ?? ''), references, prompt, qa: qa.slice(0, 3),
     },
   }
@@ -239,9 +252,27 @@ export interface CriticQuestions { blocking: string[]; notes: string[] }
 
 /** Blocking questions decide pass/fail; the action's realism note and the art
  *  director's own questions are recorded as notes for the owner. */
+export const SPACE_QUESTIONS: Record<Space, string> = {
+  roastery: 'Is this purely a roastery, free of café chairs, customer tables, customers, cups on saucers and pastries?',
+  bar: 'Is this purely an espresso bar, free of any coffee roaster or production equipment?',
+  product: 'Is any machine in the image soft or out of focus, so the beans or brewing gear are the subject?',
+  craft: 'Is there one clear close-up subject with the rest softly out of focus?',
+}
+
 export function criticQuestions(ad: ArtDirection): CriticQuestions {
   const note = ACTIONS[ad.action] ?? ad.new_action_note
-  return { blocking: AD_BLOCKING_QUESTIONS, notes: [...AD_NOTE_QUESTIONS, `Does the scene match how this action really looks: ${note}`, ...ad.qa] }
+  const space = SPACE_QUESTIONS[ad.space] ? [SPACE_QUESTIONS[ad.space]] : []
+  return { blocking: AD_BLOCKING_QUESTIONS, notes: [...space, ...AD_NOTE_QUESTIONS, `Does the scene match how this action really looks: ${note}`, ...ad.qa] }
+}
+
+export interface RankedCandidate { passes: boolean; notes: number }
+
+/** Order rendered candidates best first: passing every blocking check first,
+ *  then fewest failed notes, then render order (stable). */
+export function rankCandidates<T extends RankedCandidate>(cands: T[]): T[] {
+  return cands.map((c, i) => ({ c, i }))
+    .sort((a, b) => Number(b.c.passes) - Number(a.c.passes) || a.c.notes - b.c.notes || a.i - b.i)
+    .map(x => x.c)
 }
 
 export const AD_CRITIC_SYSTEM = `You are checking an Instagram story or feed image for Minuto, a specialty coffee roastery, the way its owner does: on a phone, at normal viewing size, before posting.
@@ -299,6 +330,7 @@ Flag:
 3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, equipment in the wrong state for the moment, two parts of the brief that contradict each other.
 4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
 5. Any logo, mark, brand name or lettering asked for on the espresso machine or the roaster (the references carry the real ones; asking for a mark makes the image model paint one on).
+6. Anything from another space: café furniture, cups, customers or the street window in a roastery scene; a roaster or production equipment in a bar scene; a machine in sharp focus in a product scene.
 Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
 Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong", "fix": "how to do it instead, said positively (e.g. keep that hand out of frame)"}]}`
 

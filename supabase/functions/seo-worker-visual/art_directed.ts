@@ -6,7 +6,7 @@
 import { callClaude } from '../seo-agent/claude.ts'
 import {
   AD_CRITIC_MODEL, AD_CRITIC_SYSTEM, AD_MODEL, AD_SYSTEM, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage,
-  briefReviewMessage, criticQuestions, criticUserMessage, parseArtDirection, parseBriefReview, parseCritic,
+  briefReviewMessage, criticQuestions, criticUserMessage, parseArtDirection, parseBriefReview, parseCritic, rankCandidates,
   type ArtDirection, type BriefProblem, type CriticVerdict,
 } from '../_shared/art_director.ts'
 import type { shotBudget } from './shotBudget.ts'
@@ -52,6 +52,9 @@ const BRIEF_REVIEW_SCHEMA = {
 // attempt (art director + render + critic) has taken ~70 s in prod, the review
 // ~20 s, a fix round ~30 s.
 export const BRIEF_REVIEW_MIN_REMAINING_MS = 150_000
+
+// Candidates rendered in parallel per round (owner + Gemini, 2026-11-13).
+export const CANDIDATES = 3
 
 async function briefReview(ad: ArtDirection, budget: Budget): Promise<BriefProblem[]> {
   const res = await callClaude({
@@ -140,34 +143,53 @@ export async function runArtDirector(opts: {
         log(`brief review skipped: ${review.error}`)
       }
     }
-    let json: Record<string, unknown> = {}
-    try {
-      const res = await opts.render({ aspect, art_direction: { prompt: ad.prompt, references: ad.references } }, budget.hopMs())
-      json = res.json
-      if (!res.ok || typeof json.url !== 'string') throw new Error(String(json.error ?? `HTTP ${res.status}`))
-    } catch (e: any) {
-      const renderError = `visual-test: ${e?.message ?? e}`
-      qaAttempts.push({ attempt: a, art_direction: ad, brief_review: review, render_error: renderError })
+    // Owner + Gemini 2026-11-13: render CANDIDATES at once from the same
+    // brief and keep the best; every candidate reaches the owner's review so
+    // he can choose a different one.
+    const brief = ad
+    const renders = await Promise.all(Array.from({ length: CANDIDATES }, async () => {
+      try {
+        const res = await opts.render({ aspect, art_direction: { prompt: brief.prompt, references: brief.references } }, budget.hopMs())
+        if (!res.ok || typeof res.json.url !== 'string') throw new Error(String(res.json.error ?? `HTTP ${res.status}`))
+        return { url: res.json.url as string, json: res.json }
+      } catch (e: any) {
+        return { error: `visual-test: ${e?.message ?? e}` }
+      }
+    }))
+    const rendered = renders.filter((r): r is { url: string; json: Record<string, unknown> } => 'url' in r)
+    if (!rendered.length) {
+      const renderError = (renders[0] as { error: string }).error
+      qaAttempts.push({ attempt: qaAttempts.length + 1, round: a, art_direction: ad, brief_review: review, render_error: renderError })
       lastAttemptMs = Date.now() - attemptStart
       // The conversation must end with a user turn before the next call.
       conversation.push({ role: 'user', content: `The render failed: ${renderError}. Fix the cause (for example choose a different reference photo) and reply with the full JSON again.` })
       continue
     }
-    imageUrl = json.url as string
-    renderRaw = json
-    try {
-      verdict = await criticCheck(imageUrl, ad, budget)
-    } catch (e: any) {
-      verdict = { passes: false, description: '', failed: [{ q: 'QA could not run', why: String(e?.message ?? e) }], notes: [], correction: '' }
+    const judged = await Promise.all(rendered.map(async r => {
+      let v: CriticVerdict
+      try { v = await criticCheck(r.url, brief, budget) } catch (e: any) {
+        v = { passes: false, description: '', failed: [{ q: 'QA could not run', why: String(e?.message ?? e) }], notes: [], correction: '' }
+      }
+      return { ...r, v, passes: v.passes, notes: v.notes.length }
+    }))
+    for (const j of judged) {
+      qaAttempts.push({
+        attempt: qaAttempts.length + 1, round: a, image_url: j.url, art_direction: ad, brief_review: review, prompt_doc: j.json.prompt_doc,
+        critique: { passes: j.v.passes, description: j.v.description, issues: j.v.failed.map(f => `${f.q} → no: ${f.why}`), notes: j.v.notes.map(f => `${f.q} → no: ${f.why}`), correction: j.v.correction },
+      })
     }
-    qaAttempts.push({
-      attempt: a, image_url: imageUrl, art_direction: ad, brief_review: review, prompt_doc: json.prompt_doc,
-      critique: { passes: verdict.passes, description: verdict.description, issues: verdict.failed.map(f => `${f.q} → no: ${f.why}`), notes: verdict.notes.map(f => `${f.q} → no: ${f.why}`), correction: verdict.correction },
-    })
+    const best = rankCandidates(judged)[0]
+    // Keep the best of everything rendered so far: a revision round only
+    // replaces it if its own best is better.
+    if (!verdict || rankCandidates([{ passes: verdict.passes, notes: verdict.notes.length, keep: false }, { passes: best.passes, notes: best.notes, keep: true }])[0].keep) {
+      imageUrl = best.url
+      renderRaw = best.json
+      verdict = best.v
+    }
     lastAttemptMs = Date.now() - attemptStart
-    log(`art-director attempt ${a} ${verdict.passes ? 'PASSED' : `FAILED ${JSON.stringify(verdict.failed.map(f => f.q.slice(0, 60)))}`} in ${lastAttemptMs}ms`)
+    log(`art-director round ${a}: ${judged.filter(j => j.passes).length}/${judged.length} candidates passed in ${lastAttemptMs}ms`)
     if (verdict.passes) break
-    conversation.push({ role: 'user', content: adRevisionMessage(ad, verdict.failed, verdict.correction) })
+    conversation.push({ role: 'user', content: adRevisionMessage(ad, best.v.failed, best.v.correction) })
   }
   return { ad, imageUrl, renderRaw, verdict, qaAttempts }
 }
