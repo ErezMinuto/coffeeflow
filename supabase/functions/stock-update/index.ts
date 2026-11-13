@@ -21,7 +21,8 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
-import { applySells, type ApplySellsResult } from "./sells.ts";
+import { applySells, channelOfSell, type ApplySellsResult, type SellChannel } from "./sells.ts";
+import { sendPendingUnloggedAlerts } from "./alerts.ts";
 import { createLogger } from "../_shared/logger.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -238,7 +239,8 @@ async function handleMflowSyncSells(body: any) {
   const classTally: Record<string, number> = {};
   const perProduct = new Map<number, { name: string; units: number }>();  // net bags sold (report)
   const sample: any[] = [];
-  const toApply: { id: number; type: string; status: string; isReturn: boolean; source: string; date: any; delta: Map<number, number> }[] = [];
+  const toApply: { id: number; type: string; status: string; isReturn: boolean; source: string; channel: SellChannel; date: any; delta: Map<number, number> }[] = [];
+  const channelTally: Record<SellChannel, number> = { web: 0, store: 0 };
   let alreadyProcessed = 0, skippedDraft = 0, skippedReturned = 0;
 
   for (const s of sells) {
@@ -268,8 +270,10 @@ async function handleMflowSyncSells(body: any) {
     if (processed.has(Number(s.id))) { alreadyProcessed++; continue; }
     if (isDraft) { skippedDraft++; continue; }
     if (isReturnedSale) { skippedReturned++; continue; }
-    toApply.push({ id: Number(s.id), type: String(s.type ?? ""), status: statusStr, isReturn, source: String(s.sell_source ?? ""), date: s.transaction_date, delta });
-    if (sample.length < 25) sample.push({ sell_id: s.id, status: statusStr, is_return: isReturn, source: s.sell_source, date: s.transaction_date, coffee: coffee.map((c) => ({ cf: c.cf_product, signed: c.signed })) });
+    const channel = channelOfSell(s);
+    channelTally[channel]++;
+    toApply.push({ id: Number(s.id), type: String(s.type ?? ""), status: statusStr, isReturn, source: String(s.sell_source ?? ""), channel, date: s.transaction_date, delta });
+    if (sample.length < 25) sample.push({ sell_id: s.id, status: statusStr, is_return: isReturn, source: s.sell_source, channel, date: s.transaction_date, coffee: coffee.map((c) => ({ cf: c.cf_product, signed: c.signed })) });
   }
 
   // Apply: one transaction claims each sell in mflow_sell_events and moves
@@ -289,7 +293,11 @@ async function handleMflowSyncSells(body: any) {
   }
   const applied = res?.claimed.length ?? 0;
   const failedProducts = res?.failedProducts ?? [];
-  const clamped = res?.clamped ?? [];
+  const unlogged = res?.unlogged ?? [];
+
+  // Email any store-sold-but-never-packed alerts (this run's, or an earlier
+  // run's whose email failed). Only on apply runs: a dry run writes nothing.
+  const alertEmail = apply ? await sendPendingUnloggedAlerts(supabase) : null;
 
   return json({
     ok: true, apply, from_date: fromDate, to_date: toDate,
@@ -303,8 +311,11 @@ async function handleMflowSyncSells(body: any) {
     // Non-empty means stock did NOT move for those products; their sells were
     // deliberately left unrecorded and will retry on the next run.
     failed_products: failedProducts.length ? failedProducts : undefined,
-    // Sales that hit the ≥0 clamp — these units are gone and will NOT retry.
-    clamped: clamped.length ? clamped : undefined,
+    eligible_by_channel: channelTally,
+    // Store sales of bags the system did not have (someone packed without
+    // logging). Stock stays at the floor; the owner is emailed.
+    store_unlogged: unlogged.length ? unlogged : undefined,
+    alert_email: alertEmail ?? undefined,
     per_product_bags_sold: [...perProduct.entries()].map(([cf, v]) => ({ cf_product: cf, name: v.name, bags: v.units })).sort((a, b) => b.bags - a.bags),
     applied_by_product: apply ? (res?.adjustments ?? []).map((a) => ({ cf_product: a.cf_product, delta: a.delta })) : undefined,
     // Dry run: what WOULD move if every eligible sell were claimed.
@@ -656,7 +667,7 @@ async function handleMflowGet(body: any) {
 const SELLS_LOG_FIELDS = [
   "apply", "from_date", "to_date", "sells_fetched", "coffee_products_mapped",
   "new_eligible", "already_processed", "skipped_draft", "claimed_by_other_run",
-  "skipped_returned_sale", "applied",
+  "skipped_returned_sale", "applied", "eligible_by_channel",
 ] as const;
 const REVENUE_LOG_FIELDS = [
   "apply", "from_date", "to_date", "sells_fetched", "lines", "rows_built", "written",
@@ -686,7 +697,12 @@ async function runLogged(action: string, body: any, run: () => Promise<Response>
       if (action === "mflow_sync_sells") {
         if (out?.coffee_products_mapped === 0) log.warn("sku_map.empty", "no MFlow product mapped to a CoffeeFlow product; stock cannot move", summary);
         if (Array.isArray(out?.failed_products) && out.failed_products.length) log.warn("apply.failed_products", `${out.failed_products.length} product(s) did not move; their sells retry next run`, { count: out.failed_products.length });
-        if (Array.isArray(out?.clamped) && out.clamped.length) log.warn("apply.clamped", `${out.clamped.length} sale(s) hit the >=0 stock clamp and will not retry`, { count: out.clamped.length });
+        if (Array.isArray(out?.store_unlogged) && out.store_unlogged.length) {
+          const bags = out.store_unlogged.reduce((a: number, u: any) => a + Number(u.units ?? 0), 0);
+          log.warn("apply.store_unlogged", `store sold ${bags} bag(s) never logged as packed`, { sales: out.store_unlogged.length, bags });
+        }
+        const st = String(out?.alert_email?.status ?? "none");
+        if (st !== "none" && !st.startsWith("sent")) log.error("alert_email.fail", `unlogged-stock email not sent: ${st.slice(0, 300)}`, { pending: out?.alert_email?.pending ?? null });
       } else {
         if (out?.unknown_statuses) log.warn("revenue.unknown_status", "a sell status we never classified was excluded from revenue", { statuses: Object.keys(out.unknown_statuses) });
         if (out?.truncated_window) log.warn("revenue.truncated", "window hit max_pages; purge was skipped", summary);
