@@ -1220,7 +1220,7 @@ function buildStrategistUserMessage(args: {
   recentIgCaptions: Array<{ created_at: string; caption_he: string }>
   blogPosts:       Array<{ title: string; url: string; published_at: string | null }>
   catalog:         Array<{ name: string; price: number | null; permalink: string | null; stock_status: string | null }>
-  inventoryAlerts: Array<{ name: string; packed_stock: number; state: string }>
+  inventoryAlerts: Array<{ name: string; store_stock: number; allocated_bags: number; state: string }>
   learnings:       Array<{ id: string; scope: string; insight: string; created_at: string }>
   paidKeywords:    Array<{ keyword: string; match_type: string | null; impressions: number; clicks: number; cost_ils: number; conversions: number; conv_value: number; ctr: number; cost_per_conv: number | null }>
   searchTerms:     Array<{ search_term: string; triggering_keyword: string | null; impressions: number; clicks: number; conversions: number; cost_ils: number }>
@@ -1329,7 +1329,7 @@ function buildStrategistUserMessage(args: {
     ? '  (no inventory alerts)'
     : inventoryAlerts
         .filter(i => i.state !== 'healthy')
-        .map(i => `  ${i.state === 'critical' ? '⛔' : '⚠️'} ${i.name} — ${i.packed_stock} bags`)
+        .map(i => `  ${i.state === 'critical' ? '⛔' : '⚠️'} ${i.name} — ${i.store_stock} bags in store${i.allocated_bags > 0 ? ` (+${i.allocated_bags} allocated to B2B, not for sale)` : ''}`)
         .join('\n') || '  (all inventory healthy)'
 
   // Standing learnings — cross-session memory recorded via the chat

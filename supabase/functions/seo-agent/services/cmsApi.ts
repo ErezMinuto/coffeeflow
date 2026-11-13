@@ -91,9 +91,48 @@ export async function fetchMinutoCoffeeCatalog(supabase: SupabaseClient): Promis
 
 export interface InventoryAlert {
   name: string
+  /** Physical bags on the shelf, including bags set aside for B2B customers. */
   packed_stock: number
+  /** Bags in open bag_allocations (status 'allocated') — already sold to a B2B customer. */
+  allocated_bags: number
+  /** Bags the store can actually sell = packed_stock − allocated_bags, never negative. */
+  store_stock: number
   min_packed_stock: number | null
   state: 'low' | 'critical' | 'healthy'
+}
+
+// Pure: products + open allocations → alerts. The state is judged on STORE
+// stock, the same rule as the app (src/lib/reservedStock.js) and coffee-bot
+// /stock. Judging raw packed_stock let a shelf full of a café's bags read as
+// "healthy" while the store had none to sell (Fazenda Sertão, 2026-11-08:
+// 326 packed, 330 allocated → store 0).
+export function computeInventoryAlerts(
+  products: Array<{ id: number; name: string; packed_stock: number | null; min_packed_stock: number | null }>,
+  allocations: Array<{ product_id: number | null; bags: number | null }>,
+): InventoryAlert[] {
+  const allocated = new Map<number, number>()
+  for (const a of allocations) {
+    if (a.product_id == null) continue
+    allocated.set(a.product_id, (allocated.get(a.product_id) ?? 0) + (a.bags ?? 0))
+  }
+  return products.map(p => {
+    const packed = p.packed_stock ?? 0
+    const held   = allocated.get(p.id) ?? 0
+    const store  = Math.max(0, packed - held)
+    const min    = p.min_packed_stock ?? 0
+    const state  =
+      store <= 0     ? 'critical'
+      : store <= min ? 'low'
+      :                'healthy'
+    return {
+      name: p.name,
+      packed_stock: packed,
+      allocated_bags: held,
+      store_stock: store,
+      min_packed_stock: p.min_packed_stock,
+      state,
+    }
+  })
 }
 
 export async function fetchInventoryAlerts(
@@ -101,17 +140,19 @@ export async function fetchInventoryAlerts(
 ): Promise<InventoryAlert[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('name, packed_stock, min_packed_stock')
+    .select('id, name, packed_stock, min_packed_stock')
   if (error) throw new Error(`fetchInventoryAlerts failed: ${error.message}`)
 
-  return (data ?? []).map((p: { name: string; packed_stock: number; min_packed_stock: number | null }) => {
-    const min = p.min_packed_stock ?? 0
-    const state =
-      p.packed_stock <= 0       ? 'critical'
-      : p.packed_stock <= min   ? 'low'
-      :                            'healthy'
-    return { ...p, state }
-  })
+  // Fail closed: without allocations every allocated SKU would look in stock,
+  // which is the exact bug this guards against. An error here surfaces as an
+  // inventory error in the snapshot rather than a false "healthy".
+  const { data: allocations, error: allocError } = await supabase
+    .from('bag_allocations')
+    .select('product_id, bags')
+    .eq('status', 'allocated')
+  if (allocError) throw new Error(`fetchInventoryAlerts (bag_allocations) failed: ${allocError.message}`)
+
+  return computeInventoryAlerts(data ?? [], allocations ?? [])
 }
 
 // ── Customer-research signals ─────────────────────────────────────────────
