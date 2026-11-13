@@ -261,8 +261,15 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     }
   }
 
-  async function handleRejectIg(t: SeoTaskRow) {
-    const reason = window.prompt('Reject this IG post (it will NOT be published).\n\nReason:', 'Off-brand / needs rework')
+  // One-click reject reasons (owner + Gemini, 2026-11-13). The reason is
+  // read back by the art director (ownerVerdicts) before its next brief.
+  const REJECT_REASONS = ['Wrong room / furniture', 'Unrealistic machine', 'Bad hands', 'Bad beans or light', 'Logo or text on the machine', 'Looks staged or AI']
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectNote, setRejectNote] = useState('')
+  useEffect(() => { setRejecting(false); setRejectNote('') }, [viewing?.id])
+
+  async function handleRejectIg(t: SeoTaskRow, reasonIn: string) {
+    const reason = reasonIn.trim()
     if (!reason) return
     const rd = (t.result_data ?? {}) as Record<string, any>
     setBusy(t.id)
@@ -571,13 +578,43 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                           {busy === viewing.id ? <Loader2 size={13} className="animate-spin" /> : <ThumbsUp size={13} />} Approve &amp; Publish
                         </button>
                         <button
-                          onClick={() => handleRejectIg(viewing)}
+                          onClick={() => setRejecting(r => !r)}
                           disabled={busy === viewing.id}
+                          aria-expanded={rejecting}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-300 text-red-700 font-medium hover:bg-red-50 disabled:opacity-50"
                           title="Reject — do not publish"
                         >
                           <X size={13} /> Reject
                         </button>
+                      </div>
+                    )}
+                    {canPublish && rejecting && (
+                      <div className="rounded border border-red-200 bg-red-50 p-2.5 space-y-2">
+                        <div className="text-[11px] text-red-900 font-medium">Why? One click rejects (the post will not be published):</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {REJECT_REASONS.map(r => (
+                            <button
+                              key={r}
+                              onClick={() => handleRejectIg(viewing, rejectNote.trim() ? `${r}: ${rejectNote.trim()}` : r)}
+                              disabled={busy === viewing.id}
+                              className="px-2 py-1 rounded border border-red-300 bg-white text-red-800 text-[11px] hover:bg-red-100 disabled:opacity-50"
+                            >{r}</button>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                          <input
+                            id="ig-reject-note"
+                            value={rejectNote}
+                            onChange={e => setRejectNote(e.target.value)}
+                            placeholder="Optional detail, or your own reason"
+                            className="flex-1 min-w-0 px-2 py-1 rounded border border-red-200 text-[12px]"
+                          />
+                          <button
+                            onClick={() => handleRejectIg(viewing, rejectNote)}
+                            disabled={busy === viewing.id || !rejectNote.trim()}
+                            className="px-2 py-1 rounded bg-red-600 text-white text-[11px] font-medium disabled:opacity-50"
+                          >Reject with this</button>
+                        </div>
                       </div>
                     )}
                     {published && rd.ig_permalink && (
