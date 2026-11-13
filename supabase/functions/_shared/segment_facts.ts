@@ -161,7 +161,11 @@ interface EmailRecLike { title?: string; rationale?: string; action_type?: strin
 /** Problems with the email_campaign recommendations, checked against one or
  *  more fact sets (the run's snapshot and a fresh read: rfm-sync may have run
  *  in between, and a number taken from either is a number taken from the data).
- *  Empty = every email rec is sized and described by the data. */
+ *  Empty = every email rec is sized and described by the data.
+ *  Only action_type email_campaign (a new campaign / segment send) is checked:
+ *  automations are never subject to minReachable. Recs that route a small
+ *  segment around this gate are caught by belowMinimumSendProblems
+ *  (email_activity.ts). */
 export function emailRecProblems(recs: EmailRecLike[], factSets: SegmentFacts[], minReachable: number): string[] {
   const problems: string[] = []
   // A set without opt-in counts cannot size an email.

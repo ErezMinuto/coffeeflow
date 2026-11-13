@@ -37,7 +37,9 @@ export interface LoopConfig {
   max_auto_approve_per_run: number
   // conclude_brief refuses an email_campaign whose segment has fewer opted-in
   // customers than this (segment_facts.ts). Not a loop switch: it applies with
-  // the loop off too.
+  // the loop off too. Scope: new campaign / segment sends only. Automations
+  // (email_automation_templates triggers, sent by email-automation-scheduler)
+  // are never subject to it (email_activity.ts).
   min_email_reachable:      number
 }
 
