@@ -1,7 +1,8 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, isRealRejection, parseArtDirection,
-  parseCritic, referenceCandidates, type ArtDirection,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, SPACE_QUESTIONS, rankCandidates, HOT_EQUIPMENT_VETO, STRUCTURAL_NOTES, BRIEF_REVIEW_SYSTEM, adBriefFixMessage, adRevisionMessage, adUserMessage,
+  briefReviewMessage, criticQuestions, isRealRejection, parseArtDirection, parseBriefReview, parseCritic, referenceCandidates,
+  type ArtDirection,
 } from './art_director.ts'
 import { PHOTO_INDEX } from './photo_index.ts'
 import { PHOTO_EXCLUDE } from './shot_library.ts'
@@ -12,7 +13,7 @@ const prompt = 'A candid lifestyle photograph at Minuto, '.repeat(20)
 
 function reply(over: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    concepts: ['a', 'b', 'c'], choice: 1, why: 'fits', action: 'steaming_milk', new_action: false, new_action_note: '',
+    space: 'bar', concepts: ['a', 'b', 'c'], choice: 1, why: 'fits', action: 'steaming_milk', new_action: false, new_action_note: '',
     references: [{ key: someKey, role: 'the exact design of the espresso machine' }], prompt, qa: ['Is the pitcher held?'], ...over,
   })
 }
@@ -48,6 +49,8 @@ Deno.test('bad replies are rejected with reasons the art director can fix', () =
     [{ action: 'juggling' }, 'not in the action list'],
     [{ references: [{ key: 'coffee_bags/GUJI.png', role: 'the bag' }] }, 'not a key'],
     [{ references: [] }, '1 or 2'],
+    [{ space: 'lounge' }, 'space must be'],
+    [{ space: undefined }, 'space must be'],
     [{ prompt: 'too short' }, 'words'],
     [{ references: [{ key: someKey, role: 'x' }, { key: someKey, role: 'y' }] }, 'different photos'],
   ]
@@ -73,7 +76,7 @@ Deno.test('only objective brand rules block; hands, physics, realism and the art
   const { blocking, notes } = criticQuestions(ad)
   assertEquals(blocking, AD_BLOCKING_QUESTIONS)
   assert(blocking.some(q => q.includes('face')) && blocking.some(q => q.includes('bags')) && blocking.some(q => q.includes('logo')))
-  assert(!blocking.some(q => q.includes('hand') || q.includes('absurd')))
+  assert(!blocking.some(q => q.includes('deformed hand') || q.includes('absurd')))
   assert(notes.some(q => q.includes('deformed hand')) && notes.some(q => q.includes('absurd')))
   assert(notes.some(q => q.includes(ACTIONS.steaming_milk)))
   assert(notes.includes('Is the pitcher held?'))
@@ -117,4 +120,54 @@ Deno.test('owner verdicts reach the art director; bulk queue clean-ups do not co
   })
   assert(m.includes('REJECTED ("filter with milk, image looks really bad")') && m.includes('PUBLISHED: image: roastery'))
   assert(adUserMessage({ caption: 'x', aspect: 'story', recent: [], learnings: [] }).includes('OWNER VERDICTS ON RECENT IMAGES'))
+})
+
+Deno.test('hands may only do what a chosen reference shows; hot equipment only by handles', () => {
+  assert(AD_SYSTEM.includes('only if one of your chosen references shows that same action'))
+  assert(AD_SYSTEM.includes('touched only by its handles, knobs and levers'))
+  assert(AD_SYSTEM.includes('one flowing paragraph'))
+  assert(!AD_SYSTEM.includes('"staging"'))
+})
+
+Deno.test('the brief review reads the action, each reference with its actions, and the prompt', () => {
+  const ad = JSON.parse(reply()) as ArtDirection
+  const idx = [{ key: someKey, desc: 'A barista steams milk.', shows: [], actions: ['right hand holds the milk pitcher by its handle under the steam wand'], flags: [] }]
+  const m = briefReviewMessage(ad, idx)
+  assert(m.includes(ACTIONS.steaming_milk) && m.includes('right hand holds the milk pitcher') && m.includes(prompt.trim()))
+  assert(briefReviewMessage(ad, []).includes('(not in the index)'))
+  assert(BRIEF_REVIEW_SYSTEM.includes('"actions"') && BRIEF_REVIEW_SYSTEM.includes('JSON only'))
+})
+
+Deno.test('skin on hot equipment blocks; the other structural checks are notes (calibration 2026-11-10)', () => {
+  assert(AD_BLOCKING_QUESTIONS.includes(HOT_EQUIPMENT_VETO))
+  const { blocking, notes } = criticQuestions(JSON.parse(reply()) as ArtDirection)
+  assert(blocking.some(q => q.includes('skin')))
+  assert(!blocking.some(q => q.includes('rising out of a drip tray') || q.includes('merged parts')))
+  assert(blocking.some(q => q.includes('side panels')))
+  for (const q of STRUCTURAL_NOTES) assert(notes.includes(q), q)
+})
+
+Deno.test('brief review problems parse; unreadable output counts as none', () => {
+  const p = parseBriefReview('{"problems":[{"quote":"the other palm rests flat against the pitcher","why":"no reference shows a second hand on the pitcher","fix":"keep the second hand out of frame"},{"quote":"x","why":"","fix":""}]}')
+  assertEquals(p.length, 1)
+  assertEquals(parseBriefReview('{"problems":[]}'), [])
+  assertEquals(parseBriefReview('garbage'), [])
+  const fix = adBriefFixMessage(p)
+  assert(fix.includes('no reference shows a second hand') && fix.includes('keep the second hand out of frame') && fix.includes('Same JSON shape'))
+})
+
+Deno.test('every image lives in one space; the space check reaches the critic as a note', () => {
+  assert(AD_SYSTEM.includes('spaces never mix') && AD_SYSTEM.includes('Ghibli R15'))
+  for (const sp of ['roastery', 'bar', 'product', 'craft'] as const) {
+    const r = parseArtDirection(reply({ space: sp }), keys)
+    assert(r.ok, sp)
+    if (r.ok) assert(criticQuestions(r.value).notes.includes(SPACE_QUESTIONS[sp]), sp)
+  }
+  assert(SPACE_QUESTIONS.roastery.includes('café chairs'))
+})
+
+Deno.test('candidates rank: passing first, then fewest notes, then render order', () => {
+  const c = [{ id: 'a', passes: false, notes: 0 }, { id: 'b', passes: true, notes: 3 }, { id: 'c', passes: true, notes: 1 }, { id: 'd', passes: true, notes: 1 }]
+  assertEquals(rankCandidates(c).map(x => x.id), ['c', 'd', 'b', 'a'])
+  assertEquals(rankCandidates([]), [])
 })

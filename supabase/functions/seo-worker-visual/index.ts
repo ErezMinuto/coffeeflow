@@ -959,7 +959,7 @@ async function handleArtDirected(
     aspect,
     prompt_version:   AD_PROMPT_VERSION,
     art_direction: {
-      concept: ad.concepts[ad.choice], concepts: ad.concepts, why: ad.why, action: ad.action,
+      space: ad.space, concept: ad.concepts[ad.choice], concepts: ad.concepts, why: ad.why, action: ad.action,
       new_action: ad.new_action, new_action_note: ad.new_action_note || undefined,
       references: ad.references, prompt: ad.prompt, qa: ad.qa, planner_hint: plannerHint,
     },
