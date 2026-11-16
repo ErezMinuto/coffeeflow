@@ -18,6 +18,14 @@ export function reservedBagsByProduct(allocations) {
   return reserved;
 }
 
+// Bags owed to website orders. products.packed_stock is signed: a website
+// order with nothing packed takes it below zero (Minuto roasts and packs after
+// the sale), and the next packing pays it off first. See migration
+// 20261109120000_web_backorder_store_unlogged_alert.
+export function webOwed(product) {
+  return Math.max(0, -(product.packed_stock ?? 0));
+}
+
 // Bags the store can actually sell. Never negative: bags allocated before the
 // packing was logged should not drive stock below zero on screen.
 export function storeStock(product, reserved) {

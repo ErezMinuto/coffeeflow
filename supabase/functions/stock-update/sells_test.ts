@@ -10,7 +10,8 @@
 // The last checks read index.ts and fail if the handler goes back to moving
 // stock and recording sells in separate requests.
 
-import { applySells, type SellToApply } from "./sells.ts";
+import { applySells, channelOfSell, toEventRows, type SellToApply } from "./sells.ts";
+import { buildUnloggedEmail } from "./alerts.ts";
 
 let failures = 0;
 function check(name: string, ok: boolean, detail = "") {
@@ -50,7 +51,7 @@ function fakeDb(opts: { failRpc?: boolean } = {}) {
 }
 
 const sell = (id: number, delta: Record<number, number>): SellToApply => ({
-  id, type: "sell", status: "Completed", isReturn: false, source: "POS", date: "2026-10-24",
+  id, type: "sell", status: "Completed", isReturn: false, source: "POS", channel: "store", date: "2026-10-24",
   delta: new Map(Object.entries(delta).map(([k, v]) => [Number(k), v])),
 });
 
@@ -84,6 +85,39 @@ const sell = (id: number, delta: Record<number, number>): SellToApply => ({
   const db = fakeDb();
   const r = await applySells(db.client, [], "empty");
   check("empty batch makes no call", db.calls.length === 0 && r.error === null);
+}
+
+// Channel: website orders may back-order; everything else is a shelf sale.
+{
+  check("woo order id → web", channelOfSell({ sell_source: "POS", woocommerce_order_id: 123 }) === "web");
+  check("EcoSite source → web", channelOfSell({ sell_source: "EcoSite - Minuto" }) === "web");
+  check("POS → store", channelOfSell({ sell_source: "POS 1" }) === "store");
+  check("back office → store", channelOfSell({ sell_source: "Back Office" }) === "store");
+  check("unknown → store (alerting side)", channelOfSell({}) === "store");
+  check("empty woo id ignored", channelOfSell({ sell_source: "POS", woocommerce_order_id: "" }) === "store");
+  const rows = toEventRows([{ ...sell(9, { 7: -1 }), channel: "web" }]);
+  check("channel sent to the rpc", rows[0].channel === "web");
+}
+
+// Store sales past the shelf come back as `unlogged`.
+{
+  const client = { async rpc() { return { data: { claimed: [5], unlogged: [{ cf_product: 8, mflow_sell_id: 5, units: 2, packed_before: 0, transaction_date: "2026-11-09T09:00:00Z" }], adjustments: [] }, error: null }; } };
+  const r = await applySells(client, [sell(5, { 8: -2 })], "unlogged");
+  check("unlogged parsed", r.unlogged.length === 1 && r.unlogged[0].units === 2 && r.unlogged[0].cf_product === 8);
+}
+
+// Owner email.
+{
+  const one = buildUnloggedEmail([{ id: 1, product_id: 8, alert_date: "2026-11-09", units_unlogged: 2, sell_ids: [5, 6],
+    first_sell_at: "2026-11-09T07:00:00Z", last_sell_at: "2026-11-09T09:00:00Z", product_name: "<Brazil>", product_size: 330, packed_stock_now: 0 }]);
+  check("email subject names coffee + bags", one.subject.includes("2 bags") && one.subject.includes("<Brazil>"), one.subject);
+  check("email html escapes names", one.html.includes("&lt;Brazil&gt;") && !one.html.includes("<Brazil>"));
+  check("email lists MFlow docs", one.html.includes("5, 6"));
+  const two = buildUnloggedEmail([
+    { id: 1, product_id: 8, alert_date: "d", units_unlogged: 1, sell_ids: [1], first_sell_at: null, last_sell_at: null, product_name: "A", product_size: null, packed_stock_now: 0 },
+    { id: 2, product_id: 9, alert_date: "d", units_unlogged: 3, sell_ids: [2], first_sell_at: null, last_sell_at: null, product_name: "B", product_size: null, packed_stock_now: 0 },
+  ]);
+  check("multi-coffee subject", two.subject.includes("4 bags across 2 coffees"), two.subject);
 }
 
 // The handler must not split the claim from the stock move again.

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
-import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
+import { reservedBagsByProduct, storeStock, webOwed } from '../../lib/reservedStock';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -348,8 +348,13 @@ export default function Products() {
                                : (product.min_packed_stock > 0 && storeStock(product, reserved) <= product.min_packed_stock) ? '#D97706'
                                : '#059669'
                         }}>
-                          {product.packed_stock ?? 0}
+                          {Math.max(0, product.packed_stock ?? 0)}
                         </span>
+                        {webOwed(product) > 0 && (
+                          <span style={{ fontSize: '11px', color: '#B45309' }} title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
+                            (🌐 {webOwed(product)} חסרות להזמנות אתר)
+                          </span>
+                        )}
                         {(reserved[product.id] || 0) > 0 && (
                           <span style={{ fontSize: '11px', color: '#6B3A1F' }}>({reserved[product.id]} מוקצות)</span>
                         )}

@@ -1,4 +1,5 @@
--- Checks apply_mflow_sells (migration 20261024_apply_mflow_sells) against real
+-- Checks apply_mflow_sells (migrations 20261024_apply_mflow_sells and
+-- 20261109120000_web_backorder_store_unlogged_alert) against real
 -- rows. Always ends in RAISE EXCEPTION, so every write is rolled back. Prints
 -- only pass/fail words, never stock values.
 --
@@ -18,12 +19,14 @@ DECLARE
 BEGIN
   SELECT id INTO p1 FROM products ORDER BY id LIMIT 1;
   SELECT id INTO p2 FROM products WHERE id > p1 ORDER BY id LIMIT 1;
-  DELETE FROM mflow_sell_events WHERE mflow_sell_id IN (-910001, -910002, -910003, -910004);
+  DELETE FROM mflow_sell_events WHERE mflow_sell_id BETWEEN -910099 AND -910001;
+  DELETE FROM stock_unlogged_alerts WHERE product_id IN (p1, p2);
   UPDATE products SET packed_stock = 10 WHERE id = p1;
   UPDATE products SET packed_stock = 1  WHERE id = p2;
   SELECT count(*) INTO n_adj0 FROM inventory_adjustments WHERE source = 'mflow_sell';
 
-  -- Two new sells: p1 -3 and -2 (net -5), p2 -4 (clamps at 0, 3 lost).
+  -- Two new STORE sells (no channel = store): p1 -3 and -2 (net -5),
+  -- p2 -4 (shelf has 1: floors at 0, 3 bags sold that were never logged).
   res := apply_mflow_sells(jsonb_build_array(
     jsonb_build_object('mflow_sell_id', -910001, 'status', 'Completed', 'coffee_delta', jsonb_build_object(p1::text, -3, p2::text, -4)),
     jsonb_build_object('mflow_sell_id', -910002, 'status', 'Completed', 'coffee_delta', jsonb_build_object(p1::text, -2))
@@ -38,8 +41,12 @@ BEGIN
                 WHERE (a->>'cf_product')::int = p2 AND (a->>'units_lost')::int = 3) THEN 'pass' ELSE 'FAIL' END);
   r := r || jsonb_build_object('events_recorded', CASE WHEN
     (SELECT count(*) FROM mflow_sell_events WHERE mflow_sell_id IN (-910001, -910002) AND applied) = 2 THEN 'pass' ELSE 'FAIL' END);
+  -- One audit row per (sell, product) now: p1 -3, p2 -4, p1 -2.
   r := r || jsonb_build_object('audit_rows', CASE WHEN
-    (SELECT count(*) FROM inventory_adjustments WHERE source = 'mflow_sell') = n_adj0 + 2 THEN 'pass' ELSE 'FAIL' END);
+    (SELECT count(*) FROM inventory_adjustments WHERE source = 'mflow_sell') = n_adj0 + 3 THEN 'pass' ELSE 'FAIL' END);
+  r := r || jsonb_build_object('store_unlogged_alert_row', CASE WHEN
+    (SELECT units_unlogged FROM stock_unlogged_alerts WHERE product_id = p2) = 3
+    AND jsonb_array_length(res->'unlogged') = 1 THEN 'pass' ELSE 'FAIL' END);
 
   -- Same sells again (overlapping run): nothing claimed, stock unchanged.
   res := apply_mflow_sells(jsonb_build_array(
@@ -60,6 +67,79 @@ BEGIN
     (SELECT packed_stock FROM products WHERE id = p1) = 4
     AND NOT EXISTS (SELECT 1 FROM mflow_sell_events WHERE mflow_sell_id = -910004)
     AND res->'failed_products' @> '[-1]'::jsonb THEN 'pass' ELSE 'FAIL' END);
+
+  -- ── Website back-order ────────────────────────────────────────────────
+  -- p2 is at 0. A website order for 2 goes to -2 (owed), no alert.
+  res := apply_mflow_sells(jsonb_build_array(
+    jsonb_build_object('mflow_sell_id', -910010, 'channel', 'web', 'transaction_date', '2026-11-09T08:00:00Z',
+                       'coffee_delta', jsonb_build_object(p2::text, -2))
+  ), 'ci check');
+  r := r || jsonb_build_object('web_goes_negative', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = -2
+    AND jsonb_array_length(res->'unlogged') = 0
+    AND (SELECT channel FROM mflow_sell_events WHERE mflow_sell_id = -910010) = 'web' THEN 'pass' ELSE 'FAIL' END);
+
+  -- Packing 3 (coffee-bot path) pays the 2 owed and leaves 1 on the shelf.
+  PERFORM apply_packed_stock_delta(p2, 3);
+  r := r || jsonb_build_object('packing_pays_backorder', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = 1 THEN 'pass' ELSE 'FAIL' END);
+
+  -- A non-sale decrement through the generic helper never erases a debt.
+  UPDATE products SET packed_stock = -2 WHERE id = p2;
+  PERFORM apply_packed_stock_delta(p2, -1);
+  r := r || jsonb_build_object('helper_keeps_debt', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = -2 THEN 'pass' ELSE 'FAIL' END);
+
+  -- Store sale while 2 are owed: the bag was on the shelf but never logged.
+  -- Stock stays -2 (still owed), 1 unlogged bag added to that day's alert row.
+  DELETE FROM stock_unlogged_alerts WHERE product_id = p2;
+  res := apply_mflow_sells(jsonb_build_array(
+    jsonb_build_object('mflow_sell_id', -910011, 'channel', 'store', 'transaction_date', '2026-11-09T09:00:00Z',
+                       'coffee_delta', jsonb_build_object(p2::text, -1))
+  ), 'ci check');
+  r := r || jsonb_build_object('store_while_owed_alerts', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = -2
+    AND (SELECT units_unlogged FROM stock_unlogged_alerts WHERE product_id = p2 AND alert_date = '2026-11-09') = 1
+    THEN 'pass' ELSE 'FAIL' END);
+
+  -- ORDER MATTERS: shelf 1, store sells 1 at 10:00, website order at 10:05,
+  -- sent in reverse. Chronological apply → 0 then -1, no alert.
+  UPDATE products SET packed_stock = 1 WHERE id = p2;
+  DELETE FROM stock_unlogged_alerts WHERE product_id = p2;
+  res := apply_mflow_sells(jsonb_build_array(
+    jsonb_build_object('mflow_sell_id', -910013, 'channel', 'web',   'transaction_date', '2026-11-09T10:05:00Z',
+                       'coffee_delta', jsonb_build_object(p2::text, -1)),
+    jsonb_build_object('mflow_sell_id', -910012, 'channel', 'store', 'transaction_date', '2026-11-09T10:00:00Z',
+                       'coffee_delta', jsonb_build_object(p2::text, -1))
+  ), 'ci check');
+  r := r || jsonb_build_object('chronological_no_false_alert', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = -1
+    AND jsonb_array_length(res->'unlogged') = 0
+    AND NOT EXISTS (SELECT 1 FROM stock_unlogged_alerts WHERE product_id = p2) THEN 'pass' ELSE 'FAIL' END);
+
+  -- Two store sales of the same coffee the same day → one alert row, summed.
+  UPDATE products SET packed_stock = 0 WHERE id = p2;
+  res := apply_mflow_sells(jsonb_build_array(
+    jsonb_build_object('mflow_sell_id', -910014, 'transaction_date', '2026-11-09T11:00:00Z', 'coffee_delta', jsonb_build_object(p2::text, -1)),
+    jsonb_build_object('mflow_sell_id', -910015, 'transaction_date', '2026-11-09T12:00:00Z', 'coffee_delta', jsonb_build_object(p2::text, -2))
+  ), 'ci check');
+  r := r || jsonb_build_object('alert_one_row_per_day', CASE WHEN
+    (SELECT count(*) FROM stock_unlogged_alerts WHERE product_id = p2) = 1
+    AND (SELECT units_unlogged FROM stock_unlogged_alerts WHERE product_id = p2) = 3
+    AND (SELECT cardinality(sell_ids) FROM stock_unlogged_alerts WHERE product_id = p2) = 2
+    AND (SELECT packed_stock FROM products WHERE id = p2) = 0 THEN 'pass' ELSE 'FAIL' END);
+
+  -- A return adds back regardless of channel.
+  res := apply_mflow_sells(jsonb_build_array(
+    jsonb_build_object('mflow_sell_id', -910016, 'is_return', true, 'coffee_delta', jsonb_build_object(p2::text, 2))
+  ), 'ci check');
+  r := r || jsonb_build_object('return_adds', CASE WHEN
+    (SELECT packed_stock FROM products WHERE id = p2) = 2 THEN 'pass' ELSE 'FAIL' END);
+
+  -- Alerts table is service-role only.
+  r := r || jsonb_build_object('alerts_hidden_from_anon', CASE WHEN
+    NOT has_table_privilege('anon', 'stock_unlogged_alerts', 'SELECT')
+    AND NOT has_table_privilege('authenticated', 'stock_unlogged_alerts', 'SELECT') THEN 'pass' ELSE 'FAIL' END);
 
   -- Bad input is refused.
   BEGIN
