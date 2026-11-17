@@ -30,6 +30,16 @@
   --color-surface-800: #33382F;
   --color-surface-900: #1C211A;
 
+  /* Status tones: small dots and tags only, never big fills.
+     Utilities: text-danger, bg-danger-soft, bg-warn-dot, etc. */
+  --color-danger:      #B42318;
+  --color-danger-soft: #FDF1EF;
+  --color-warn:        #A15C07;
+  --color-warn-soft:   #FCF5E8;
+  --color-warn-dot:    #D9921C;
+  --color-ok:          #3F6B2A;
+  --color-ok-soft:     #EEF3E8;
+
   --font-sans:    "Heebo", system-ui, sans-serif;
   --font-display: "Heebo", system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", monospace;
@@ -127,6 +137,70 @@
   .stat-down { @apply text-xs font-medium; color: #B42318; }
 
   .num { font-variant-numeric: tabular-nums; }
+
+  /* Quiet buttons: ghost (no border) and a delete that turns red only when aimed at. */
+  .btn-ghost,
+  .btn-quiet-danger {
+    @apply inline-flex items-center justify-center gap-2 h-[38px] px-3 rounded-lg text-sm font-medium whitespace-nowrap bg-transparent text-surface-700;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out-ui);
+  }
+  .btn-ghost:active:not(:disabled),
+  .btn-quiet-danger:active:not(:disabled) { transform: scale(0.97); }
+  .btn-quiet-danger:active:not(:disabled) { color: var(--color-danger); }
+  .btn-ghost:disabled,
+  .btn-quiet-danger:disabled { @apply opacity-50 cursor-not-allowed; }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-ghost:hover:not(:disabled) { @apply bg-surface-100 text-surface-900; }
+    .btn-quiet-danger:hover:not(:disabled) { background: var(--color-danger-soft); color: var(--color-danger); }
+  }
+
+  /* Status tag with an optional leading dot: <span class="tag tag-ok"><i class="dot"></i>מחובר</span> */
+  .tag {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap bg-surface-100 text-surface-700;
+  }
+  .tag .dot, .dot { @apply inline-block w-2 h-2 rounded-full shrink-0 bg-surface-400; }
+  .tag-ok     { background: var(--color-ok-soft);     color: var(--color-ok); }
+  .tag-warn   { background: var(--color-warn-soft);   color: var(--color-warn); }
+  .tag-danger { background: var(--color-danger-soft); color: var(--color-danger); }
+  .tag-brand  { @apply bg-brand-100 text-brand-600; }
+  .tag-ok .dot, .dot-ok         { background: var(--color-ok); }
+  .tag-warn .dot, .dot-warn     { background: var(--color-warn-dot); }
+  .tag-danger .dot, .dot-danger { background: var(--color-danger); }
+
+  /* Notice: only for a real message. Soft tint, hairline, no side stripe. */
+  .notice {
+    @apply flex items-start gap-2.5 px-3.5 py-3 rounded-lg border border-surface-200 bg-white text-surface-900 text-sm;
+  }
+  .notice-ok     { background: var(--color-ok-soft);     border-color: #D6E2CB; color: #2C4B1D; }
+  .notice-warn   { background: var(--color-warn-soft);   border-color: #F0DFC0; color: #6B3E05; }
+  .notice-danger { background: var(--color-danger-soft); border-color: #F1D3CE; color: #7A1A12; }
+
+  /* Form fields: 38px, hairline, olive focus ring. Labels 13px/500 above. */
+  .field {
+    @apply w-full min-h-[38px] px-3 py-2 rounded-lg border border-surface-300 bg-white text-surface-900 text-sm placeholder:text-surface-400;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .field:focus { @apply outline-none border-brand-600; box-shadow: 0 0 0 3px rgba(61, 74, 46, 0.22); }
+  .field:disabled { @apply bg-surface-100 text-surface-500; }
+  .field-label { @apply block text-[13px] font-medium text-surface-700 mb-1.5; }
+
+  /* Card with a header row and flush content. */
+  .card-flush { @apply bg-white rounded-[10px] border border-surface-200; }
+  .card-head {
+    @apply flex items-center justify-between gap-3 min-h-[52px] px-[18px] py-3 border-b border-surface-200;
+  }
+  .card-head h2 { @apply text-[15px] font-semibold text-surface-900; }
+  .card-body { @apply px-[18px] py-4; }
+
+  /* Page header: title + one muted line on one side, actions on the other. */
+  .page-header { @apply flex flex-wrap items-end justify-between gap-4 mb-6; }
+  .page-header h1 { @apply text-2xl font-semibold text-surface-900; }
+  .page-sub { @apply text-surface-500 mt-0.5; }
+  .page-actions { @apply flex flex-wrap gap-2; }
+  @media (max-width: 1023px) {
+    .page-header { @apply flex-col items-stretch; }
+    .page-header h1 { @apply text-[22px]; }
+  }
 }
 
 /* Scrollbar */
