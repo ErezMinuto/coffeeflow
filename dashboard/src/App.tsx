@@ -38,7 +38,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden lg:overflow-x-visible" dir="rtl">
+    <div className="flex min-h-screen bg-[#F7F6F2] overflow-x-hidden lg:overflow-x-visible" dir="rtl">
       {/* overflow-x-hidden on mobile clips the off-screen (translate-x-full)
           Sidebar drawer so its transform doesn't inflate document width and
           create phantom horizontal scroll. On `lg:` and up the sidebar is
@@ -48,17 +48,18 @@ function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile header — burger + wordmark, sticky top on mobile only.
             `lg:hidden` hides it on desktop so the existing sticky sidebar
             handles navigation. */}
-        <header className="lg:hidden sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-surface-200 h-14 px-4 flex items-center gap-3">
+        <header className="lg:hidden sticky top-0 z-20 bg-white border-b border-surface-200 h-14 pl-3 pr-4 flex items-center justify-between gap-3">
+          <img src="/logo.png" alt="Minuto" className="h-10 w-auto -my-1 object-contain" />
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 -m-2 text-surface-700 hover:text-surface-900"
-            aria-label="פתח תפריט"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-surface-700 transition-transform duration-150 active:scale-95"
+            aria-label="פתיחת תפריט"
+            aria-expanded={sidebarOpen}
           >
-            <Menu size={22} />
+            <Menu size={20} aria-hidden="true" />
           </button>
-          <h1 className="font-display text-base font-semibold text-surface-900">Minuto</h1>
         </header>
-        <main className="flex-1 p-4 lg:p-8 lg:max-w-6xl min-w-0">
+        <main className="flex-1 px-4 pt-5 pb-10 lg:px-10 lg:pt-7 lg:pb-14 lg:max-w-[1240px] min-w-0">
           {children}
         </main>
       </div>
@@ -101,16 +102,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!isSignedIn) {
     return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen gap-8 p-6"
-        style={{ background: 'linear-gradient(160deg, #3D4A2E 0%, #556B3A 50%, #6A7D45 100%)' }}
-        dir="rtl"
-      >
-        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md text-center">
-          <h1 className="font-display text-2xl font-semibold text-surface-900 mb-2">Minuto</h1>
-          <p className="text-sm text-brand-600 font-medium mb-6">Marketing Dashboard</p>
-          <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl', boxShadow: 'none' } } }} />
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#F7F6F2]" dir="rtl">
+        <img src="/logo.png" alt="Minuto" className="h-[104px] w-auto object-contain" />
+        <p className="text-sm text-surface-500 mt-1 mb-6">מערכת שיווק ותוכן</p>
+        <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl', boxShadow: 'none', border: '1px solid #E6E3DB' } } }} />
       </div>
     )
   }
@@ -143,7 +138,7 @@ export default function App() {
             <Route path="/ads"             element={<Page name="Meta Ads"><MetaAdsPage /></Page>} />
             <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
             <Route path="/plan"            element={<Page name="תוכנית שיווק"><UnifiedPlanPage /></Page>} />
-            <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
+            <Route path="/marketing"       element={<Page name="מחולל מיילים"><MarketingPage /></Page>} />
             <Route path="/reels"           element={<Page name="רילס מוצרים"><ReelsPage /></Page>} />
             <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />
           </Routes>

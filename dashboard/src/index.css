@@ -1,108 +1,149 @@
 @import "tailwindcss";
 
+/* Minuto marketing admin: same design system as CoffeeFlow
+   (see /.interface-design/system.md). Warm paper ground, white surfaces,
+   hairline borders, Minuto olive as the only accent. The brand-* and
+   surface-* scales are remapped here, so every existing utility class
+   picks up the new palette. */
 @theme {
-  --color-brand-50:  #fdf6ee;
-  --color-brand-100: #f9e8cf;
-  --color-brand-200: #f2cc96;
-  --color-brand-300: #eaaa57;
-  --color-brand-400: #e48f30;
-  --color-brand-500: #d97318;
-  --color-brand-600: #c05a13;
-  --color-brand-700: #9f4213;
-  --color-brand-800: #813416;
-  --color-brand-900: #6a2c15;
+  /* Minuto olive. 600 is the primary action colour (#3D4A2E). */
+  --color-brand-50:  #F4F6EF;
+  --color-brand-100: #ECEFE4;
+  --color-brand-200: #D8DEC9;
+  --color-brand-300: #B8C2A2;
+  --color-brand-400: #8A9873;
+  --color-brand-500: #5B6B45;
+  --color-brand-600: #3D4A2E;
+  --color-brand-700: #2F3A23;
+  --color-brand-800: #26301C;
+  --color-brand-900: #1C211A;
 
-  --color-surface-50:  #f9f7f4;
-  --color-surface-100: #f0ebe3;
-  --color-surface-200: #e3d9cc;
-  --color-surface-300: #d1c2ad;
-  --color-surface-400: #bba48e;
-  --color-surface-500: #a68a73;
-  --color-surface-600: #927561;
-  --color-surface-700: #796151;
-  --color-surface-800: #645146;
-  --color-surface-900: #54453d;
+  /* Warm neutrals: paper, hairlines and the ink ramp. */
+  --color-surface-50:  #FBFAF7;
+  --color-surface-100: #F1EFE9;
+  --color-surface-200: #E6E3DB;
+  --color-surface-300: #D6D2C7;
+  --color-surface-400: #A3A79C;
+  --color-surface-500: #7A7F73;
+  --color-surface-600: #63685D;
+  --color-surface-700: #4A5045;
+  --color-surface-800: #33382F;
+  --color-surface-900: #1C211A;
 
-  --font-sans:    "DM Sans", sans-serif;
-  --font-display: "Fraunces", serif;
+  --font-sans:    "Heebo", system-ui, sans-serif;
+  --font-display: "Heebo", system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", monospace;
+
+  --radius-card: 10px;
+  --ease-out-ui: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @layer base {
   :root {
-    --bg: #f9f7f4;
-    --surface: #ffffff;
-    --border: #e3d9cc;
-    --text: #2a1f14;
-    --text-muted: #927561;
-    --accent: #d97318;
-    --accent-light: #f9e8cf;
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --border: #E6E3DB;
+    --text: #1C211A;
+    --text-muted: #7A7F73;
+    --accent: #3D4A2E;
+    --accent-light: #ECEFE4;
+    /* Channel identity, used only for small markers next to Meta / Google data. */
     --meta: #1877f2;
     --google: #ea4335;
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --success: #3F6B2A;
+    --warning: #A15C07;
+    --danger: #B42318;
   }
 
   * { box-sizing: border-box; }
 
+  html { background-color: var(--bg); }
+
   body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3 {
-    font-family: 'Fraunces', serif;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  ::selection { background: #ECEFE4; color: #1C211A; }
+
+  :focus-visible { outline: 2px solid #3D4A2E; outline-offset: 2px; }
+
+  svg.lucide { stroke-width: 1.7; }
+
+  /* 16px fields on phones stop iOS Safari zooming the page on focus. */
+  @media (max-width: 1023px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px; }
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl border border-surface-200 p-6;
+    @apply bg-white rounded-[10px] border border-surface-200 p-5;
   }
 
   .card-sm {
-    @apply bg-white rounded-xl border border-surface-200 p-4;
+    @apply bg-white rounded-lg border border-surface-200 p-4;
   }
 
-  .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm;
-  }
-
+  .btn-primary,
   .btn-secondary {
-    @apply bg-surface-100 hover:bg-surface-200 text-surface-800 font-medium px-4 py-2 rounded-lg transition-colors text-sm;
+    @apply inline-flex items-center justify-center gap-2 h-[38px] px-3.5 rounded-lg text-sm font-medium whitespace-nowrap;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out-ui);
+  }
+  .btn-primary { @apply bg-brand-600 text-white border border-brand-600; }
+  .btn-secondary { @apply bg-white text-surface-900 border border-surface-300; }
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled) { transform: scale(0.97); }
+  .btn-primary:disabled,
+  .btn-secondary:disabled { @apply opacity-50 cursor-not-allowed; }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) { @apply bg-brand-700 border-brand-700; }
+    .btn-secondary:hover:not(:disabled) { @apply bg-surface-100; }
   }
 
+  /* Status tags: soft tint + strong text, 6px radius. */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold;
   }
+  .badge-success { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold; background: #EEF3E8; color: #3F6B2A; }
+  .badge-warning { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold; background: #FCF5E8; color: #A15C07; }
+  .badge-danger  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold; background: #FDF1EF; color: #B42318; }
+  .badge-meta    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-surface-100 text-surface-700; }
+  .badge-google  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-surface-100 text-surface-700; }
 
-  .badge-success { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700; }
-  .badge-warning { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700; }
-  .badge-danger  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700; }
-  .badge-meta    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700; }
-  .badge-google  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600; }
+  .stat-up   { @apply text-xs font-medium; color: #3F6B2A; }
+  .stat-down { @apply text-xs font-medium; color: #B42318; }
 
-  .stat-up   { @apply text-green-600 text-xs font-medium; }
-  .stat-down { @apply text-red-500 text-xs font-medium; }
+  .num { font-variant-numeric: tabular-nums; }
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #e3d9cc; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #bba48e; }
+::-webkit-scrollbar-thumb { background: #E6E3DB; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #A3A79C; }
 
-/* Animations */
+/* Page entrance: pages open many times a day, so a short fade with no
+   slide and no stagger. The delay classes are kept (as no-ops) so existing
+   markup keeps working. */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
 }
-.fade-up { animation: fadeUp 0.4s ease both; }
-.fade-up-1 { animation-delay: 0.05s; }
-.fade-up-2 { animation-delay: 0.1s; }
-.fade-up-3 { animation-delay: 0.15s; }
-.fade-up-4 { animation-delay: 0.2s; }
-.fade-up-5 { animation-delay: 0.25s; }
+.fade-up { animation: fadeUp 150ms ease-out both; }
+.fade-up-1, .fade-up-2, .fade-up-3, .fade-up-4, .fade-up-5 { animation-delay: 0ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up { animation: none; }
+}
