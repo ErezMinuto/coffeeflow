@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowRight, Check, Info, Play, Flag } from 'lucide-react';
 import { useApp } from '../../lib/context';
+import { PageHeader } from '../shared/ui';
+import './checklist.css';
 
 const substitute = (text, vars) =>
   (text || '').replace(/\{\{(\w+)\}\}/g, (_, name) =>
@@ -33,14 +36,14 @@ export default function RoastChecklist() {
 
   if (!template) {
     return (
-      <div className="page">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <button onClick={() => navigate('/roasting')} className="btn-small">← חזור לקלייה</button>
-          <h1>📋 צ'קליסט קלייה</h1>
-        </div>
-        <div className="empty-state">
-          <div style={{ marginBottom: '12px' }}>אין תבנית צ'קליסט מוגדרת.</div>
-          <div style={{ fontSize: '13px', color: '#9CA3AF' }}>בקש מסאגי ליצור תבנית ב-/checklist-editor</div>
+      <div className="page checklist-page">
+        <button type="button" onClick={() => navigate('/roasting')} className="btn ghost sm checklist-back">
+          <ArrowRight aria-hidden="true" />חזרה לקלייה
+        </button>
+        <PageHeader title="צ'קליסט קלייה" />
+        <div className="card empty-state">
+          <p className="checklist-empty-title">אין תבנית צ'קליסט מוגדרת.</p>
+          <p className="text-muted">אפשר לבקש מסאגי ליצור תבנית ב<Link to="/checklist-editor" className="text-link">עורך הצ'קליסט</Link>.</p>
         </div>
       </div>
     );
@@ -59,54 +62,65 @@ export default function RoastChecklist() {
 
   if (phase === 'setup') {
     return (
-      <div className="page">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <button onClick={() => navigate('/roasting')} className="btn-small">← חזור</button>
-          <h1>📋 {template.name}</h1>
-        </div>
+      <div className="page checklist-page">
+        <button type="button" onClick={() => navigate('/roasting')} className="btn ghost sm checklist-back">
+          <ArrowRight aria-hidden="true" />חזרה לקלייה
+        </button>
+        <PageHeader
+          title={template.name}
+          subtitle={`${steps.length} שלבים, ${requiredSteps.length} מהם חובה`}
+        />
 
         {(template.variables || []).length > 0 && (
-          <div className="form-card" style={{ marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0 }}>🔧 משתנים</h3>
-            <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 14px' }}>
-              הערכים ימולאו בתוך השלבים אוטומטית
-            </p>
-            {template.variables.map(v => (
-              <div key={v.id || v.name} className="form-group" style={{ marginBottom: '10px' }}>
-                <label>{v.label || v.name}</label>
-                <input
-                  value={varValues[v.name] || ''}
-                  onChange={e => setVarValues(prev => ({ ...prev, [v.name]: e.target.value }))}
-                  placeholder={v.default_value || v.label || v.name}
-                />
-              </div>
-            ))}
-          </div>
+          <section className="card flush">
+            <div className="card-head">
+              <h2>פרטי הקלייה</h2>
+              <span className="meta">הערכים ימולאו בתוך השלבים אוטומטית</span>
+            </div>
+            <div className="card-body checklist-vars">
+              {template.variables.map(v => (
+                <div key={v.id || v.name} className="form-group">
+                  <label htmlFor={`cl-var-${v.id || v.name}`}>{v.label || v.name}</label>
+                  <input
+                    id={`cl-var-${v.id || v.name}`}
+                    value={varValues[v.name] || ''}
+                    onChange={e => setVarValues(prev => ({ ...prev, [v.name]: e.target.value }))}
+                    placeholder={v.default_value || v.label || v.name}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Preview */}
-        <div style={{ background: '#FFFBF5', border: '1px solid #F4E8D8', borderRadius: '8px', padding: '14px', marginBottom: '24px' }}>
-          <div style={{ fontWeight: '600', color: '#6F4E37', marginBottom: '8px' }}>
-            📝 {steps.length} שלבים ({requiredSteps.length} חובה)
+        <section className="card flush">
+          <div className="card-head">
+            <h2>השלבים</h2>
           </div>
-          {steps.slice(0, 4).map((s, i) => (
-            <div key={s.id} style={{ fontSize: '13px', color: '#374151', marginBottom: '3px' }}>
-              {i + 1}. {substitute(s.text, varValues)}
-              {s.required && <span style={{ color: '#EF4444', marginRight: '4px', fontSize: '11px' }}>*</span>}
-            </div>
-          ))}
+          <ol className="checklist-preview">
+            {steps.slice(0, 4).map((s, i) => (
+              <li key={s.id}>
+                <span className="checklist-num num">{i + 1}</span>
+                <span className="checklist-preview-text">{substitute(s.text, varValues)}</span>
+                {s.required && <span className="tag">חובה</span>}
+              </li>
+            ))}
+          </ol>
           {steps.length > 4 && (
-            <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>...ועוד {steps.length - 4} שלבים</div>
+            <div className="checklist-more">ועוד {steps.length - 4} שלבים</div>
           )}
-        </div>
+        </section>
 
-        <button
-          onClick={() => { setChecked({}); setPhase('checklist'); }}
-          className="btn-primary"
-          style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
-        >
-          🚀 התחל צ'קליסט
-        </button>
+        <div className="checklist-actionbar">
+          <button
+            type="button"
+            onClick={() => { setChecked({}); setPhase('checklist'); }}
+            className="btn primary checklist-big"
+          >
+            <Play aria-hidden="true" />התחלת הצ'קליסט
+          </button>
+        </div>
       </div>
     );
   }
@@ -114,92 +128,77 @@ export default function RoastChecklist() {
   // ── Checklist phase ───────────────────────────────────────────────────────
 
   return (
-    <div className="page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-        <button onClick={() => setPhase('setup')} className="btn-small">← הגדרות</button>
-        <h1>📋 {template.name}</h1>
-      </div>
+    <div className="page checklist-page">
+      <button type="button" onClick={() => setPhase('setup')} className="btn ghost sm checklist-back">
+        <ArrowRight aria-hidden="true" />חזרה לפרטי הקלייה
+      </button>
+      <PageHeader title={template.name} />
 
       {/* Progress */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6B7280', marginBottom: '6px' }}>
-          <span>{completedAll} / {steps.length} שלבים הושלמו</span>
-          <span style={{ fontWeight: '600', color: progress === 100 ? '#059669' : '#374151' }}>{progress}%</span>
+      <div className="checklist-progress">
+        <div className="checklist-progress-row">
+          <span><strong className="num">{completedAll}</strong> מתוך <span className="num">{steps.length}</span> שלבים הושלמו</span>
+          <span className="checklist-pct num">{progress}%</span>
         </div>
-        <div style={{ background: '#E5E7EB', borderRadius: '999px', height: '8px' }}>
-          <div style={{
-            background: progress === 100 ? '#059669' : '#6F4E37',
-            borderRadius: '999px', height: '8px',
-            width: `${progress}%`, transition: 'width 0.3s ease'
-          }} />
+        <div
+          className="meter checklist-meter"
+          role="progressbar"
+          aria-label="התקדמות הצ'קליסט"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+        >
+          <i style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      {/* Steps */}
-      <div style={{ marginBottom: '24px' }}>
+      {/* Steps: each row is one big tap target */}
+      <ol className="checklist-steps">
         {steps.map((step, i) => {
           const isDone = !!checked[step.id];
           return (
-            <div
-              key={step.id}
-              onClick={() => toggleStep(step.id)}
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                padding: '14px', marginBottom: '8px', borderRadius: '10px',
-                background: isDone ? '#F0FFF4' : 'white',
-                border: `1.5px solid ${isDone ? '#6EE7B7' : '#E5E7EB'}`,
-                cursor: 'pointer', transition: 'all 0.2s',
-              }}
-            >
-              {/* Checkbox circle */}
-              <div style={{
-                width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
-                border: `2px solid ${isDone ? '#059669' : '#D1D5DB'}`,
-                background: isDone ? '#059669' : 'white',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s', marginTop: '1px',
-              }}>
-                {isDone && <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontWeight: '600', fontSize: '0.95rem', lineHeight: '1.4',
-                  color: isDone ? '#065F46' : '#1F2937',
-                  textDecoration: isDone ? 'line-through' : 'none',
-                }}>
-                  <span style={{ color: '#9CA3AF', fontSize: '0.78rem', marginLeft: '6px' }}>{i + 1}.</span>
-                  {substitute(step.text, varValues)}
-                  {step.required && !isDone && (
-                    <span style={{ color: '#EF4444', fontSize: '0.7rem', marginRight: '6px' }}>חובה</span>
+            <li key={step.id}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={isDone}
+                onClick={() => toggleStep(step.id)}
+                className={`checklist-step${isDone ? ' done' : ''}`}
+              >
+                <span className="checklist-check" aria-hidden="true">
+                  {isDone && <Check />}
+                </span>
+                <span className="checklist-step-body">
+                  <span className="checklist-step-text">
+                    <span className="checklist-num num">{i + 1}</span>
+                    {substitute(step.text, varValues)}
+                  </span>
+                  {step.note && (
+                    <span className="checklist-step-note">
+                      <Info aria-hidden="true" />{substitute(step.note, varValues)}
+                    </span>
                   )}
-                </div>
-                {step.note && (
-                  <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '4px' }}>
-                    💡 {substitute(step.note, varValues)}
-                  </div>
-                )}
-              </div>
-            </div>
+                </span>
+                {step.required && !isDone && <span className="tag warn">חובה</span>}
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
       {/* Finish button */}
-      <button
-        onClick={() => navigate('/roasting')}
-        disabled={!allReqDone}
-        className="btn-primary"
-        style={{
-          width: '100%', padding: '1rem', fontSize: '1.05rem',
-          opacity: allReqDone ? 1 : 0.5,
-          background: allReqDone ? '#059669' : undefined,
-        }}
-      >
-        {allReqDone
-          ? '✅ סיים קלייה — חזור לרישום'
-          : `⏳ נותרו ${requiredSteps.length - completedReq} שלבי חובה`}
-      </button>
+      <div className="checklist-actionbar">
+        <button
+          type="button"
+          onClick={() => navigate('/roasting')}
+          disabled={!allReqDone}
+          className="btn primary checklist-big"
+        >
+          {allReqDone
+            ? <><Flag aria-hidden="true" />סיום וחזרה לרישום הקלייה</>
+            : `נותרו ${requiredSteps.length - completedReq} שלבי חובה`}
+        </button>
+      </div>
     </div>
   );
 }
