@@ -1,0 +1,108 @@
+/* Tasks (משימות): customers waiting for a product. Page-scoped styles;
+   tokens and base classes live in App.css. */
+
+.tasks-page .tasks-sub { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+
+/* ── Filter: one segmented control ──────────────────────────────────────── */
+.tasks-page .tasks-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 16px;
+  background: var(--sunken);
+  border-radius: var(--radius-sm);
+}
+.tasks-page .tasks-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.tasks-page .tasks-seg button.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.tasks-page .tasks-seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+@media (hover: hover) and (pointer: fine) {
+  .tasks-page .tasks-seg button:not(.active):hover { color: var(--ink); }
+}
+.tasks-page .tasks-seg-count { color: var(--muted); font-weight: 400; }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+.tasks-page .tasks-list { list-style: none; margin: 0; padding: 0; }
+
+.tasks-page .tasks-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+}
+.tasks-page .tasks-row + .tasks-row { border-top: 1px solid var(--line); }
+.tasks-page .tasks-row > .dot { margin-top: 7px; }
+
+.tasks-page .tasks-main { flex: 1; min-width: 0; }
+.tasks-page .tasks-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tasks-page .tasks-name { font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.tasks-page .tasks-product { margin-top: 2px; color: var(--ink-2); overflow-wrap: anywhere; }
+.tasks-page .tasks-notes { margin-top: 2px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
+.tasks-page .tasks-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.tasks-page .tasks-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 13px;
+}
+.tasks-page .tasks-phone svg { width: 14px; height: 14px; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) {
+  .tasks-page .tasks-phone:hover { color: var(--ink); text-decoration: underline; }
+}
+
+/* Handled rows step back: muted name, no status colour beyond the tag. */
+.tasks-page .tasks-row.done .tasks-name { color: var(--ink-2); font-weight: 500; }
+.tasks-page .tasks-row.done .tasks-product { color: var(--muted); }
+
+.tasks-page .tasks-actions { flex-shrink: 0; }
+.tasks-page .tasks-done-btn { margin-inline-end: 4px; }
+
+/* ── Add / edit form ────────────────────────────────────────────────────── */
+.tasks-page .tasks-form { max-width: 720px; margin-bottom: 20px; }
+.tasks-page .tasks-form h2 { margin: 0 0 18px; font-size: 15px; }
+.tasks-page .tasks-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.tasks-page .tasks-form input[dir="ltr"] { text-align: right; }
+.tasks-page .tasks-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .tasks-page .tasks-seg { display: flex; }
+  .tasks-page .tasks-seg button { flex: 1; justify-content: center; min-height: 38px; }
+  .tasks-page .tasks-row { flex-wrap: wrap; padding: 14px 16px; }
+  .tasks-page .tasks-actions { width: 100%; justify-content: flex-start; padding-inline-start: 16px; }
+  .tasks-page .tasks-form-row { grid-template-columns: 1fr; }
+  .tasks-page .tasks-form-actions .btn { flex: 1; }
+}
