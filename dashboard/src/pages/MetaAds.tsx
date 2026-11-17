@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { KPICard } from '../components/shared/KPICard'
 import { DateRangePicker } from '../components/shared/DateRangePicker'
+import { CardHead, CHART, Dot, Kpi, Kpis, Notice, SectionHead, Segmented, Swatch, TD, TH, Tone } from '../components/shared/cockpit'
 import { DateRange } from '../lib/types'
 import { getDefaultDateRange, formatCurrency, formatNumber } from '../lib/utils'
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { AlertCircle, Pencil } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar
 } from 'recharts'
 
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: 'badge-success',
-  PAUSED: 'badge-warning',
-  ARCHIVED: 'bg-surface-100 text-surface-400',
+// Meta campaign status → Hebrew label + status dot.
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+  ACTIVE:   { label: 'פעיל',    tone: 'ok' },
+  PAUSED:   { label: 'מושהה',   tone: 'warn' },
+  ARCHIVED: { label: 'בארכיון', tone: 'neutral' },
 }
 
 function getPrevMonthRange(): DateRange {
@@ -137,154 +139,180 @@ export default function MetaAdsPage() {
   })
 
   return (
-    <div className="space-y-8 fade-up">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-display font-semibold text-surface-900">Meta Ads</h2>
-          <p className="text-sm text-surface-400 mt-1">{campaigns.length} קמפיינים</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* CPA Threshold setting */}
-          <div className="flex items-center gap-2 text-sm bg-surface-50 border border-surface-200 rounded-xl px-3 py-2">
-            <span className="text-surface-500">סף CPA:</span>
+    <div className="space-y-5 fade-up">
+      <SectionHead
+        title="מודעות Meta"
+        sub={`${campaigns.length} קמפיינים בטווח`}
+        actions={
+          <>
+            {/* CPA Threshold setting */}
             {editingThreshold ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  className="w-16 text-sm border border-surface-200 rounded px-1 py-0.5 text-center"
-                  value={thresholdInput}
-                  onChange={e => setThresholdInput(e.target.value)}
-                  autoFocus
-                />
-                <span className="text-surface-400">₪</span>
-                <button onClick={() => saveCpaThreshold(Number(thresholdInput))}
-                  className="text-xs bg-brand-600 text-white px-2 py-0.5 rounded">שמור</button>
-                <button onClick={() => setEditingThreshold(false)} className="text-xs text-surface-400">ביטול</button>
+              <div className="flex items-center gap-2 w-full lg:w-auto">
+                <label htmlFor="cpa-threshold" className="text-[13px] text-surface-600 whitespace-nowrap">סף CPA</label>
+                <div className="relative">
+                  <input
+                    id="cpa-threshold"
+                    type="number"
+                    inputMode="decimal"
+                    className="field num w-24 ps-3 pe-7"
+                    value={thresholdInput}
+                    onChange={e => setThresholdInput(e.target.value)}
+                    autoFocus
+                  />
+                  <span aria-hidden="true" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-surface-400">₪</span>
+                </div>
+                <button type="button" onClick={() => saveCpaThreshold(Number(thresholdInput))} className="btn-primary h-[38px]">שמירה</button>
+                <button type="button" onClick={() => setEditingThreshold(false)} className="btn-secondary h-[38px]">ביטול</button>
               </div>
             ) : (
-              <button onClick={() => { setThresholdInput(String(cpaThreshold)); setEditingThreshold(true) }}
-                className="font-mono font-medium text-brand-600 hover:underline">
-                ₪{cpaThreshold}
+              <button
+                type="button"
+                onClick={() => { setThresholdInput(String(cpaThreshold)); setEditingThreshold(true) }}
+                className="btn-secondary flex-1 lg:flex-none"
+                aria-label={`סף CPA ${cpaThreshold} ש״ח, עריכה`}
+              >
+                <span className="text-surface-500 font-normal">סף CPA</span>
+                <span className="num">₪{cpaThreshold}</span>
+                <Pencil size={14} aria-hidden="true" className="text-surface-400" />
               </button>
             )}
-          </div>
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-        </div>
-      </div>
+            <div className="flex-1 lg:flex-none"><DateRangePicker value={dateRange} onChange={setDateRange} /></div>
+          </>
+        }
+      />
 
       {/* CPA Alert */}
       {cpaAlert && (
-        <div className="card bg-red-50 border-red-200 flex items-center gap-3">
-          <span className="text-2xl">⚠️</span>
-          <div>
-            <p className="font-medium text-red-800 text-sm">עלות להמרה גבוהה מהסף</p>
-            <p className="text-xs text-red-600 mt-0.5">
-              CPA נוכחי: <strong>{formatCurrency(totalCPA!)}</strong> — סף: {formatCurrency(cpaThreshold)}
-            </p>
-          </div>
-        </div>
+        <Notice tone="danger" icon={<AlertCircle />} title="העלות לרכישה גבוהה מהסף">
+          <span className="num">CPA נוכחי <strong className="font-semibold text-surface-900">{formatCurrency(totalCPA!)}</strong>, הסף {formatCurrency(cpaThreshold)}</span>
+        </Notice>
       )}
 
       {/* KPIs with MoM */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="הוצאות" value={formatCurrency(totalSpend)} change={spendChange} loading={loading} />
-        <KPICard label="רכישות (לפי מטא)" value={formatNumber(totalConversions)} change={convChange} loading={loading} />
-        <KPICard label="עלות לרכישה (CPA)" value={totalCPA !== null ? formatCurrency(totalCPA) : '—'} change={cpaChange} loading={loading} />
-        <KPICard label="קליקים" value={formatNumber(totalClicks)} change={clicksChange} loading={loading} />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <KPICard label="CPC ממוצע" value={formatCurrency(avgCPC)} loading={loading} />
-        <KPICard label="CPM ממוצע" value={formatCurrency(totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0)} loading={loading} />
-        <KPICard label="CTR ממוצע" value={avgCTR.toFixed(2)} suffix="%" loading={loading} />
+      <div className="space-y-3">
+        <Kpis label="מדדי Meta עיקריים">
+          <Kpi label="הוצאות" value={formatCurrency(totalSpend)} change={spendChange} goodWhen="none" loading={loading} />
+          <Kpi label="רכישות (לפי Meta)" value={formatNumber(totalConversions)} change={convChange} loading={loading} />
+          <Kpi label="עלות לרכישה (CPA)" value={totalCPA !== null ? formatCurrency(totalCPA) : '—'} change={cpaChange} goodWhen="down" loading={loading} />
+          <Kpi label="קליקים" value={formatNumber(totalClicks)} change={clicksChange} loading={loading} />
+        </Kpis>
+        <Kpis label="מדדי Meta משניים" cols={3}>
+          <Kpi size="sm" label="CPC ממוצע" value={formatCurrency(avgCPC)} loading={loading} />
+          <Kpi size="sm" label="CPM ממוצע" value={formatCurrency(totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0)} loading={loading} />
+          <Kpi size="sm" label="CTR ממוצע" value={avgCTR.toFixed(2)} unit="%" loading={loading} />
+        </Kpis>
       </div>
 
       {/* Charts */}
       {chartData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card">
-            <h3 className="font-display font-semibold text-surface-900 mb-4">עלות להמרה יומית (₪)</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0ebe3" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#927561' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#927561' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e3d9cc', borderRadius: 12, fontSize: 12 }} formatter={(v: any) => [`₪${Number(v).toFixed(2)}`, 'CPA']} />
-                <Line type="monotone" dataKey="cpa" stroke="#1877f2" strokeWidth={2} dot={false} name="CPA ₪" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="card">
-            <h3 className="font-display font-semibold text-surface-900 mb-4">הוצאות ורכישות יומיות</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0ebe3" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#927561' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#927561' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e3d9cc', borderRadius: 12, fontSize: 12 }} />
-                <Bar dataKey="spend" fill="#1877f2" name="הוצאות ₪" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="conversions" fill="#34d399" name="רכישות" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <section className="card-flush overflow-hidden">
+            <CardHead title="עלות לרכישה ביום">
+              <span className="text-[12.5px] text-surface-500">₪, לפי Meta</span>
+            </CardHead>
+            <div className="p-4 pt-5" dir="ltr">
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke={CHART.grid} />
+                  <XAxis dataKey="date" tick={CHART.tick} tickLine={false} axisLine={false} minTickGap={16} />
+                  <YAxis tick={CHART.tick} tickLine={false} axisLine={false} />
+                  <Tooltip {...CHART.tooltip} cursor={{ stroke: CHART.grid }} formatter={(v: any) => [`₪${Number(v).toFixed(2)}`, 'CPA']} />
+                  <Line type="monotone" dataKey="cpa" stroke={CHART.olive} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} name="CPA ₪" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+          <section className="card-flush overflow-hidden">
+            <CardHead title="הוצאות ורכישות ביום">
+              <div className="flex items-center gap-3">
+                <Swatch color={CHART.olive} label="הוצאות ₪" />
+                <Swatch color={CHART.grey} label="רכישות" />
+              </div>
+            </CardHead>
+            <div className="p-4 pt-5" dir="ltr">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke={CHART.grid} />
+                  <XAxis dataKey="date" tick={CHART.tick} tickLine={false} axisLine={false} minTickGap={16} />
+                  <YAxis tick={CHART.tick} tickLine={false} axisLine={false} />
+                  <Tooltip {...CHART.tooltip} />
+                  <Bar dataKey="spend" fill={CHART.olive} name="הוצאות ₪" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="conversions" fill={CHART.grey} name="רכישות" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
         </div>
       )}
 
       {/* Campaigns table */}
-      <div className="card overflow-hidden p-0">
-        <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
-          <h3 className="font-display font-semibold text-surface-900">קמפיינים</h3>
-          <div className="flex items-center gap-2 text-xs text-surface-400">
-            <span>מיין לפי:</span>
-            {(['spend', 'conversions', 'cpa'] as const).map(s => (
-              <button key={s} onClick={() => setSortBy(s)}
-                className={`px-2 py-1 rounded ${sortBy === s ? 'bg-brand-100 text-brand-700 font-medium' : 'hover:bg-surface-100'}`}>
-                {s === 'spend' ? 'הוצאות' : s === 'conversions' ? 'רכישות' : 'CPA'}
-              </button>
-            ))}
-          </div>
+      <section className="card-flush overflow-hidden">
+        <CardHead title="קמפיינים">
+          <Segmented
+            label="מיון הקמפיינים"
+            value={sortBy}
+            onChange={setSortBy}
+            options={[
+              { id: 'spend', label: 'הוצאות' },
+              { id: 'conversions', label: 'רכישות' },
+              { id: 'cpa', label: 'CPA' },
+            ]}
+          />
+        </CardHead>
+        <div className="relative overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-surface-50 border-b border-surface-200">
+                <th scope="col" className={`${TH} text-right`}>קמפיין</th>
+                <th scope="col" className={`${TH} text-right`}>סטטוס</th>
+                <th scope="col" className={`${TH} text-left`}>הוצאות</th>
+                <th scope="col" className={`${TH} text-left hidden lg:table-cell`}>קליקים</th>
+                <th scope="col" className={`${TH} text-left hidden lg:table-cell`}>CTR</th>
+                <th scope="col" className={`${TH} text-left hidden lg:table-cell`}>CPC</th>
+                <th scope="col" className={`${TH} text-left`}>רכישות</th>
+                <th scope="col" className={`${TH} text-left`}>CPA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="border-t border-surface-200 first:border-t-0">{Array.from({ length: 8 }).map((_, j) => (
+                    <td key={j} className={`px-4 py-3.5 ${j >= 3 && j <= 5 ? 'hidden lg:table-cell' : ''}`}><div className="h-3 bg-surface-100 rounded" /></td>
+                  ))}</tr>
+                ))
+              ) : sorted.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-12 text-[13px] text-surface-500">אין נתונים לטווח הזה. אפשר לחבר את Meta בהגדרות ולסנכרן.</td></tr>
+              ) : (
+                sorted.map(c => {
+                  const st = STATUS[c.status] ?? { label: c.status, tone: 'neutral' as Tone }
+                  return (
+                    <tr key={c.campaign_id} className="border-t border-surface-200 first:border-t-0 [@media(hover:hover)]:hover:bg-surface-50 transition-colors duration-150">
+                      <td className="px-4 py-3 font-medium text-surface-900 max-w-[16rem] lg:max-w-xs truncate" title={c.name}>{c.name}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 text-[13px] text-surface-700"><Dot tone={st.tone} />{st.label}</span>
+                      </td>
+                      <td className={`${TD} text-left text-surface-900`}>{formatCurrency(c.spend)}</td>
+                      <td className={`${TD} text-left text-surface-700 hidden lg:table-cell`}>{formatNumber(c.clicks)}</td>
+                      <td className={`${TD} text-left text-surface-700 hidden lg:table-cell`}>{c.ctr.toFixed(2)}%</td>
+                      <td className={`${TD} text-left text-surface-700 hidden lg:table-cell`}>{formatCurrency(c.cpc)}</td>
+                      <td className={`${TD} text-left text-surface-700`}>{c.conversions}</td>
+                      <td className={`${TD} text-left whitespace-nowrap`}>
+                        {c.cpa !== null ? (
+                          c.cpa > cpaThreshold ? (
+                            <span className="inline-flex items-center gap-1.5 font-medium text-danger">
+                              <Dot tone="danger" /><span className="sr-only">מעל הסף: </span>{formatCurrency(c.cpa)}
+                            </span>
+                          ) : <span className="text-surface-900">{formatCurrency(c.cpa)}</span>
+                        ) : <span className="text-surface-400">—</span>}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-surface-100 bg-surface-50">
-              {['קמפיין', 'סטטוס', 'הוצאות', 'קליקים', 'CTR', 'CPC', 'רכישות', 'CPA'].map(h => (
-                <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-surface-50">
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}>{Array.from({ length: 8 }).map((_, j) => (
-                  <td key={j} className="px-4 py-3"><div className="h-3 bg-surface-100 rounded animate-pulse" /></td>
-                ))}</tr>
-              ))
-            ) : sorted.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-12 text-surface-400">אין נתונים — חבר את Meta בהגדרות וסנכרן</td></tr>
-            ) : (
-              sorted.map(c => (
-                <tr key={c.campaign_id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-surface-800 max-w-xs truncate">{c.name}</td>
-                  <td className="px-4 py-3">
-                    <span className={`badge ${STATUS_COLORS[c.status] || 'bg-surface-100 text-surface-500'}`}>{c.status}</span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-surface-700">{formatCurrency(c.spend)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{formatNumber(c.clicks)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{c.ctr.toFixed(2)}%</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{formatCurrency(c.cpc)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{c.conversions}</td>
-                  <td className="px-4 py-3 font-mono">
-                    {c.cpa !== null ? (
-                      <span className={c.cpa > cpaThreshold ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                        {formatCurrency(c.cpa)}
-                      </span>
-                    ) : <span className="text-surface-300">—</span>}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      </section>
     </div>
   )
 }

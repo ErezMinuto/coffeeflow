@@ -3,12 +3,12 @@ import { supabase } from '../lib/supabase'
 import { formatCurrency } from '../lib/utils'
 import { startOfWeek, format } from 'date-fns'
 import {
-  Megaphone, Search, Layers, AlertTriangle, RefreshCw,
-  TrendingUp, ShieldCheck, Wallet, Sparkles,
+  Megaphone, Search, Layers, RefreshCw, Loader2, AlertCircle, CircleHelp, Wallet, ClipboardList,
 } from 'lucide-react'
 import { DraftCampaignDrawer } from '../components/DraftCampaignDrawer'
 import { BrainChat } from '../components/BrainChat'
 import { NeedsYou } from '../components/shared/NeedsYou'
+import { Dot, Kpi, Kpis, Notice, SectionHead, Tabs, Tone } from '../components/shared/cockpit'
 import MetaAdsPage from './MetaAds'
 import MetaOrganicPage from './MetaOrganic'
 import GoogleOrganicPage from './GoogleOrganic'
@@ -39,15 +39,16 @@ interface Spend {
 // visually separate "cited data" from "we don't know this yet".
 const isUnknown = (s: string) => /^\s*unknown/i.test(s || '')
 
-const CHANNEL: Record<Theme['channel'], { label: string; cls: string; Icon: any }> = {
-  paid:    { label: 'ממומן — Meta', cls: 'bg-brand-50 text-brand-700',       Icon: Megaphone },
-  organic: { label: 'אורגני',        cls: 'bg-emerald-50 text-emerald-700',   Icon: Search },
-  both:    { label: 'משולב',         cls: 'bg-brand-100 text-brand-800',      Icon: Layers },
+// Channel = a neutral tag with a line icon; confidence = a status dot.
+const CHANNEL: Record<Theme['channel'], { label: string; Icon: any }> = {
+  paid:    { label: 'ממומן, Meta', Icon: Megaphone },
+  organic: { label: 'אורגני',      Icon: Search },
+  both:    { label: 'משולב',       Icon: Layers },
 }
-const CONFIDENCE: Record<Theme['confidence'], string> = {
-  high:   'badge-success',
-  medium: 'badge-warning',
-  low:    'bg-surface-100 text-surface-500',
+const CONFIDENCE: Record<Theme['confidence'], Tone> = {
+  high:   'ok',
+  medium: 'warn',
+  low:    'neutral',
 }
 const CONFIDENCE_HE: Record<Theme['confidence'], string> = {
   high: 'ביטחון גבוה', medium: 'ביטחון בינוני', low: 'ביטחון נמוך',
@@ -57,37 +58,20 @@ function thisWeekStart(): string {
   return format(startOfWeek(new Date(), { weekStartsOn: 0 }), 'yyyy-MM-dd')
 }
 
-// ── Small stat tile (warm, dense) ─────────────────────────────────────────────
-function Stat({ icon: Icon, label, value, sub, tone = 'default' }: {
-  icon: any; label: string; value: string; sub?: string
-  tone?: 'default' | 'good' | 'warn'
-}) {
-  const valueTone = tone === 'good' ? 'text-emerald-700' : tone === 'warn' ? 'text-brand-700' : 'text-surface-900'
-  return (
-    <div className="bg-white border border-surface-200 rounded-2xl p-4">
-      <div className="flex items-center gap-2 text-surface-400 mb-2">
-        <Icon size={15} />
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <p className={`font-display text-2xl font-semibold ${valueTone}`}>{value}</p>
-      {sub && <p className="text-xs text-surface-400 mt-1">{sub}</p>}
-    </div>
-  )
-}
-
 // ── Evidence row — the heart of "grounded, not guessing" ──────────────────────
 function EvidenceRow({ label, text }: { label: string; text: string }) {
   const unknown = isUnknown(text)
   return (
-    <div className="flex gap-2 text-sm">
-      <span className="shrink-0 w-16 text-surface-400 font-medium">{label}</span>
+    <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3 py-2 [&+&]:border-t [&+&]:border-surface-200">
+      <dt className="text-[13px] text-surface-500">{label}</dt>
       {unknown ? (
-        <span className="inline-flex items-start gap-1.5 text-amber-700">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          <span>{text}</span>
-        </span>
+        <dd className="flex items-start gap-1.5 text-[13px] text-warn">
+          <CircleHelp size={14} aria-hidden="true" className="mt-[3px] shrink-0" />
+          {/* Display only: the agent's "unknown:" prefix becomes a Hebrew label. */}
+          <span><span className="font-medium">לא ידוע</span>{text.replace(/^\s*unknown\s*:?\s*/i, '') ? `: ${text.replace(/^\s*unknown\s*:?\s*/i, '')}` : ''}</span>
+        </dd>
       ) : (
-        <span className="text-surface-700">{text}</span>
+        <dd className="text-[13px] text-surface-700 num">{text}</dd>
       )}
     </div>
   )
@@ -99,52 +83,55 @@ function ThemeCard({ t, onDraft }: { t: Theme; onDraft: (t: Theme) => void }) {
   // "fix infra first" themes come through with budget 0 → recommendation-only.
   const actionable = (t.channel === 'paid' || t.channel === 'both') && t.suggested_daily_budget_ils > 0
   return (
-    <article className="bg-white border border-surface-200 rounded-2xl p-5">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="font-display text-lg font-semibold text-surface-900">{t.name}</h3>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`badge ${CONFIDENCE[t.confidence]}`}>{CONFIDENCE_HE[t.confidence]}</span>
-          <span className={`inline-flex items-center gap-1 badge ${ch.cls}`}>
-            <ch.Icon size={12} />{ch.label}
+    <article className="card-flush p-5">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-4 mb-3">
+        <h3 className="text-base font-semibold text-surface-900">{t.name}</h3>
+        <div className="flex items-center gap-3 shrink-0 text-[13px] text-surface-600">
+          <span className="inline-flex items-center gap-1.5">
+            <Dot tone={CONFIDENCE[t.confidence]} />{CONFIDENCE_HE[t.confidence]}
+          </span>
+          <span className="tag">
+            <ch.Icon size={13} aria-hidden="true" />{ch.label}
           </span>
         </div>
       </div>
 
-      <div className="space-y-1.5 mb-4 border-r-2 border-surface-100 pr-3">
+      <p className="text-sm text-surface-900 leading-relaxed mb-4">{t.recommendation}</p>
+
+      <dl className="rounded-lg bg-surface-50 border border-surface-200 px-3.5 py-1 mb-4">
         <EvidenceRow label="אורגני" text={t.evidence?.organic} />
         <EvidenceRow label="ממומן"  text={t.evidence?.paid} />
         <EvidenceRow label="מרווח"  text={t.evidence?.margin} />
-      </div>
+      </dl>
 
-      <p className="text-sm text-surface-800 leading-relaxed mb-4">{t.recommendation}</p>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {t.suggested_daily_budget_ils > 0 && (
-          <span className="inline-flex items-center gap-1.5 badge bg-brand-50 text-brand-700">
-            <Wallet size={12} />
-            תקציב מוצע: {formatCurrency(t.suggested_daily_budget_ils)}/יום
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {t.suggested_daily_budget_ils > 0 ? (
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-surface-600 num">
+            <Wallet size={15} aria-hidden="true" className="text-surface-400" />
+            תקציב מוצע <span className="font-medium text-surface-900">{formatCurrency(t.suggested_daily_budget_ils)}</span> ליום
           </span>
-        )}
+        ) : <span />}
         {actionable ? (
           <button
+            type="button"
             onClick={() => onDraft(t)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-medium hover:bg-brand-700 transition-colors cursor-pointer"
+            className="btn-secondary h-9 px-3 text-[13px]"
           >
-            <Megaphone size={13} /> בנה טיוטה מושהית
+            <Megaphone size={15} aria-hidden="true" /> בניית טיוטה מושהית
           </button>
         ) : t.channel !== 'organic' ? (
-          <span className="text-xs text-surface-400">המלצה בלבד (לא נבנה אוטומטית)</span>
+          <span className="text-[12.5px] text-surface-500">המלצה בלבד, לא נבנית אוטומטית</span>
         ) : null}
       </div>
 
       {t.unknowns?.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-surface-100">
-          <p className="text-xs font-medium text-amber-700 mb-1.5 flex items-center gap-1.5">
-            <AlertTriangle size={12} /> חסר לנו מידע:
+        <div className="mt-4 pt-3 border-t border-surface-200">
+          <p className="text-[13px] font-medium text-surface-700 mb-1 flex items-center gap-2">
+            <Dot tone="warn" /> חסר לנו מידע
           </p>
-          <ul className="space-y-1">
+          <ul className="list-disc pr-5 space-y-0.5 marker:text-surface-400">
             {t.unknowns.map((u, i) => (
-              <li key={i} className="text-xs text-surface-500 pr-4 relative before:content-['·'] before:absolute before:right-1">{u}</li>
+              <li key={i} className="text-[13px] text-surface-500">{u}</li>
             ))}
           </ul>
         </div>
@@ -218,76 +205,80 @@ function PlanTab() {
     }
   }
 
+  const themeCount = plan ? plan.themes?.length ?? 0 : null
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-surface-900">תוכנית שיווק מאוחדת</h1>
-          <p className="text-sm text-surface-500 mt-1 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-brand-500" />
-            אורגני וממומן יחד, כל המלצה מבוססת על נתונים אמיתיים
-          </p>
-        </div>
-        <button
-          onClick={runAnalysis}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-60 cursor-pointer"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          {loading ? 'מנתח…' : plan ? 'רענן ניתוח' : 'הפעל ניתוח'}
-        </button>
-      </div>
+    <div className="fade-up space-y-5">
+      <SectionHead
+        title="התוכנית של השבוע"
+        sub="אורגני וממומן יחד. כל המלצה נשענת על נתונים אמיתיים, ומה שלא ידוע מסומן."
+        actions={
+          <button
+            type="button"
+            onClick={runAnalysis}
+            disabled={loading}
+            className={`${plan ? 'btn-secondary' : 'btn-primary'} w-full lg:w-auto`}
+          >
+            {loading
+              ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+              : <RefreshCw size={16} aria-hidden="true" />}
+            {loading ? 'הניתוח רץ…' : plan ? 'רענון הניתוח' : 'הפעלת ניתוח'}
+          </button>
+        }
+      />
 
       {/* Spend guardrail KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat icon={Wallet} label="הוצאת Meta החודש" value={spend ? formatCurrency(spend.month_to_date) : '—'} sub={spend ? `חודש שעבר: ${formatCurrency(spend.last_month)}` : undefined} />
-        <Stat icon={ShieldCheck} label="נותר עד התקרה" tone="good" value={spend ? formatCurrency(spend.remaining_under_cap) : '—'} sub={spend ? `תקרה חודשית: ${formatCurrency(spend.monthly_cap)}` : undefined} />
-        <Stat icon={Megaphone} label="מחויב מטיוטות" tone="warn" value={spend ? formatCurrency(spend.committed_drafts_this_month) : '—'} />
-        <Stat icon={Layers} label="תמות בתוכנית" value={plan ? String(plan.themes?.length ?? 0) : '—'} sub={plan ? 'לחצו להרחבה' : 'טרם הופעל'} />
-      </div>
+      <Kpis label="תקציב Meta">
+        <Kpi label="הוצאת Meta החודש" value={spend ? formatCurrency(spend.month_to_date) : '—'}
+          note={spend ? `בחודש שעבר ${formatCurrency(spend.last_month)}` : 'לפי Meta'} />
+        <Kpi label="נותר עד התקרה" value={spend ? formatCurrency(spend.remaining_under_cap) : '—'}
+          note={spend ? `מתוך תקרה חודשית של ${formatCurrency(spend.monthly_cap)}` : 'תקרה חודשית'} />
+        <Kpi label="מחויב בטיוטות" value={spend ? formatCurrency(spend.committed_drafts_this_month) : '—'}
+          note="טיוטות מושהות שנבנו החודש" />
+        <Kpi label="נושאים בתוכנית" value={themeCount ?? '—'}
+          note={plan ? 'בתוכנית של השבוע' : 'עדיין לא הופעל ניתוח'} />
+      </Kpis>
 
       {/* Body */}
-      {error && (
-        <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 text-sm">{error}</div>
-      )}
+      {error && <Notice tone="danger" icon={<AlertCircle />} title="הניתוח לא הושלם">{error}</Notice>}
 
       {!plan && !loading && !error && (
-        <div className="bg-white border border-dashed border-surface-200 rounded-2xl p-10 text-center">
-          <TrendingUp size={28} className="text-surface-300 mx-auto mb-3" />
-          <p className="text-surface-600 font-medium">טרם הופעל ניתוח לשבוע הנוכחי</p>
-          <p className="text-sm text-surface-400 mt-1">הפעלת הניתוח אוספת נתוני אורגני, ממומן ומכירות ומחזירה תוכנית מבוססת נתונים. לוקח כ-30-60 שניות.</p>
+        <div className="card-flush px-6 py-10 text-center">
+          <ClipboardList size={22} aria-hidden="true" className="text-surface-400 mx-auto mb-3" />
+          <p className="text-[15px] font-medium text-surface-900">עדיין לא הופעל ניתוח לשבוע הזה</p>
+          <p className="text-[13px] text-surface-500 mt-1 max-w-md mx-auto text-pretty">הניתוח אוסף נתוני אורגני, ממומן ומכירות ומחזיר תוכנית מבוססת נתונים. זה לוקח כדקה.</p>
         </div>
       )}
 
       {loading && (
-        <div className="bg-white border border-surface-200 rounded-2xl p-10 text-center">
-          <RefreshCw size={24} className="text-brand-500 mx-auto mb-3 animate-spin" />
-          <p className="text-surface-600 text-sm">אוסף נתונים ומנתח… זה לוקח כ-30-60 שניות.</p>
+        <div className="card-flush px-6 py-10 text-center" role="status">
+          <Loader2 size={20} aria-hidden="true" className="text-surface-400 mx-auto mb-3 animate-spin" />
+          <p className="text-sm text-surface-700">אוסף נתונים ומנתח. זה לוקח כדקה, אפשר להישאר בעמוד.</p>
         </div>
       )}
 
       {plan && !loading && (
         <div className="space-y-4">
           {plan.summary && (
-            <div className="bg-brand-50/60 border border-brand-100 rounded-2xl p-5">
-              <p className="text-sm text-surface-800 leading-relaxed">{plan.summary}</p>
-            </div>
+            <section aria-label="סיכום" className="card-flush p-5">
+              <p className="text-[13px] text-surface-500 mb-1.5">סיכום השבוע</p>
+              <p className="text-[15px] text-surface-900 leading-relaxed text-pretty">{plan.summary}</p>
+            </section>
           )}
 
           {plan.themes?.map((t, i) => <ThemeCard key={i} t={t} onDraft={setDrafting} />)}
 
           {plan.global_unknowns?.length > 0 && (
-            <div className="bg-white border border-surface-200 rounded-2xl p-5">
-              <p className="text-sm font-medium text-amber-700 mb-2 flex items-center gap-1.5">
-                <AlertTriangle size={14} /> מה חסר כדי לשפר את התוכנית
-              </p>
-              <ul className="space-y-1">
+            <section aria-labelledby="global-unknowns" className="card-flush p-5">
+              <h3 id="global-unknowns" className="text-[15px] font-semibold text-surface-900 mb-2 flex items-center gap-2">
+                <Dot tone="warn" /> מה חסר כדי לשפר את התוכנית
+              </h3>
+              <ul className="list-disc pr-5 space-y-1 marker:text-surface-400">
                 {plan.global_unknowns.map((u, i) => (
-                  <li key={i} className="text-sm text-surface-600 pr-4 relative before:content-['·'] before:absolute before:right-1">{u}</li>
+                  <li key={i} className="text-sm text-surface-700">{u}</li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
         </div>
       )}
@@ -304,7 +295,7 @@ function PlanTab() {
 const COCKPIT_TABS = [
   { id: 'brain',    label: 'מוח שיווקי' },
   { id: 'plan',     label: 'תוכנית' },
-  { id: 'meta',     label: 'Meta Ads' },
+  { id: 'meta',     label: 'מודעות Meta' },
   { id: 'ig',       label: 'אינסטגרם' },
   { id: 'gorganic', label: 'Google אורגני' },
 ] as const
@@ -313,26 +304,24 @@ type CockpitTab = typeof COCKPIT_TABS[number]['id']
 export default function UnifiedPlanPage() {
   const [tab, setTab] = useState<CockpitTab>('brain')
   return (
-    <div className="space-y-5">
+    <div className="fade-up space-y-6">
+      <header className="page-header mb-0">
+        <div>
+          <h1>שיווק</h1>
+          <p className="page-sub">מה ממתין להחלטה, התוכנית של השבוע והנתונים לפי ערוץ</p>
+        </div>
+      </header>
       <NeedsYou />
-      <div className="flex gap-1 border-b border-surface-200 overflow-x-auto">
-        {COCKPIT_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors cursor-pointer ${
-              tab === t.id ? 'border-brand-600 text-brand-700' : 'border-transparent text-surface-400 hover:text-surface-700'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="space-y-6">
+        <Tabs value={tab} onChange={setTab} tabs={COCKPIT_TABS} label="אזורי השיווק" idPrefix="cockpit" />
+        <div role="tabpanel" id="cockpit-panel" aria-labelledby={`cockpit-tab-${tab}`}>
+          {tab === 'brain'    && <BrainChat />}
+          {tab === 'plan'     && <PlanTab />}
+          {tab === 'meta'     && <MetaAdsPage />}
+          {tab === 'ig'       && <MetaOrganicPage />}
+          {tab === 'gorganic' && <GoogleOrganicPage />}
+        </div>
       </div>
-      {tab === 'brain'    && <BrainChat />}
-      {tab === 'plan'     && <PlanTab />}
-      {tab === 'meta'     && <MetaAdsPage />}
-      {tab === 'ig'       && <MetaOrganicPage />}
-      {tab === 'gorganic' && <GoogleOrganicPage />}
     </div>
   )
 }

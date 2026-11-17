@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronLeft, CircleCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { Dot } from './cockpit'
 
 // "Needs You" — one consolidated view of everything awaiting the owner's
 // decision, pinned to the top of the /plan home page. The autonomous agents
@@ -9,7 +11,6 @@ import { supabase } from '../../lib/supabase'
 
 interface ActionRow {
   key:   string
-  icon:  string
   label: string
   to:    string
   cta:   string
@@ -46,54 +47,62 @@ export function NeedsYou() {
       ])
       if (!alive) return
       setRows([
-        { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=inbox',     cta: 'לאישור',  count: proposals },
-        { key: 'loop',      icon: '✅', label: 'טיוטות מהאסטרטג אחרי בדיקה, ממתינות להחלטה שלך', to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה', count: loopDone },
-        { key: 'drafts',    icon: '✉️', label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing?tab=history',          cta: 'למרקטינג', count: drafts },
-        { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה',  count: review },
-        { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=inbox',     cta: 'לצפייה',  count: signals },
+        { key: 'proposals', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=inbox',     cta: 'לאישור',  count: proposals },
+        { key: 'loop',      label: 'טיוטות מהאסטרטג אחרי בדיקה, ממתינות להחלטה שלך', to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה', count: loopDone },
+        { key: 'drafts',    label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing?tab=history',          cta: 'למחולל המיילים', count: drafts },
+        { key: 'review',    label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה',  count: review },
+        { key: 'signals',   label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=inbox',     cta: 'לצפייה',  count: signals },
       ])
     })()
     return () => { alive = false }
   }, [])
 
-  if (!rows) return null // still loading — stay quiet, don't flash an empty box
+  // Still loading: a static placeholder the height of one row, so the page
+  // neither claims "all clear" early nor jumps when the counts land.
+  if (!rows) {
+    return (
+      <section aria-busy="true" aria-label="ממתין להחלטה" className="card-flush px-[18px] py-4">
+        <span aria-hidden="true" className="block h-4 w-48 rounded bg-surface-100" />
+      </section>
+    )
+  }
 
   const pending = rows.filter(r => r.count > 0)
   const total = pending.reduce((s, r) => s + r.count, 0)
 
   if (total === 0) {
     return (
-      <div className="card fade-up flex items-center gap-2 text-sm text-surface-400">
-        <span>✓</span>
-        <span>אין פעולות ממתינות — הכול מטופל</span>
-      </div>
+      <section aria-label="ממתין להחלטה" className="fade-up card-flush px-[18px] py-4 flex items-center gap-2.5 text-sm text-surface-700">
+        <CircleCheck size={18} aria-hidden="true" className="text-ok shrink-0" />
+        <span>אין כרגע פריטים שממתינים להחלטה</span>
+      </section>
     )
   }
 
   return (
-    <div className="card fade-up border-r-4 border-amber-400">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display font-semibold text-surface-900">דורש את תשומת לבך</h3>
-        <span className="badge bg-amber-100 text-amber-700">{total}</span>
+    <section aria-labelledby="needs-you-title" className="fade-up card-flush overflow-hidden">
+      <div className="card-head">
+        <h2 id="needs-you-title">ממתין להחלטה שלך</h2>
+        <span className="text-[13px] text-surface-500 num">{total} פריטים</span>
       </div>
-      <div className="space-y-1">
+      <ul>
         {pending.map(r => (
-          <Link
-            key={r.key}
-            to={r.to}
-            className="flex items-center justify-between rounded-xl px-3 py-3 hover:bg-surface-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-lg">{r.icon}</span>
-              <span className="text-sm text-surface-900">{r.label}</span>
+          <li key={r.key} className="flex items-center gap-3 px-[18px] py-2.5 [&+&]:border-t [&+&]:border-surface-200">
+            <Dot tone="warn" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-surface-900">{r.label}</p>
+              <p className="text-[13px] text-surface-500 num">{r.count === 1 ? 'פריט אחד' : `${r.count} פריטים`}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="badge bg-amber-100 text-amber-700">{r.count}</span>
-              <span className="text-xs text-surface-400 whitespace-nowrap">{r.cta} ←</span>
-            </div>
-          </Link>
+            <Link
+              to={r.to}
+              className="btn-ghost shrink-0 gap-1 h-9 px-2.5 text-[13px]"
+            >
+              {r.cta}
+              <ChevronLeft size={15} aria-hidden="true" />
+            </Link>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   )
 }

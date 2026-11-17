@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { KPICard } from '../components/shared/KPICard'
 import { DateRangePicker } from '../components/shared/DateRangePicker'
+import { CardHead, Dot, Kpi, Kpis, Notice, SectionHead, Segmented, TD, TH, Tone } from '../components/shared/cockpit'
 import { DateRange } from '../lib/types'
 import { getDefaultDateRange, formatNumber } from '../lib/utils'
-import { AlertCircle, TrendingUp, TrendingDown, Minus, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
+import { AlertCircle, Info, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
 
 interface GSCRow {
   id: string
@@ -33,26 +33,32 @@ interface AggregatedPage {
   position: number
 }
 
-function positionIcon(pos: number) {
-  if (pos <= 3)  return <TrendingUp size={14} className="text-green-500" />
-  if (pos <= 10) return <Minus size={14} className="text-amber-400" />
-  return <TrendingDown size={14} className="text-red-400" />
+// Search position as a status dot: page one top 3 / rest of page one / beyond.
+// Beyond page one is the common case, so it stays a quiet grey dot.
+function positionTone(pos: number): Tone {
+  if (pos <= 3)  return 'ok'
+  if (pos <= 10) return 'warn'
+  return 'neutral'
 }
 
-function positionColor(pos: number) {
-  if (pos <= 3)  return 'text-green-600 font-bold'
-  if (pos <= 10) return 'text-amber-600 font-medium'
-  return 'text-red-500'
+function Position({ pos }: { pos: number }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${pos <= 3 ? 'font-medium text-surface-900' : 'text-surface-700'}`}>
+      <Dot tone={positionTone(pos)} />{pos.toFixed(1)}
+    </span>
+  )
 }
 
 type SortField = 'clicks' | 'impressions' | 'ctr' | 'position'
 type SortDir   = 'asc' | 'desc'
 
+const SORT_LABEL: Record<SortField, string> = { clicks: 'קליקים', impressions: 'חשיפות', ctr: 'CTR', position: 'מיקום' }
+
 function SortIcon({ field, sortBy, sortDir }: { field: SortField; sortBy: SortField; sortDir: SortDir }) {
-  if (sortBy !== field) return <ChevronsUpDown size={12} className="text-surface-300" />
+  if (sortBy !== field) return <ChevronsUpDown size={13} aria-hidden="true" className="text-surface-400" />
   return sortDir === 'asc'
-    ? <ChevronUp size={12} className="text-brand-600" />
-    : <ChevronDown size={12} className="text-brand-600" />
+    ? <ChevronUp size={13} aria-hidden="true" className="text-surface-900" />
+    : <ChevronDown size={13} aria-hidden="true" className="text-surface-900" />
 }
 
 export default function GoogleOrganicPage() {
@@ -218,7 +224,7 @@ export default function GoogleOrganicPage() {
       <>
         {parts.map((p, i) =>
           p.marked
-            ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">{p.str}</mark>
+            ? <mark key={i} className="bg-brand-100 text-brand-800 rounded-[3px] px-0.5">{p.str}</mark>
             : <span key={i}>{p.str}</span>
         )}
       </>
@@ -235,226 +241,199 @@ export default function GoogleOrganicPage() {
     ? keywords.reduce((s, k) => s + k.position, 0) / keywords.length
     : 0
 
+  // Sortable numeric header cells, shared by both tables.
+  const sortHeads = (['clicks', 'impressions', 'ctr', 'position'] as SortField[]).map(field => (
+    <th
+      key={field}
+      scope="col"
+      aria-sort={sortBy === field ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={`${TH} p-0 text-left ${field === 'impressions' || field === 'ctr' ? 'hidden lg:table-cell' : ''}`}
+    >
+      <button
+        type="button"
+        onClick={() => handleSort(field)}
+        className={`w-full inline-flex items-center justify-end gap-1 h-10 px-4 transition-colors duration-150 cursor-pointer ${sortBy === field ? 'text-surface-900' : '[@media(hover:hover)]:hover:text-surface-900'}`}
+      >
+        {SORT_LABEL[field]}
+        <SortIcon field={field} sortBy={sortBy} sortDir={sortDir} />
+      </button>
+    </th>
+  ))
+
+  const skeleton = (rows: number) => Array.from({ length: rows }).map((_, i) => (
+    <tr key={i} className="border-t border-surface-200 first:border-t-0">{Array.from({ length: 5 }).map((_, j) => (
+      <td key={j} className={`px-4 py-3.5 ${j === 2 || j === 3 ? 'hidden lg:table-cell' : ''}`}><div className="h-3 bg-surface-100 rounded" /></td>
+    ))}</tr>
+  ))
+
+  const emptyRow = (
+    <tr>
+      <td colSpan={5} className="text-center py-12 text-[13px] text-surface-500">
+        {connected ? 'אין נתונים לתקופה הזו' : 'אפשר לחבר את Google בהגדרות'}
+      </td>
+    </tr>
+  )
+
+  const ROW = 'border-t border-surface-200 first:border-t-0 [@media(hover:hover)]:hover:bg-surface-50 transition-colors duration-150'
+
   return (
-    <div className="space-y-8 fade-up">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-display font-semibold text-surface-900">Google Organic</h2>
-          <p className="text-sm text-surface-400 mt-1">
-            {hasData
-              ? q
-                ? `${sortedKeywords.length} / ${keywords.length} מילות מפתח · ${sortedPages.length} / ${pages.length} עמודים`
-                : `${keywords.length} מילות מפתח · ${pages.length} עמודים`
-              : connected
-                ? 'Google Search Console'
-                : 'לא מחובר'}
-          </p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
-      </div>
+    <div className="space-y-5 fade-up">
+      <SectionHead
+        title="Google אורגני"
+        sub={hasData
+          ? q
+            ? `${sortedKeywords.length} / ${keywords.length} מילות מפתח · ${sortedPages.length} / ${pages.length} עמודים`
+            : `${keywords.length} מילות מפתח · ${pages.length} עמודים`
+          : connected
+            ? 'Google Search Console'
+            : 'לא מחובר'}
+        actions={<div className="w-full lg:w-auto"><DateRangePicker value={dateRange} onChange={setDateRange} /></div>}
+      />
 
       {/* Not connected */}
       {!connected && !loading && (
-        <div className="card bg-amber-50 border-amber-200 flex gap-3">
-          <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
-          <div>
-            <p className="font-medium text-amber-800 text-sm">Google לא מחובר</p>
-            <p className="text-xs text-amber-700 mt-1">
-              חבר את Google ב<a href="/settings" className="underline">הגדרות</a>.
-            </p>
-          </div>
-        </div>
+        <Notice tone="warn" icon={<AlertCircle />} title="Google לא מחובר">
+          אפשר לחבר את Google ב<a href="/settings" className="font-medium text-surface-900 underline underline-offset-2">הגדרות</a>.
+        </Notice>
       )}
 
       {/* Connected but no data yet */}
       {connected && !loading && !hasData && (
-        <div className="card bg-blue-50 border-blue-200 flex gap-3">
-          <AlertCircle className="text-blue-500 shrink-0 mt-0.5" size={18} />
-          <div>
-            <p className="font-medium text-blue-800 text-sm">אין נתוני Search Console עדיין</p>
-            <p className="text-xs text-blue-700 mt-1">
-              לחץ על "סנכרן Search Console" ב<a href="/settings" className="underline">הגדרות</a> כדי לטעון את הנתונים.
-              ודא שהאתר <strong>www.minuto.co.il</strong> מאומת ב-Google Search Console.
-            </p>
-          </div>
-        </div>
+        <Notice icon={<Info className="text-surface-500" />} title="אין עדיין נתוני Search Console">
+          הכפתור "סנכרן Search Console" ב<a href="/settings" className="font-medium text-surface-900 underline underline-offset-2">הגדרות</a> טוען את הנתונים.
+          האתר <strong className="font-medium text-surface-900" dir="ltr">www.minuto.co.il</strong> צריך להיות מאומת ב-Google Search Console.
+        </Notice>
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="קליקים" value={formatNumber(totalClicks)} loading={loading} />
-        <KPICard label="חשיפות" value={formatNumber(totalImpressions)} loading={loading} />
-        <KPICard label="CTR ממוצע" value={`${(avgCtr * 100).toFixed(1)}%`} loading={loading} />
-        <KPICard label="מיקום ממוצע" value={avgPosition > 0 ? avgPosition.toFixed(1) : '—'} loading={loading} />
-      </div>
+      <Kpis label="מדדי חיפוש אורגני">
+        <Kpi label="קליקים" value={formatNumber(totalClicks)} loading={loading} note="מילות מפתח בטווח" />
+        <Kpi label="חשיפות" value={formatNumber(totalImpressions)} loading={loading} note="מילות מפתח בטווח" />
+        <Kpi label="CTR ממוצע" value={`${(avgCtr * 100).toFixed(1)}%`} loading={loading} note="משוקלל לפי חשיפות" />
+        <Kpi label="מיקום ממוצע" value={avgPosition > 0 ? avgPosition.toFixed(1) : '—'} loading={loading} note="ממוצע פשוט למילת מפתח" />
+      </Kpis>
 
-      {/* Search bar */}
-      {connected && (
-        <div className="relative">
-          <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none" />
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="חפש מילה, ביטוי, או specialty|ספשלטי לOR..."
-            className="w-full pr-9 pl-9 py-2.5 text-sm rounded-xl border border-surface-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 placeholder:text-surface-300 transition"
-            dir="rtl"
+      {/* Tables */}
+      <section className="card-flush overflow-hidden">
+        <CardHead title={
+          <Segmented
+            label="תצוגה"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { id: 'keywords', label: <>מילות מפתח <span className="num text-surface-500 font-normal">{q ? `${sortedKeywords.length}/${keywords.length}` : keywords.length}</span></> },
+              { id: 'pages', label: <>עמודים <span className="num text-surface-500 font-normal">{q ? `${sortedPages.length}/${pages.length}` : pages.length}</span></> },
+            ]}
           />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
-            >
-              <X size={14} />
-            </button>
+        }>
+          {connected && (
+            <div className="relative w-full lg:w-72">
+              <Search size={16} aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="חיפוש מילה או ביטוי"
+                aria-label="חיפוש במילות מפתח ובעמודים"
+                aria-describedby="gsc-search-help"
+                className="field pr-9 pl-10"
+                dir="rtl"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="ניקוי החיפוש"
+                  className="absolute left-0.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-surface-400 transition-colors duration-150 [@media(hover:hover)]:hover:text-surface-900 cursor-pointer"
+                >
+                  <X size={15} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
+        </CardHead>
+        {connected && (
+          <p id="gsc-search-help" className="px-[18px] py-2 text-[12.5px] text-surface-500 border-b border-surface-200 bg-surface-50">
+            רווח בין מילים: כולן חייבות להופיע. <span dir="ltr" className="font-medium text-surface-700">specialty|ספשלטי</span>: אחת מהן מספיקה.
+          </p>
+        )}
+
+        <div className="relative overflow-x-auto">
+          {/* Keywords table */}
+          {tab === 'keywords' && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-surface-50 border-b border-surface-200">
+                  <th scope="col" className={`${TH} text-right ps-[18px]`}>מילת מפתח</th>
+                  {sortHeads}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? skeleton(8) : sortedKeywords.length === 0 ? emptyRow : (
+                  sortedKeywords.map((kw, i) => (
+                    <tr key={i} className={ROW}>
+                      <td className="px-4 ps-[18px] py-3 font-medium text-surface-900 max-w-[12rem] lg:max-w-xs truncate" title={kw.keyword}>{highlight(kw.keyword)}</td>
+                      <td className={`${TD} text-left text-surface-900`}>{kw.clicks.toLocaleString()}</td>
+                      <td className={`${TD} text-left text-surface-600 hidden lg:table-cell`}>{kw.impressions.toLocaleString()}</td>
+                      <td className={`${TD} text-left text-surface-600 hidden lg:table-cell`}>{(kw.ctr * 100).toFixed(1)}%</td>
+                      <td className={`${TD} text-left`}><Position pos={kw.position} /></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {/* Pages table */}
+          {tab === 'pages' && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-surface-50 border-b border-surface-200">
+                  <th scope="col" className={`${TH} text-right ps-[18px]`}>עמוד</th>
+                  {sortHeads}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? skeleton(5) : sortedPages.length === 0 ? emptyRow : (
+                  sortedPages.map((pg, i) => {
+                    // Show just the path, not full URL
+                    const displayUrl = pg.page.replace(/^https?:\/\/[^/]+/, '') || '/'
+                    return (
+                      <tr key={i} className={ROW}>
+                        <td className="px-4 ps-[18px] py-3 max-w-[12rem] lg:max-w-xs">
+                          <a
+                            href={pg.page}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-[13px] text-surface-900 underline decoration-surface-300 underline-offset-2 [@media(hover:hover)]:hover:decoration-surface-900 transition-colors duration-150 text-right"
+                            dir="ltr"
+                            title={pg.page}
+                          >
+                            {highlight(displayUrl)}
+                          </a>
+                        </td>
+                        <td className={`${TD} text-left text-surface-900`}>{pg.clicks.toLocaleString()}</td>
+                        <td className={`${TD} text-left text-surface-600 hidden lg:table-cell`}>{pg.impressions.toLocaleString()}</td>
+                        <td className={`${TD} text-left text-surface-600 hidden lg:table-cell`}>{(pg.ctr * 100).toFixed(1)}%</td>
+                        <td className={`${TD} text-left`}><Position pos={pg.position} /></td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           )}
         </div>
-      )}
 
-      {/* Tab switcher */}
-      <div className="card overflow-hidden p-0">
-        <div className="flex border-b border-surface-100">
-          <button
-            onClick={() => setTab('keywords')}
-            className={`px-5 py-3 text-sm font-medium transition-colors ${tab === 'keywords' ? 'border-b-2 border-brand-600 text-brand-700' : 'text-surface-500 hover:text-surface-700'}`}
-          >
-            מילות מפתח ({q ? `${sortedKeywords.length} / ${keywords.length}` : keywords.length})
-          </button>
-          <button
-            onClick={() => setTab('pages')}
-            className={`px-5 py-3 text-sm font-medium transition-colors ${tab === 'pages' ? 'border-b-2 border-brand-600 text-brand-700' : 'text-surface-500 hover:text-surface-700'}`}
-          >
-            עמודים ({q ? `${sortedPages.length} / ${pages.length}` : pages.length})
-          </button>
-        </div>
-
-        {/* Keywords table */}
-        {tab === 'keywords' && (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-100 bg-surface-50">
-                <th className="text-right px-5 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">מילת מפתח</th>
-                {(['clicks', 'impressions', 'ctr', 'position'] as SortField[]).map(field => (
-                  <th key={field} className="px-4 py-3">
-                    <button
-                      onClick={() => handleSort(field)}
-                      className="flex items-center gap-1 text-xs font-semibold text-surface-400 uppercase tracking-wider hover:text-brand-600 transition-colors"
-                    >
-                      <SortIcon field={field} sortBy={sortBy} sortDir={sortDir} />
-                      {field === 'clicks' ? 'קליקים' : field === 'impressions' ? 'חשיפות' : field === 'ctr' ? 'CTR' : 'מיקום'}
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-50">
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j} className="px-4 py-3"><div className="h-3 bg-surface-100 rounded animate-pulse" /></td>
-                  ))}</tr>
-                ))
-              ) : sortedKeywords.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-surface-400">
-                    {connected ? 'אין נתונים לתקופה זו' : 'חבר את Google בהגדרות'}
-                  </td>
-                </tr>
-              ) : (
-                sortedKeywords.map((kw, i) => (
-                  <tr key={i} className="hover:bg-surface-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-surface-800 max-w-xs truncate">{highlight(kw.keyword)}</td>
-                    <td className="px-4 py-3 font-mono text-surface-700">{kw.clicks.toLocaleString()}</td>
-                    <td className="px-4 py-3 font-mono text-surface-500">{kw.impressions.toLocaleString()}</td>
-                    <td className="px-4 py-3 font-mono text-surface-600">{(kw.ctr * 100).toFixed(1)}%</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        {positionIcon(kw.position)}
-                        <span className={`font-mono ${positionColor(kw.position)}`}>{kw.position.toFixed(1)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Position legend */}
+        {hasData && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-[18px] py-3 border-t border-surface-200 text-[12.5px] text-surface-500">
+            <span className="inline-flex items-center gap-1.5"><Dot tone="ok" /> מיקום 1 עד 3</span>
+            <span className="inline-flex items-center gap-1.5"><Dot tone="warn" /> מיקום 4 עד 10</span>
+            <span className="inline-flex items-center gap-1.5"><Dot tone="neutral" /> מיקום 11 ומעלה</span>
+          </div>
         )}
-
-        {/* Pages table */}
-        {tab === 'pages' && (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-100 bg-surface-50">
-                <th className="text-right px-5 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">עמוד</th>
-                {(['clicks', 'impressions', 'ctr', 'position'] as SortField[]).map(field => (
-                  <th key={field} className="px-4 py-3">
-                    <button
-                      onClick={() => handleSort(field)}
-                      className="flex items-center gap-1 text-xs font-semibold text-surface-400 uppercase tracking-wider hover:text-brand-600 transition-colors"
-                    >
-                      <SortIcon field={field} sortBy={sortBy} sortDir={sortDir} />
-                      {field === 'clicks' ? 'קליקים' : field === 'impressions' ? 'חשיפות' : field === 'ctr' ? 'CTR' : 'מיקום'}
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-50">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j} className="px-4 py-3"><div className="h-3 bg-surface-100 rounded animate-pulse" /></td>
-                  ))}</tr>
-                ))
-              ) : sortedPages.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-surface-400">
-                    {connected ? 'אין נתונים לתקופה זו' : 'חבר את Google בהגדרות'}
-                  </td>
-                </tr>
-              ) : (
-                sortedPages.map((pg, i) => {
-                  // Show just the path, not full URL
-                  const displayUrl = pg.page.replace(/^https?:\/\/[^/]+/, '') || '/'
-                  return (
-                    <tr key={i} className="hover:bg-surface-50 transition-colors">
-                      <td className="px-5 py-3 text-surface-800 max-w-xs">
-                        <a
-                          href={pg.page}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-mono text-xs text-brand-600 hover:text-brand-800 truncate block"
-                          title={pg.page}
-                        >
-                          {highlight(displayUrl)}
-                        </a>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-surface-700">{pg.clicks.toLocaleString()}</td>
-                      <td className="px-4 py-3 font-mono text-surface-500">{pg.impressions.toLocaleString()}</td>
-                      <td className="px-4 py-3 font-mono text-surface-600">{(pg.ctr * 100).toFixed(1)}%</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          {positionIcon(pg.position)}
-                          <span className={`font-mono ${positionColor(pg.position)}`}>{pg.position.toFixed(1)}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Position legend */}
-      {hasData && (
-        <div className="flex items-center gap-4 text-xs text-surface-400">
-          <span className="flex items-center gap-1"><TrendingUp size={12} className="text-green-500" /> מיקום 1–3</span>
-          <span className="flex items-center gap-1"><Minus size={12} className="text-amber-400" /> מיקום 4–10</span>
-          <span className="flex items-center gap-1"><TrendingDown size={12} className="text-red-400" /> מיקום 11+</span>
-        </div>
-      )}
+      </section>
     </div>
   )
 }

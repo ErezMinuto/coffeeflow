@@ -1,30 +1,37 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Visual progress bar.
+ * Visual progress bar: the system meter (6px sunken track, olive fill).
  * progress: 0-100
+ * `color` is still accepted so existing callers keep working, but every
+ * meter is olive now (one accent; see /.interface-design/system.md).
+ * The fill moves with transform (scaleX), not width, so it stays on the
+ * compositor while the progress ticks every 200ms.
  */
-export function ProgressBar({ progress = 0, label, color = '#4A7C59', height = 8 }) {
+// eslint-disable-next-line no-unused-vars
+export function ProgressBar({ progress = 0, label, color, height = 6 }) {
+  const pct = Math.min(100, Math.max(0, progress));
   return (
-    <div style={{ width: '100%' }}>
+    <div className="w-full">
       {label && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: '0.85rem', color: '#555' }}>{label}</span>
-          <span style={{ fontSize: '0.8rem', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
-            {Math.round(progress)}%
-          </span>
+        <div className="flex items-baseline justify-between gap-3 mb-1.5">
+          <span className="text-[13px] text-surface-700">{label}</span>
+          <span className="text-[12.5px] text-surface-500 num">{Math.round(progress)}%</span>
         </div>
       )}
-      <div style={{
-        background: '#E8E8E0', borderRadius: 99, height, overflow: 'hidden',
-      }}>
-        <div style={{
-          height: '100%',
-          width: `${Math.min(100, Math.max(0, progress))}%`,
-          background: `linear-gradient(90deg, ${color}, ${color}bb)`,
-          borderRadius: 99,
-          transition: 'width 0.35s ease',
-        }} />
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+        aria-label={label || undefined}
+        className="w-full bg-surface-100 rounded-full overflow-hidden"
+        style={{ height }}
+      >
+        <div
+          className="h-full w-full bg-brand-600 rounded-full origin-right motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-linear"
+          style={{ transform: `scaleX(${pct / 100})` }}
+        />
       </div>
     </div>
   );
