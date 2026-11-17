@@ -147,6 +147,16 @@ export const AppProvider = ({ children }) => {
     costSettings:                 costSettings                       || {}
   };
 
+  // True until the core tables have finished their first load, then latched.
+  // useSupabaseData sets loading=true on every refresh (refreshAll runs on each
+  // route change), so the raw flags would flicker; empty tables count as loaded.
+  const [coreLoaded, setCoreLoaded] = useState(false);
+  const coreIdle = !originsDb.loading && !productsDb.loading && !roastsDb.loading;
+  useEffect(() => {
+    if (coreIdle && !coreLoaded) setCoreLoaded(true);
+  }, [coreIdle, coreLoaded]);
+  const dataLoading = !coreLoaded;
+
   // Toasts are rendered by Sonner's <Toaster /> in App.jsx. Callers still pass
   // the old emoji prefixes (✅ ❌ ⚠️); Sonner draws its own icon, so strip them.
   // `options` goes straight to Sonner, e.g. { duration: Infinity } for an error
@@ -196,6 +206,7 @@ export const AppProvider = ({ children }) => {
       user,
       data,
       isAdmin, canSchedule, userRole, roleLoading,
+      dataLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, roastChecklistTemplatesDb,

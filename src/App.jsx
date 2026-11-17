@@ -63,13 +63,14 @@ function AppContent() {
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <>
+    <div className="app-shell">
       <Navigation />
 
+      <main className="app-main">
       <Routes>
         {roleLoading ? null : isBookkeeper ? (
           <Route path="*" element={
-            <div className="container" style={{ direction: 'rtl' }}>
+            <div className="container">
               <Routes>
                 <Route path="/invoices" element={<SupplierInvoices />} />
                 <Route path="*"         element={<Navigate to="/invoices" replace />} />
@@ -80,7 +81,7 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         {/* All other pages use the standard container */}
         <Route path="*" element={
-          <div className="container" style={{ direction: 'rtl' }}>
+          <div className="container">
             <Routes>
               <Route path="/dashboard"  element={<Dashboard />} />
               <Route path="/origins"    element={<Origins />} />
@@ -102,9 +103,10 @@ function AppContent() {
         } />
         </>)}
       </Routes>
+      </main>
 
       <Toaster dir="rtl" position="top-right" richColors closeButton duration={4000} />
-    </>
+    </div>
   );
 }
 
@@ -115,33 +117,19 @@ export default function App() {
 
   if (!isLoaded) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', direction: 'rtl' }}>
-        <div>טוען...</div>
+      <div className="auth-screen">
+        <div className="text-muted">טוען...</div>
       </div>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        height: '100vh', flexDirection: 'column', gap: '2rem',
-        background: 'linear-gradient(160deg, #3D4A2E 0%, #556B3A 50%, #6A7D45 100%)',
-      }}>
-        <div style={{
-          background: 'white', padding: '2.5rem 2rem', borderRadius: '20px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.35)', textAlign: 'center',
-          direction: 'rtl', maxWidth: '420px', width: '90%',
-        }}>
-          <img
-            src="/New_logo.pdf.png"
-            alt="Minuto Café Roastery"
-            style={{ height: '120px', width: 'auto', objectFit: 'contain', marginBottom: '0.5rem' }}
-          />
-          <p style={{ marginBottom: '1.75rem', color: '#8CA870', fontSize: '0.9rem', fontWeight: 500 }}>
-            מערכת ניהול פנימית
-          </p>
-          <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl' } } }} />
+      <div className="auth-screen">
+        <div className="auth-card">
+          <img src="/New_logo.pdf.png" alt="Minuto Café Roastery" className="auth-logo" />
+          <p className="auth-sub">מערכת ניהול פנימית</p>
+          <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl', boxShadow: 'none', border: '1px solid #E6E3DB' } } }} />
         </div>
       </div>
     );
