@@ -1,0 +1,155 @@
+/* Products (מוצרים): page-scoped styles. Tokens and base classes live in App.css. */
+
+/* ── Product cards ──────────────────────────────────────────────────────── */
+/* A card reads top-down: what it is, what goes in it, then the two numbers
+   that get checked every day (bags on the shelf, cost per bag). */
+.products-page .prod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.products-page .prod-card { display: flex; flex-direction: column; }
+
+.products-page .prod-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+.products-page .prod-title { min-width: 0; }
+.products-page .prod-head h3 { margin: 0; line-height: 1.35; overflow-wrap: anywhere; letter-spacing: -0.01em; }
+.products-page .prod-desc { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.products-page .prod-head .tag { flex-shrink: 0; }
+
+.products-page .prod-label { font-size: 13px; color: var(--muted); }
+
+/* Recipe: ingredient name on one side, share on the other. Space, not lines. */
+.products-page .prod-recipe-block { padding: 16px 20px 16px; }
+.products-page .prod-recipe { list-style: none; margin: 4px 0 0; padding: 0; }
+.products-page .prod-recipe li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+  color: var(--ink-2);
+}
+.products-page .prod-recipe-name { min-width: 0; overflow-wrap: anywhere; }
+.products-page .prod-recipe-pct { color: var(--ink); font-weight: 500; flex-shrink: 0; }
+
+/* The two daily numbers, side by side, split by one hairline. */
+.products-page .prod-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+}
+.products-page .prod-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 20px 8px;
+  min-width: 0;
+}
+.products-page .prod-stat + .prod-stat { border-inline-start: 1px solid var(--line); }
+.products-page .prod-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--ink);
+}
+/* Text-style actions under each number: aligned with the label, no fill. */
+.products-page .btn.prod-stat-link { padding-inline: 0; color: var(--ink-2); }
+@media (hover: hover) and (pointer: fine) {
+  .products-page .btn.prod-stat-link:hover:not(:disabled) { background: transparent; color: var(--ink); }
+}
+.products-page .prod-stat-link svg { width: 15px; height: 15px; color: var(--muted); }
+
+/* Editing the bag count takes the whole row so the field has room. */
+.products-page .prod-stat-editing { grid-column: 1 / -1; padding-bottom: 12px; }
+.products-page .prod-stat-editing + .prod-stat { border-inline-start: 0; border-top: 1px solid var(--line); grid-column: 1 / -1; }
+.products-page .prod-stock-edit { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.products-page .prod-stock-edit input { width: 96px; }
+
+.products-page .prod-stock-notes { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 20px 12px; }
+
+.products-page .prod-breakdown {
+  margin: 0 20px 14px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.products-page .prod-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+.products-page .prod-breakdown dt { color: var(--ink-2); }
+.products-page .prod-breakdown dd { margin: 0; color: var(--ink); }
+.products-page .prod-breakdown .prod-breakdown-total {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-weight: 600;
+}
+.products-page .prod-breakdown-total dt { color: var(--ink); }
+
+.products-page .prod-actions {
+  padding: 4px 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Add / edit form ────────────────────────────────────────────────────── */
+.products-page .prod-form { max-width: 720px; margin-bottom: 20px; }
+.products-page .prod-form h2 { margin: 0 0 18px; font-size: 15px; }
+
+.products-page .prod-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.products-page .prod-recipe-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(80px, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+}
+.products-page .prod-recipe-row select { min-width: 0; }
+.products-page .prod-recipe-spacer { width: 40px; }
+
+.products-page .prod-recipe-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+.products-page .prod-recipe-total { font-size: 13px; font-weight: 500; }
+.products-page .prod-recipe-total.ok  { color: var(--ok); }
+.products-page .prod-recipe-total.off { color: var(--danger); }
+
+.products-page .prod-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .products-page .prod-grid { grid-template-columns: 1fr; }
+  .products-page .prod-form-row { grid-template-columns: 1fr; }
+  .products-page .prod-form-actions .btn { flex: 1; }
+  .products-page .prod-actions .btn-icon { min-width: 44px; min-height: 44px; }
+}
