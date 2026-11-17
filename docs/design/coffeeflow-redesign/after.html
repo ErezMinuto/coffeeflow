@@ -1,0 +1,206 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoffeeFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg: #F7F6F2;          /* warm paper */
+    --surface: #FFFFFF;
+    --sunken: #F1EFE9;
+    --line: #E6E3DB;
+    --line-strong: #D6D2C7;
+    --ink: #1C211A;
+    --ink-2: #4A5045;
+    --muted: #7A7F73;
+    --brand: #3D4A2E;       /* Minuto olive, the only accent */
+    --brand-ink: #FFFFFF;
+    --brand-soft: #ECEFE4;
+    --danger: #B42318; --danger-soft: #FDF1EF;
+    --warn: #A15C07;   --warn-soft: #FCF5E8;
+    --ok: #3F6B2A;
+    --radius: 10px;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', system-ui, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.lucide { width: 18px; height: 18px; stroke-width: 1.6; flex-shrink: 0; }
+
+  .shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* Sidebar (right side in RTL) */
+  .side { background: var(--surface); border-inline-end: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
+  .brand img { height: 52px; margin: -6px 0; }
+  .brand span { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+  .group-label { font-size: 12px; color: var(--muted); padding: 0 10px 6px; font-weight: 500; }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--ink-2); text-decoration: none; font-weight: 500; transition: background-color 150ms ease, color 150ms ease; }
+  .nav a:hover { background: var(--sunken); color: var(--ink); }
+  .nav a.active { background: var(--brand-soft); color: var(--brand); }
+  .nav a .count { margin-inline-start: auto; font-size: 12px; background: var(--danger-soft); color: var(--danger); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .side .user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid var(--line); }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 13px; }
+
+  /* Main */
+  main { padding: 28px 40px 48px; max-width: 1180px; width: 100%; }
+  .topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -.015em; }
+  .sub { color: var(--muted); margin-top: 2px; }
+  .actions { display: flex; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 8px; font: inherit; font-weight: 500; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; transition: background-color 150ms ease, transform 160ms var(--ease); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  @media (hover: hover) and (pointer: fine) { .btn:hover { background: var(--sunken); } .btn.primary:hover { background: #2F3A23; } }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 24px; }
+  .kpi { padding: 18px 20px; }
+  .kpi + .kpi { border-inline-start: 1px solid var(--line); }
+  .kpi .label { color: var(--muted); font-size: 13px; }
+  .kpi .value { font-size: 28px; font-weight: 500; letter-spacing: -.02em; margin-top: 4px; }
+  .kpi .value small { font-size: 14px; color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
+  .kpi .delta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .kpi .delta b { color: var(--ok); font-weight: 600; }
+
+  .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .card-head h2 { font-size: 15px; font-weight: 600; }
+  .card-head a { color: var(--brand); font-weight: 500; text-decoration: none; font-size: 13px; }
+
+  /* Attention list */
+  .item { display: flex; align-items: center; gap: 12px; padding: 12px 18px; }
+  .item + .item { border-top: 1px solid var(--line); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.danger { background: var(--danger); } .dot.warn { background: #D9921C; }
+  .item .what { font-weight: 500; }
+  .item .why { color: var(--muted); font-size: 13px; }
+  .item .go { margin-inline-start: auto; color: var(--ink-2); font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 7px; }
+  .item .go:hover { background: var(--sunken); }
+  .tag { font-size: 12px; font-weight: 600; border-radius: 6px; padding: 1px 7px; }
+  .tag.danger { color: var(--danger); background: var(--danger-soft); }
+  .tag.warn { color: var(--warn); background: var(--warn-soft); }
+
+  /* Bag stock meter list */
+  .stock { padding: 6px 18px 14px; }
+  .srow { display: grid; grid-template-columns: 1fr 120px 44px; align-items: center; gap: 12px; padding: 9px 0; }
+  .srow + .srow { border-top: 1px solid var(--line); }
+  .srow .name { font-weight: 500; } .srow .size { color: var(--muted); font-size: 12.5px; }
+  .bar { height: 6px; background: var(--sunken); border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+  .bar i.low { background: #D9921C; } .bar i.out { background: var(--danger); }
+  .srow .n { text-align: left; font-weight: 500; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: right; font-weight: 500; color: var(--muted); font-size: 12.5px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: #FBFAF7; }
+  td { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  td.l, th.l { text-align: left; }
+  tbody tr { transition: background-color 120ms ease; }
+  tbody tr:hover { background: #FBFAF7; }
+
+  .mobile-top { display: none; }
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .mobile-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+    .mobile-top img { height: 40px; margin: -6px 0; }
+    main { padding: 20px 16px 40px; }
+    .topbar { flex-direction: column; align-items: stretch; }
+    .actions .btn { flex: 1; justify-content: center; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .kpi:nth-child(3) { border-inline-start: 0; }
+    .kpi:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .grid2 { grid-template-columns: 1fr; }
+    .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="mobile-top"><img src="../../../public/New_logo.pdf.png" alt="Minuto"><button class="btn" aria-label="תפריט"><i data-lucide="menu"></i></button></div>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><img src="../../../public/New_logo.pdf.png" alt="Minuto"></div>
+    <nav class="nav">
+      <a class="active" href="#"><i data-lucide="layout-grid"></i>סקירה</a>
+    </nav>
+    <nav class="nav">
+      <div class="group-label">ייצור</div>
+      <a href="#"><i data-lucide="sprout"></i>זנים</a>
+      <a href="#"><i data-lucide="flame"></i>קלייה</a>
+      <a href="#"><i data-lucide="coffee"></i>מוצרים</a>
+      <a href="#"><i data-lucide="package"></i>אריזה<span class="count num">2</span></a>
+    </nav>
+    <nav class="nav">
+      <div class="group-label">תפעול</div>
+      <a href="#"><i data-lucide="list-checks"></i>משימות</a>
+      <a href="#"><i data-lucide="calendar-days"></i>סידור עבודה</a>
+      <a href="#"><i data-lucide="clock"></i>נוכחות</a>
+      <a href="#"><i data-lucide="car"></i>יומן רכב</a>
+      <a href="#"><i data-lucide="receipt"></i>חשבוניות ספקים</a>
+    </nav>
+    <nav class="nav"><a href="#"><i data-lucide="settings"></i>הגדרות</a></nav>
+    <div class="user"><div class="avatar">א</div><div><div style="font-weight:500">ארז</div><div class="sub" style="font-size:12px;margin:0">מנהל</div></div></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div><h1>סקירה</h1><div class="sub">יום שלישי, 17 בנובמבר</div></div>
+      <div class="actions">
+        <button class="btn"><i data-lucide="package-plus"></i>רישום אריזה</button>
+        <button class="btn primary"><i data-lucide="flame"></i>רישום קלייה</button>
+      </div>
+    </div>
+
+    <section class="kpis">
+      <div class="kpi"><div class="label">מלאי ירוק</div><div class="value num">412.5<small>ק״ג</small></div><div class="delta">14 זנים</div></div>
+      <div class="kpi"><div class="label">ערך מלאי</div><div class="value num">₪18,940</div><div class="delta">לפי עלות לק״ג</div></div>
+      <div class="kpi"><div class="label">קליות החודש</div><div class="value num">31</div><div class="delta"><b>+4</b> לעומת אוקטובר</div></div>
+      <div class="kpi"><div class="label">איבוד משקל ממוצע</div><div class="value num">15.8<small>%</small></div><div class="delta">ב־30 הקליות האחרונות</div></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <div class="card-head"><h2>דורש טיפול</h2><span class="sub num" style="margin:0">5 פריטים</span></div>
+        <div class="item"><span class="dot danger"></span><div><div class="what">אריסטו 330g</div><div class="why">אין שקיות ארוזות לחנות</div></div><a class="go" href="#">לאריזה<i data-lucide="chevron-left"></i></a></div>
+        <div class="item"><span class="dot danger"></span><div><div class="what">אתיופיה יירגשף 330g</div><div class="why">אין שקיות ארוזות לחנות</div></div><a class="go" href="#">לאריזה<i data-lucide="chevron-left"></i></a></div>
+        <div class="item"><span class="dot warn"></span><div><div class="what">Dark Chocolate 330g</div><div class="why num">4 שקיות, מינימום 10</div></div><a class="go" href="#">לאריזה<i data-lucide="chevron-left"></i></a></div>
+        <div class="item"><span class="dot warn"></span><div><div class="what">קולומביה הואילה</div><div class="why num">6 ק״ג ירוק, מינימום 15</div></div><a class="go" href="#">להזמנה<i data-lucide="chevron-left"></i></a></div>
+        <div class="item"><span class="dot warn"></span><div><div class="what">גואטמלה אנטיגואה</div><div class="why num">8 ק״ג ירוק, מינימום 15</div></div><a class="go" href="#">להזמנה<i data-lucide="chevron-left"></i></a></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>שקיות לחנות</h2><a href="#">כל המוצרים</a></div>
+        <div class="stock">
+          <div class="srow"><div><span class="name">פרסטיז'</span> <span class="size">330g</span></div><div class="bar"><i style="width:82%"></i></div><div class="n num">41</div></div>
+          <div class="srow"><div><span class="name">אתיופיה דיי בנסה</span> <span class="size">330g</span></div><div class="bar"><i style="width:56%"></i></div><div class="n num">28</div></div>
+          <div class="srow"><div><span class="name">ברזיל סרטאו</span> <span class="size">330g</span></div><div class="bar"><i class="low" style="width:18%"></i></div><div class="n num">9</div></div>
+          <div class="srow"><div><span class="name">Dark Chocolate</span> <span class="size">330g</span></div><div class="bar"><i class="low" style="width:8%"></i></div><div class="n num">4</div></div>
+          <div class="srow"><div><span class="name">אריסטו</span> <span class="size">330g</span></div><div class="bar"><i class="out" style="width:2%"></i></div><div class="n num">0</div></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>קליות אחרונות</h2><a href="#">כל הקליות</a></div>
+      <table>
+        <thead><tr><th>תאריך</th><th>זן</th><th class="hide-sm">מפעיל</th><th class="l">ירוק</th><th class="l">קלוי</th><th class="l hide-sm">איבוד</th></tr></thead>
+        <tbody>
+          <tr><td class="num">17.11</td><td>אתיופיה דיי בנסה</td><td class="hide-sm">שגיא</td><td class="l num">12.0 ק״ג</td><td class="l num">10.1 ק״ג</td><td class="l num hide-sm">15.8%</td></tr>
+          <tr><td class="num">17.11</td><td>ברזיל סרטאו</td><td class="hide-sm">שגיא</td><td class="l num">15.0 ק״ג</td><td class="l num">12.8 ק״ג</td><td class="l num hide-sm">14.7%</td></tr>
+          <tr><td class="num">16.11</td><td>קולומביה הואילה</td><td class="hide-sm">ארז</td><td class="l num">10.0 ק״ג</td><td class="l num">8.4 ק״ג</td><td class="l num hide-sm">16.0%</td></tr>
+          <tr><td class="num">16.11</td><td>תערובת אריסטו</td><td class="hide-sm">שגיא</td><td class="l num">20.0 ק״ג</td><td class="l num">16.9 ק״ג</td><td class="l num hide-sm">15.5%</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,125 +1,51 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
+import {
+  LayoutGrid, Sprout, Flame, Coffee, Package, ListChecks, CalendarDays,
+  Clock, Car, Receipt, Settings, ClipboardPen, Menu, X,
+} from 'lucide-react';
 import { useApp } from '../../lib/context';
 
-const allNavItems = [
-  { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-  {
-    label: 'Production', icon: '☕', children: [
-      { path: '/origins',   icon: '🌱', label: 'Origins'   },
-      { path: '/roasting',  icon: '🔥', label: 'Roasting'  },
-      { path: '/products',  icon: '📦', label: 'Products'  },
-      { path: '/packaging', icon: '🎁', label: 'Packaging' },
-    ],
-  },
-  {
-    label: 'Operations', icon: '🏪', children: [
-      { path: '/tasks',      icon: '📋', label: 'Tasks',      adminOnly:    true },
-      { path: '/schedule',   icon: '📅', label: 'Schedule',   scheduleOnly: true },
-      { path: '/attendance', icon: '⏱️', label: 'Attendance', scheduleOnly: true },
-      { path: '/vehicle-log',  icon: '🚗', label: 'יומן רכב',       adminOnly: true },
-      { path: '/invoices',   icon: '🧾', label: 'חשבוניות ספקים' },
-    ],
-  },
-  { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
+// Sidebar structure. Visibility flags are unchanged from the old top navbar:
+//   scheduleOnly → admins + schedule_manager   |   adminOnly → admins only   |   else everyone
+const allNavGroups = [
+  { items: [
+    { path: '/dashboard', icon: LayoutGrid, label: 'סקירה' },
+  ] },
+  { label: 'ייצור', items: [
+    { path: '/origins',   icon: Sprout,  label: 'זנים'   },
+    { path: '/roasting',  icon: Flame,   label: 'קלייה'  },
+    { path: '/products',  icon: Coffee,  label: 'מוצרים' },
+    { path: '/packaging', icon: Package, label: 'אריזה'  },
+  ] },
+  { label: 'תפעול', items: [
+    { path: '/tasks',       icon: ListChecks,   label: 'משימות',         adminOnly:    true },
+    { path: '/schedule',    icon: CalendarDays, label: 'סידור עבודה',    scheduleOnly: true },
+    { path: '/attendance',  icon: Clock,        label: 'נוכחות',         scheduleOnly: true },
+    { path: '/vehicle-log', icon: Car,          label: 'יומן רכב',       adminOnly:    true },
+    { path: '/invoices',    icon: Receipt,      label: 'חשבוניות ספקים' },
+  ] },
+  { items: [
+    { path: '/settings', icon: Settings, label: 'הגדרות', adminOnly: true },
+  ] },
 ];
 
-function NavDropdown({ item, badges }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const location = useLocation();
+const ROLE_LABELS = {
+  admin:            'הרשאת ניהול',
+  schedule_manager: 'ניהול סידור עבודה',
+  employee:         'צוות',
+  bookkeeper:       'הנהלת חשבונות',
+};
 
-  const isChildActive = item.children.some(c => location.pathname === c.path);
-
-  // Close on route change
-  useEffect(() => { setOpen(false); }, [location.pathname]);
-
-  // Close on click outside
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
+function NavItem({ item, badge }) {
+  const Icon = item.icon;
   return (
-    <div ref={ref} className="nav-dropdown" style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(!open)}
-        className={`nav-item${isChildActive ? ' active' : ''}`}
-        style={{ border: 'none', cursor: 'pointer' }}
-      >
-        <span className="nav-icon">{item.icon}</span>
-        <span className="nav-label">{item.label}</span>
-        <span style={{ fontSize: '0.6rem', marginRight: '2px', opacity: 0.7 }}>▾</span>
-      </button>
-
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          right: '50%',
-          transform: 'translateX(50%)',
-          marginTop: '6px',
-          background: 'white',
-          borderRadius: '10px',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
-          padding: '6px',
-          minWidth: '160px',
-          zIndex: 200,
-        }}>
-          {item.children.map(child => (
-            <NavLink
-              key={child.path}
-              to={child.path}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                color: isActive ? '#3D4A2E' : '#555',
-                background: isActive ? '#EBEFE2' : 'transparent',
-                transition: 'background 0.15s',
-              })}
-              onMouseEnter={e => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.background = '#F4F7EE';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
-              <span style={{ fontSize: '1.05rem' }}>{child.icon}</span>
-              <span>{child.label}</span>
-              {badges[child.path] && (
-                <span style={{
-                  background: badges[child.path].color,
-                  color: 'white',
-                  borderRadius: '10px',
-                  fontSize: '0.7rem',
-                  fontWeight: '700',
-                  padding: '1px 6px',
-                  marginRight: 'auto',
-                  lineHeight: '1.4',
-                }}>
-                  {badges[child.path].count}
-                </span>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
+    <NavLink to={item.path} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+      <Icon size={18} aria-hidden="true" />
+      <span>{item.label}</span>
+      {badge && <span className={`nav-count ${badge.tone}`}>{badge.count}</span>}
+    </NavLink>
   );
 }
 
@@ -128,9 +54,11 @@ export default function Navigation() {
   const isBookkeeper = userRole === 'bookkeeper';
   const { user } = useUser();
   const isSagie = user?.primaryEmailAddress?.emailAddress === 'sagieelbaz@gmail.com';
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const menuButtonRef = useRef(null);
+  const closeButtonRef = useRef(null);
 
-  // Visibility predicate for a nav item / child.
-  //   scheduleOnly → admins + schedule_manager   |   adminOnly → admins only   |   else everyone
   const canSee = item =>
     item.scheduleOnly ? canSchedule
     : item.adminOnly  ? isAdmin
@@ -140,80 +68,81 @@ export default function Navigation() {
   const pendingEmployees = (data.employees || []).filter(e => e.user_id === 'pending').length;
 
   const badges = {};
-  if (pendingTasks > 0) badges['/tasks'] = { count: pendingTasks, color: '#DC2626' };
-  if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, color: '#F59E0B' };
+  if (pendingTasks > 0) badges['/tasks'] = { count: pendingTasks, tone: 'danger' };
+  if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, tone: 'warn' };
 
-  // Filter nav items based on role. For dropdown groups, filter the children
-  // and drop the group entirely if nothing inside is visible.
-  const navItems = isBookkeeper ? [{ path: '/invoices', icon: '🧾', label: 'חשבוניות ספקים' }] : [
-    ...allNavItems
-      .map(item => {
-        if (!item.children) return canSee(item) ? item : null;
-        const children = item.children.filter(canSee);
-        return children.length ? { ...item, children } : null;
-      })
-      .filter(Boolean),
-    ...(isSagie ? [{ path: '/checklist-editor', icon: '📋', label: 'Checklist Editor' }] : []),
-  ];
+  // Filter groups by role and drop any group left with nothing visible.
+  const groups = isBookkeeper
+    ? [{ items: [{ path: '/invoices', icon: Receipt, label: 'חשבוניות ספקים' }] }]
+    : [
+        ...allNavGroups
+          .map(g => ({ ...g, items: g.items.filter(canSee) }))
+          .filter(g => g.items.length),
+        ...(isSagie ? [{ items: [{ path: '/checklist-editor', icon: ClipboardPen, label: 'עריכת צ׳קליסט' }] }] : []),
+      ];
+
+  // The phone drawer closes on navigation and on Escape.
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    closeButtonRef.current?.focus();
+    const onKey = e => {
+      if (e.key === 'Escape') { setOpen(false); menuButtonRef.current?.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const displayName = user?.firstName || user?.fullName || user?.primaryEmailAddress?.emailAddress || '';
+  const roleLabel = ROLE_LABELS[userRole] || '';
 
   return (
-    <nav className="navbar">
-      {/* Brand / Logo */}
-      <div className="nav-brand">
-        <div style={{
-          background: 'white',
-          borderRadius: '10px',
-          padding: '3px 8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-        }}>
-          <img
-            src="/New_logo.pdf.png"
-            alt="Minuto Café Roastery"
-            className="nav-brand-logo"
-            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
-          />
+    <>
+      <header className="mobile-top">
+        <img src="/New_logo.pdf.png" alt="Minuto" />
+        <div className="mobile-top-end">
+          <UserButton afterSignOutUrl="/" />
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="btn-icon"
+            onClick={() => setOpen(true)}
+            aria-label="פתיחת תפריט"
+            aria-expanded={open}
+            aria-controls="app-sidebar"
+          >
+            <Menu size={20} aria-hidden="true" />
+          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Nav items */}
-      <div className="nav-menu">
-        {navItems.map(item =>
-          item.children ? (
-            <NavDropdown key={item.label} item={item} badges={badges} />
-          ) : (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-              {badges[item.path] && (
-                <span style={{
-                  background: badges[item.path].color,
-                  color: 'white',
-                  borderRadius: '10px',
-                  fontSize: '0.7rem',
-                  fontWeight: '700',
-                  padding: '1px 6px',
-                  marginRight: '4px',
-                  lineHeight: '1.4',
-                }}>
-                  {badges[item.path].count}
-                </span>
-              )}
-            </NavLink>
-          )
-        )}
-      </div>
+      <div className={`side-scrim${open ? ' open' : ''}`} onClick={() => setOpen(false)} aria-hidden="true" />
 
-      {/* User button */}
-      <div style={{ paddingLeft: '0.5rem' }}>
-        <UserButton afterSignOutUrl="/" />
-      </div>
-    </nav>
+      <aside id="app-sidebar" className={`side${open ? ' open' : ''}`} aria-label="ניווט ראשי">
+        <div className="side-brand">
+          <img src="/New_logo.pdf.png" alt="Minuto Café Roastery" />
+          <button ref={closeButtonRef} type="button" className="btn-icon side-close" onClick={() => setOpen(false)} aria-label="סגירת תפריט">
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+
+        {groups.map((group, i) => (
+          <nav className="nav-group" key={group.label || i} aria-label={group.label}>
+            {group.label && <div className="nav-group-label">{group.label}</div>}
+            {group.items.map(item => (
+              <NavItem key={item.path} item={item} badge={badges[item.path]} />
+            ))}
+          </nav>
+        ))}
+
+        <div className="side-user">
+          <UserButton afterSignOutUrl="/" />
+          <div>
+            <div className="side-user-name">{displayName}</div>
+            {roleLabel && <div className="side-user-role">{roleLabel}</div>}
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
