@@ -4,85 +4,108 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>הוסרת מרשימת התפוצה — Minuto</title>
+  <meta name="theme-color" content="#F7F6F2">
+  <title>הוסרת מרשימת התפוצה · מינוטו</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     html, body { margin: 0; padding: 0; }
     body {
-      background: #F5F0EB;
+      background: #F7F6F2;
       font-family: 'Heebo', 'Segoe UI', Arial, Helvetica, sans-serif;
       -webkit-font-smoothing: antialiased;
       direction: rtl;
       text-align: center;
-      padding: 60px 20px;
-      color: #2C3522;
-    }
-    .card {
-      max-width: 520px;
-      margin: 0 auto;
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 48px 36px;
-      box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
-    }
-    .accent {
-      height: 4px;
-      background: linear-gradient(90deg, #3D4A2E, #7C9A5E, #3D4A2E);
-      border-radius: 4px 4px 0 0;
-      margin: 0 auto 0;
-      max-width: 520px;
-    }
-    h1 { font-size: 26px; font-weight: 800; margin: 0 0 14px; color: #2C3522; }
-    p  { font-size: 16px; line-height: 1.7; color: #4A4A42; margin: 0 0 12px; }
-    .email {
-      display: inline-block;
-      background: #F0FDF4;
-      border: 1px solid #BBF7D0;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-weight: 600;
-      color: #3D4A2E;
-      direction: ltr;
-      unicode-bidi: embed;
-      margin: 6px 0 18px;
-    }
-    .warn {
-      margin-top: 16px;
-      padding: 12px 16px;
-      background: #FEF3C7;
-      border: 1px solid #FDE68A;
-      border-radius: 8px;
-      color: #92400E;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    .footer {
-      margin-top: 28px;
-      font-size: 13px;
-      color: #888;
+      padding: 48px 16px;
+      color: #1C211A;
     }
     .logo {
       display: block;
-      max-width: 130px;
-      height: auto;
-      margin: 0 auto 18px;
+      height: 96px;
+      width: auto;
+      margin: 0 auto 20px;
+    }
+    .card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid #E6E3DB;
+      border-radius: 10px;
+      padding: 36px 28px 28px;
+    }
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 16px;
+      border-radius: 999px;
+      background: #ECEFE4;
+      color: #3D4A2E;
+    }
+    h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 12px; color: #1C211A; }
+    p  { font-size: 15px; line-height: 1.7; color: #4A5045; margin: 0 0 8px; }
+    .email {
+      display: inline-block;
+      max-width: 100%;
+      box-sizing: border-box;
+      background: #FBFAF7;
+      border: 1px solid #E6E3DB;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-weight: 500;
+      font-size: 15px;
+      color: #1C211A;
+      direction: ltr;
+      unicode-bidi: isolate;
+      overflow-wrap: anywhere;
+      margin: 4px 0 12px;
+    }
+    .email:empty { display: none; }
+    .warn {
+      margin-top: 20px;
+      padding: 12px 14px;
+      background: #FCF5E8;
+      border: 1px solid rgba(161, 92, 7, 0.15);
+      border-radius: 8px;
+      color: #A15C07;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: right;
+    }
+    .footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #E6E3DB;
+      font-size: 13px;
+      color: #7A7F73;
     }
     a { color: #3D4A2E; }
+    @media (max-width: 480px) {
+      body { padding: 32px 16px; }
+      .logo { height: 80px; }
+      .card { padding: 28px 20px 22px; }
+      h1 { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
-  <div class="accent"></div>
-  <div class="card">
-    <img class="logo" src="https://minuto.co.il/content/uploads/2025/03/Frame-14.png" alt="Minuto">
+  <img class="logo" src="/logo.png" alt="Minuto">
+  <main class="card">
+    <span class="mark" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </span>
     <h1>הוסרת בהצלחה</h1>
     <p>הכתובת</p>
-    <div class="email" id="email-line">—</div>
+    <div class="email" id="email-line"></div>
     <p>הוסרה מרשימת התפוצה של מינוטו.</p>
     <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
-    <div class="warn" id="warn-box" style="display:none;">
-      ⚠️ הבקשה התקבלה אך עדכון הרשימה החיצונית נכשל — צוות מינוטו יטפל ידנית.
+    <div class="warn" id="warn-box" role="status" style="display:none;">
+      הבקשה התקבלה אך עדכון הרשימה החיצונית נכשל. צוות מינוטו יטפל ידנית.
     </div>
-    <div class="footer">תודה, צוות מינוטו ☕</div>
-  </div>
+    <div class="footer">תודה, צוות מינוטו</div>
+  </main>
   <script>
     (function () {
       var params = new URLSearchParams(location.search);
