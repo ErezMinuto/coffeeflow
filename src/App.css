@@ -126,8 +126,8 @@ svg.lucide { flex-shrink: 0; stroke-width: 1.7; }
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 36px;
-  padding: 7px 10px;
+  min-height: 40px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   color: var(--ink-2);
   font-weight: 500;
@@ -203,6 +203,7 @@ svg.lucide { flex-shrink: 0; stroke-width: 1.7; }
   line-height: 1.25;
   color: var(--ink);
   margin-bottom: 24px;
+  text-wrap: balance;
 }
 .page h2 {
   font-size: 17px;
@@ -292,8 +293,8 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0;
   font-size: 1rem;
   line-height: 1;
@@ -454,8 +455,9 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 36px;
   padding: 6px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 500;
