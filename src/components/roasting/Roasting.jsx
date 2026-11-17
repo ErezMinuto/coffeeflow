@@ -4,34 +4,28 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
+import {
+  Flame, Sprout, List, ClipboardCheck, Search, Pencil, Trash2, ArrowLeft, ArrowRight,
+  FileChartLine, X, Plus, Minus, CircleCheck, LoaderCircle,
+} from 'lucide-react';
 import RoastingList from './RoastingList';
+import { PageHeader, Kpi } from '../shared/ui';
 import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
 
-// ── Inline SVG icons (Lucide-style) ───────────────────────────────────────────
-const Icon = ({ d, size = 16, sw = 2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
-);
+// Line icons from lucide-react; stroke weight comes from the shared svg.lucide rule.
+const Icon = ({ d: Glyph, size = 16, className }) => <Glyph size={size} className={className} aria-hidden="true" />;
 const RI = {
-  fire:  <><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z" /></>,
-  leaf:  <><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6" /></>,
-  list:  <><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></>,
-  check: <><path d="M11 12H3" /><path d="m15 6-3 6 3 6" /><rect width="8" height="18" x="13" y="3" rx="1" /></>,
-  search:<><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
-  edit:  <><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
-  trash: <><path d="M3 6h18" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></>,
-  arrow: <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>,
-  alert: <><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></>,
-  chart: <><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>,
-  x:     <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  fire: Flame, leaf: Sprout, list: List, check: ClipboardCheck, search: Search, edit: Pencil,
+  trash: Trash2, arrow: ArrowLeft, back: ArrowRight, chart: FileChartLine, x: X,
+  plus: Plus, minus: Minus, ok: CircleCheck, loading: LoaderCircle,
 };
 
 export default function Roasting() {
   const {
     data, originsDb, roastsDb, roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
-    artisanProfilesDb, getOriginById, calculateRoastedWeight, showToast
+    artisanProfilesDb, getOriginById, calculateRoastedWeight, showToast, dataLoading
   } = useApp();
 
   // Form mode: 'origin' (simple) | 'profile' (blend / multi-level)
@@ -145,16 +139,16 @@ export default function Roasting() {
         // .context — the readable reason is in the body, not error.message.
         let msg = error.message;
         try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* keep msg */ }
-        showToast(`❌ ${msg}`, 'error');
+        showToast(`${msg}`, 'error');
         return;
       }
 
       await roastsDb.refresh();
       await artisanProfilesDb.refresh();
-      showToast(`✅ נטען מ-Artisan — הטענה ${temp(res?.charge_et)} · סיום ${temp(res?.drop_bt)}`);
+      showToast(`נטען מ-Artisan: הטענה ${temp(res?.charge_et)} · סיום ${temp(res?.drop_bt)}`);
     } catch (err) {
       console.error('Artisan upload failed:', err);
-      showToast('❌ טעינת קובץ Artisan נכשלה', 'error');
+      showToast('טעינת קובץ Artisan נכשלה', 'error');
     } finally {
       setUploadingFor(null);
     }
@@ -193,15 +187,15 @@ export default function Roasting() {
   const recordOriginRoast = async () => {
     if (savingRef.current) return; // ignore repeat taps while an insert is in flight
     if (!selectedOrigin || !greenWeight || !selectedOperator) {
-      showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
+      showToast('נא למלא את כל השדות', 'warning'); return;
     }
     const origin = getOriginById(parseInt(selectedOrigin));
-    if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+    if (!origin) { showToast('זן לא נמצא', 'warning'); return; }
 
     const weight = parseFloat(greenWeight);
-    if (weight <= 0 || weight > 20) { showToast('⚠️ משקל לא תקין (1-20 ק"ג)', 'warning'); return; }
+    if (weight <= 0 || weight > 20) { showToast('משקל לא תקין (1-20 ק"ג)', 'warning'); return; }
     if (origin.stock < weight) {
-      showToast(`⚠️ אין מספיק מלאי! נדרש: ${weight} ק"ג, קיים: ${origin.stock} ק"ג`, 'warning'); return;
+      showToast(`אין מספיק מלאי! נדרש: ${weight} ק"ג, קיים: ${origin.stock} ק"ג`, 'warning'); return;
     }
 
     const roastedWeight = parseFloat(calculateRoastedWeight(weight, origin.weight_loss));
@@ -222,11 +216,11 @@ export default function Roasting() {
       await roastsDb.refresh();
       await originsDb.refresh();
       setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
-      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי`);
+      showToast(`קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי`);
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${origin.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording roast:', err);
-      showToast(`❌ שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
+      showToast(`שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
     } finally {
       savingRef.current = false; setIsSaving(false);
     }
@@ -237,23 +231,23 @@ export default function Roasting() {
   const recordProfileRoast = async () => {
     if (savingRef.current) return; // ignore repeat taps while an insert is in flight
     if (!selectedProfileId || !greenWeight || !selectedOperator) {
-      showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
+      showToast('נא למלא את כל השדות', 'warning'); return;
     }
     const profile = getProfileById(selectedProfileId);
-    if (!profile) { showToast('⚠️ פרופיל לא נמצא', 'warning'); return; }
+    if (!profile) { showToast('פרופיל לא נמצא', 'warning'); return; }
 
     const weight = parseFloat(greenWeight);
-    if (weight <= 0 || weight > 20) { showToast('⚠️ משקל לא תקין (1-20 ק"ג)', 'warning'); return; }
+    if (weight <= 0 || weight > 20) { showToast('משקל לא תקין (1-20 ק"ג)', 'warning'); return; }
 
     const ings = getProfileIngredients(selectedProfileId);
-    if (ings.length === 0) { showToast('⚠️ לפרופיל זה אין רכיבים מוגדרים', 'warning'); return; }
+    if (ings.length === 0) { showToast('לפרופיל זה אין רכיבים מוגדרים', 'warning'); return; }
 
     for (const ing of ings) {
       const origin    = getOriginById(ing.origin_id);
       const greenUsed = weight * ing.percentage / 100;
-      if (!origin) { showToast(`⚠️ זן לא נמצא (ID ${ing.origin_id})`, 'warning'); return; }
+      if (!origin) { showToast(`זן לא נמצא (ID ${ing.origin_id})`, 'warning'); return; }
       if (origin.stock < greenUsed) {
-        showToast(`⚠️ אין מספיק מלאי ירוק ל${origin.name}! נדרש: ${greenUsed.toFixed(2)} ק"ג, קיים: ${origin.stock} ק"ג`, 'warning'); return;
+        showToast(`אין מספיק מלאי ירוק ל${origin.name}! נדרש: ${greenUsed.toFixed(2)} ק"ג, קיים: ${origin.stock} ק"ג`, 'warning'); return;
       }
     }
 
@@ -292,11 +286,11 @@ export default function Roasting() {
       await roastComponentsDb.refresh();
 
       setGreenWeight('15'); setSelectedProfileId(''); setSelectedOperator('');
-      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
+      showToast(`קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${profile.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording profile roast:', err);
-      showToast(`❌ שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
+      showToast(`שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
     } finally {
       savingRef.current = false; setIsSaving(false);
     }
@@ -325,10 +319,10 @@ export default function Roasting() {
   const saveEditRoast = async () => {
     if (savingRef.current) return; // ignore repeat taps while an update is in flight
     if (!editingRoast.greenWeight || !editingRoast.operator) {
-      showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
+      showToast('נא למלא את כל השדות', 'warning'); return;
     }
     const newWeight = parseFloat(editingRoast.greenWeight);
-    if (newWeight <= 0 || newWeight > 20) { showToast('⚠️ משקל לא תקין', 'warning'); return; }
+    if (newWeight <= 0 || newWeight > 20) { showToast('משקל לא תקין', 'warning'); return; }
 
     savingRef.current = true; setIsSaving(true);
     try {
@@ -353,7 +347,7 @@ export default function Roasting() {
           const origin    = getOriginById(ing.origin_id);
           const greenUsed = newWeight * ing.percentage / 100;
           if (!origin || origin.stock < greenUsed) {
-            showToast(`⚠️ אין מספיק מלאי ירוק ל${origin?.name || '?'}`, 'warning');
+            showToast(`אין מספיק מלאי ירוק ל${origin?.name || '?'}`, 'warning');
             // Rollback
             for (const comp of oldComps) {
               const o = getOriginById(comp.origin_id);
@@ -385,7 +379,7 @@ export default function Roasting() {
       } else {
         // Legacy simple origin edit
         const origin = getOriginById(editingRoast.originId);
-        if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+        if (!origin) { showToast('זן לא נמצא', 'warning'); return; }
         const newRoastedWeight = parseFloat(calculateRoastedWeight(newWeight, origin.weight_loss));
         const oldWeight        = parseFloat(editingRoast.oldGreenWeight);
         const oldRoastedWeight = parseFloat(editingRoast.oldRoastedWeight);
@@ -402,10 +396,10 @@ export default function Roasting() {
       await roastProfilesDb.refresh();
       await roastComponentsDb.refresh();
       setEditingRoast(null);
-      showToast('✅ קלייה עודכנה!');
+      showToast('קלייה עודכנה!');
     } catch (err) {
       console.error('Error updating roast:', err);
-      showToast('❌ שגיאה בעדכון קלייה', 'error');
+      showToast('שגיאה בעדכון קלייה', 'error');
     } finally {
       savingRef.current = false; setIsSaving(false);
     }
@@ -418,7 +412,7 @@ export default function Roasting() {
     const label = isProfile
       ? getProfileById(roast.roast_profile_id)?.name || 'פרופיל לא ידוע'
       : getOriginById(roast.origin_id)?.name || 'זן לא ידוע';
-    if (!window.confirm(`⚠️ האם למחוק קלייה זו?\n${roast.green_weight} ק"ג ${label}\nהמלאי יוחזר`)) return;
+    if (!window.confirm(`האם למחוק קלייה זו?\n${roast.green_weight} ק"ג ${label}\nהמלאי יוחזר`)) return;
 
     try {
       if (isProfile) {
@@ -439,10 +433,10 @@ export default function Roasting() {
       await originsDb.refresh();
       await roastProfilesDb.refresh();
       await roastComponentsDb.refresh();
-      showToast('✅ קלייה נמחקה והמלאי הוחזר!');
+      showToast('קלייה נמחקה והמלאי הוחזר!');
     } catch (err) {
       console.error('Error deleting roast:', err);
-      showToast('❌ שגיאה במחיקת קלייה', 'error');
+      showToast('שגיאה במחיקת קלייה', 'error');
     }
   };
 
@@ -452,8 +446,8 @@ export default function Roasting() {
   const toggleSelectAll       = () => setSelectedRoasts(selectedRoasts.length === displayedRoasts.length ? [] : displayedRoasts.map(r => r.id));
 
   const deleteSelectedRoasts = async () => {
-    if (selectedRoasts.length === 0) { showToast('⚠️ לא נבחרו קליות למחיקה', 'warning'); return; }
-    if (!window.confirm(`⚠️ האם למחוק ${selectedRoasts.length} קליות?\n\nהמלאי יוחזר אוטומטית.`)) return;
+    if (selectedRoasts.length === 0) { showToast('לא נבחרו קליות למחיקה', 'warning'); return; }
+    if (!window.confirm(`האם למחוק ${selectedRoasts.length} קליות?\n\nהמלאי יוחזר אוטומטית.`)) return;
     try {
       for (const roastId of selectedRoasts) {
         const roast = data.roasts.find(r => r.id === roastId);
@@ -478,10 +472,10 @@ export default function Roasting() {
       await roastComponentsDb.refresh();
       const count = selectedRoasts.length;
       setSelectedRoasts([]);
-      showToast(`✅ ${count} קליות נמחקו והמלאי הוחזר!`);
+      showToast(`${count} קליות נמחקו והמלאי הוחזר!`);
     } catch (err) {
       console.error('Error bulk deleting roasts:', err);
-      showToast('❌ שגיאה במחיקת קליות', 'error');
+      showToast('שגיאה במחיקת קליות', 'error');
     }
   };
 
@@ -585,11 +579,12 @@ export default function Roasting() {
 
   if (view === 'list') {
     return (
-      <div className="page">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1>📋 רשימת קלייה</h1>
-          <button onClick={() => setView('log')} className="btn-small">← חזור לרישום</button>
-        </div>
+      <div className="page roasting-page">
+        <PageHeader
+          title="רשימת קלייה"
+          subtitle="מה ירד מתחת למלאי הקריטי, ומה נקלה היום."
+          actions={<button onClick={() => setView('log')} className="btn"><Icon d={RI.back} /> חזרה לרישום</button>}
+        />
         <RoastingList
           data={data} originsDb={originsDb} roastsDb={roastsDb} showToast={showToast}
           roastProfilesDb={roastProfilesDb}
@@ -611,33 +606,33 @@ export default function Roasting() {
       {/* Header */}
       <div className="roasting-head">
         <div>
-          <h1><span className="rh-fire"><Icon d={RI.fire} size={26} /></span>רישום קלייה</h1>
-          <p>רישום קליות, מעקב מלאי קלוי ותכנון מה צריך לקלות — במקום אחד.</p>
+          <h1>רישום קלייה</h1>
+          <p>רישום קליות, מעקב מלאי קלוי ותכנון מה צריך לקלות, במקום אחד.</p>
         </div>
         <div className="roasting-head-actions">
           {data.roastChecklistTemplates?.length > 0 && (
-            <button onClick={startChecklist} className="rbtn forest"><Icon d={RI.check} /> צ'קליסט קלייה</button>
+            <button onClick={startChecklist} className="btn"><Icon d={RI.check} /> צ'קליסט קלייה</button>
           )}
           {/* One picker for the whole table; the row button sets its target. */}
           <input ref={fileInputRef} type="file" accept=".alog,.json"
-            style={{ display: 'none' }} onChange={uploadArtisanFile} />
-          <button onClick={() => setView('list')} className="rbtn ghost"><Icon d={RI.list} /> רשימת קלייה</button>
+            hidden onChange={uploadArtisanFile} />
+          <button onClick={() => setView('list')} className="btn"><Icon d={RI.list} /> רשימת קלייה</button>
         </div>
       </div>
 
       {/* KPI strip */}
-      <div className="roasting-kpis">
-        <div className="rkpi"><div className="lbl"><Icon d={RI.fire} size={14} /> קליות היום</div><div className="val">{roastStats.todayCount}</div><i className="spark" /></div>
-        <div className="rkpi"><div className="lbl">ק"ג ירוק היום</div><div className="val">{num(roastStats.greenToday, 0)} <small>ק"ג</small></div><i className="spark" /></div>
-        <div className="rkpi"><div className="lbl">ק"ג קלוי היום</div><div className="val">{num(roastStats.roastedToday, 0)} <small>ק"ג</small></div><i className="spark" /></div>
-        <div className="rkpi"><div className="lbl">קלוי השבוע</div><div className="val">{num(roastStats.roastedWeek, 0)} <small>ק"ג</small></div><i className="spark" /></div>
+      <div className="kpis roasting-kpis">
+        <Kpi label="קליות היום" value={roastStats.todayCount} />
+        <Kpi label="ירוק שנקלה היום" value={num(roastStats.greenToday, 0)} unit='ק"ג' />
+        <Kpi label="קלוי היום" value={num(roastStats.roastedToday, 0)} unit='ק"ג' />
+        <Kpi label="קלוי ב-7 הימים האחרונים" value={num(roastStats.roastedWeek, 0)} unit='ק"ג' />
       </div>
 
       {/* Two columns: record form | needs roasting */}
       <div className="roasting-cols">
         {/* Record roast */}
         <div className="rcard">
-          <div className="rcard-h"><h2><Icon d={RI.fire} size={18} /> קלייה חדשה</h2></div>
+          <div className="rcard-h"><h2>קלייה חדשה</h2></div>
           <div className="rcard-b">
             <div className="rseg">
               <button className={formMode === 'origin' ? 'active' : ''} onClick={() => setFormMode('origin')}><Icon d={RI.leaf} /> זן בודד</button>
@@ -647,9 +642,9 @@ export default function Roasting() {
             {formMode === 'origin' && (
               <>
                 <div className="rfield">
-                  <label>בחר זן לקלייה</label>
+                  <label>זן לקלייה</label>
                   <select value={selectedOrigin} onChange={e => setSelectedOrigin(e.target.value)}>
-                    <option value="">בחר זן...</option>
+                    <option value="">בחירת זן…</option>
                     {data.origins.filter(o => o.stock > 0).map(o => <option key={o.id} value={o.id}>{o.name} (מלאי: {num(o.stock)} ק"ג)</option>)}
                   </select>
                 </div>
@@ -657,15 +652,15 @@ export default function Roasting() {
                   <div className="rfield">
                     <label>משקל ירוק (ק"ג)</label>
                     <div className="rstepper">
-                      <button type="button" onClick={() => setGreenWeight(String(Math.max(0, (parseFloat(greenWeight) || 0) - 1)))}>−</button>
+                      <button type="button" aria-label="פחות" onClick={() => setGreenWeight(String(Math.max(0, (parseFloat(greenWeight) || 0) - 1)))}><Icon d={RI.minus} /></button>
                       <input type="number" step="0.5" placeholder="15" value={greenWeight} onChange={e => setGreenWeight(e.target.value)} />
-                      <button type="button" onClick={() => setGreenWeight(String((parseFloat(greenWeight) || 0) + 1))}>+</button>
+                      <button type="button" aria-label="יותר" onClick={() => setGreenWeight(String((parseFloat(greenWeight) || 0) + 1))}><Icon d={RI.plus} /></button>
                     </div>
                   </div>
                   <div className="rfield">
                     <label>מפעיל</label>
                     <select value={selectedOperator} onChange={e => setSelectedOperator(e.target.value)}>
-                      <option value="">בחר מפעיל...</option>
+                      <option value="">בחירת מפעיל…</option>
                       {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
                     </select>
                   </div>
@@ -686,18 +681,18 @@ export default function Roasting() {
               <>
                 {data.roastProfiles.length === 0 ? (
                   <div className="rempty">
-                    ⚠️ עדיין אין פרופילי קלייה.{' '}
-                    <a href="/settings">הגדר פרופילים בהגדרות ←</a>
+                    עדיין אין פרופילי קלייה.{' '}
+                    <a href="/settings">להגדרת פרופילים בהגדרות</a>
                   </div>
                 ) : (
                   <>
                     <div className="rfield">
-                      <label>בחר פרופיל קלייה</label>
+                      <label>פרופיל קלייה</label>
                       <select value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)}>
-                        <option value="">בחר פרופיל...</option>
+                        <option value="">בחירת פרופיל…</option>
                         {data.roastProfiles.map(p => (
                           <option key={p.id} value={p.id}>
-                            {p.name}{p.roast_level !== 'none' ? ` (${ROAST_LEVEL_LABELS[p.roast_level]})` : ''} — מלאי: {(p.roasted_stock || 0).toFixed(1)} ק"ג
+                            {p.name}{p.roast_level !== 'none' ? ` (${ROAST_LEVEL_LABELS[p.roast_level]})` : ''} · מלאי: {(p.roasted_stock || 0).toFixed(1)} ק"ג
                           </option>
                         ))}
                       </select>
@@ -706,15 +701,15 @@ export default function Roasting() {
                       <div className="rfield">
                         <label>משקל ירוק (ק"ג)</label>
                         <div className="rstepper">
-                          <button type="button" onClick={() => setGreenWeight(String(Math.max(0, (parseFloat(greenWeight) || 0) - 1)))}>−</button>
+                          <button type="button" aria-label="פחות" onClick={() => setGreenWeight(String(Math.max(0, (parseFloat(greenWeight) || 0) - 1)))}><Icon d={RI.minus} /></button>
                           <input type="number" step="0.5" placeholder="15" value={greenWeight} onChange={e => setGreenWeight(e.target.value)} />
-                          <button type="button" onClick={() => setGreenWeight(String((parseFloat(greenWeight) || 0) + 1))}>+</button>
+                          <button type="button" aria-label="יותר" onClick={() => setGreenWeight(String((parseFloat(greenWeight) || 0) + 1))}><Icon d={RI.plus} /></button>
                         </div>
                       </div>
                       <div className="rfield">
                         <label>מפעיל</label>
                         <select value={selectedOperator} onChange={e => setSelectedOperator(e.target.value)}>
-                          <option value="">בחר מפעיל...</option>
+                          <option value="">בחירת מפעיל…</option>
                           {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
                         </select>
                       </div>
@@ -730,7 +725,7 @@ export default function Roasting() {
                             <div key={i} className="pv-comp">
                               <span><Icon d={RI.leaf} size={13} /> {p.origin?.name || '?'} · {p.percentage}%</span>
                               <span>{p.greenUsed.toFixed(2)} ק"ג
-                                {p.origin && p.origin.stock < p.greenUsed && <span className="pv-warn"> ⚠ חסר ({num(p.origin.stock)} ק"ג)</span>}
+                                {p.origin && p.origin.stock < p.greenUsed && <span className="pv-warn"><span className="dot danger" />חסר במלאי ({num(p.origin.stock)} ק"ג)</span>}
                               </span>
                             </div>
                           ))}
@@ -742,21 +737,23 @@ export default function Roasting() {
               </>
             )}
 
-            <div className="rfield" style={{ marginTop: '4px' }}>
-              <label>קריאת צבע (Color Meter) — אופציונלי</label>
+            <div className="rfield rfield-color">
+              <label>קריאת צבע (Color Meter, לא חובה)</label>
               <input type="number" step="0.1" placeholder="למשל: 65.4" value={colorReading} onChange={e => setColorReading(e.target.value)} />
             </div>
 
-            <button onClick={recordRoast} disabled={isSaving} className="rbtn roast rbtn-block"><Icon d={RI.fire} /> {isSaving ? 'רושם…' : 'רשום קלייה'}</button>
+            <button onClick={recordRoast} disabled={isSaving} className="btn primary btn-large"><Icon d={RI.fire} /> {isSaving ? 'רושם…' : 'רישום קלייה'}</button>
           </div>
         </div>
 
         {/* Needs roasting */}
         <div className="rcard">
-          <div className="rcard-h"><h2><Icon d={RI.alert} size={18} /> מה צריך לקלות</h2><span className="rcount">{needsRoasting.length}</span></div>
+          <div className="rcard-h"><h2>מה צריך לקלות</h2><span className="rcount">{needsRoasting.length}</span></div>
           <div className="rcard-b">
-            {needsRoasting.length === 0 ? (
-              <div className="needs-empty">הכול מעל המלאי הקריטי 🎉</div>
+            {needsRoasting.length === 0 && dataLoading ? (
+              <div className="needs-loading" aria-busy="true"><span className="skel" /><span className="skel" /><span className="sr-only">טוען…</span></div>
+            ) : needsRoasting.length === 0 ? (
+              <div className="needs-empty"><Icon d={RI.ok} /> הכול מעל המלאי הקריטי</div>
             ) : (
               <div className="needs">
                 {needsRoasting.map(n => (
@@ -766,7 +763,7 @@ export default function Roasting() {
                       <span className="missing">חסר {num(n.needed)} ק"ג</span>
                     </div>
                     <div className="n-sub"><span>מלאי קלוי <b>{num(n.roasted)}</b></span><span>קריטי <b>{num(n.critical)}</b></span></div>
-                    <button className="rbtn roast roast-now" onClick={() => roastNow(n)}><Icon d={RI.fire} size={14} /> רשום קלייה</button>
+                    <button className="btn sm roast-now" onClick={() => roastNow(n)}><Icon d={RI.fire} /> לרישום קלייה</button>
                   </div>
                 ))}
               </div>
@@ -778,7 +775,7 @@ export default function Roasting() {
       {/* History */}
       <div className="rcard">
         <div className="rcard-h rcard-h-wrap">
-          <h2><Icon d={RI.chart} size={18} /> היסטוריית קליות <span className="rcount">{filteredRoasts.length}</span></h2>
+          <h2>היסטוריית קליות <span className="rcount">{filteredRoasts.length}</span></h2>
           <div className="rtoolbar">
             <div className="rsearch"><Icon d={RI.search} size={16} /><input type="text" aria-label="חיפוש קלייה" placeholder="חיפוש…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
             <div className="rchips">
@@ -801,25 +798,25 @@ export default function Roasting() {
         {selectedRoasts.length > 0 && (
           <div className="rbulk">
             <span>{selectedRoasts.length} נבחרו</span>
-            <button className="rbtn ghost sm" onClick={() => setSelectedRoasts([])}>בטל בחירה</button>
-            <button className="rbtn danger sm" onClick={deleteSelectedRoasts}><Icon d={RI.trash} size={14} /> מחק נבחרים</button>
+            <button className="btn sm" onClick={() => setSelectedRoasts([])}>ביטול בחירה</button>
+            <button className="btn danger sm" onClick={deleteSelectedRoasts}><Icon d={RI.trash} /> מחיקת הנבחרים</button>
           </div>
         )}
 
         {filteredRoasts.length === 0 ? (
-          <div className="empty-state">אין קליות עדיין. רשום קלייה ראשונה!</div>
+          <div className="empty-state">אין קליות בטווח הזה. קליות שיירשמו יופיעו כאן.</div>
         ) : (
           <>
             <div className="rscroll">
               <table className="rtable">
                 <thead>
                   <tr>
-                    <th className="c" style={{ width: '36px' }}>
-                      <input type="checkbox" className="rchk" aria-label="בחר הכל"
+                    <th className="c chk">
+                      <input type="checkbox" className="rchk" aria-label="בחירת הכל"
                         checked={selectedRoasts.length === displayedRoasts.length && displayedRoasts.length > 0}
                         onChange={toggleSelectAll} />
                     </th>
-                    <th>פריט</th><th className="c">ירוק → קלוי</th><th className="c">מפעיל</th>
+                    <th>פריט</th><th className="c">ירוק ← קלוי</th><th className="c">מפעיל</th>
                     <th className="c">צבע</th>
                     <th className="c" title="טמפרטורת הטענה (ET) מ-Artisan">הטענה</th>
                     <th className="c" title="טמפרטורת סיום (BT) מ-Artisan">סיום</th>
@@ -837,10 +834,10 @@ export default function Roasting() {
                     const name       = isProfile ? (profile?.name || 'פרופיל לא ידוע') : (origin?.name || 'זן לא ידוע');
                     return (
                       <tr key={roast.id} className={isSelected ? 'sel' : ''}>
-                        <td className="c"><input type="checkbox" className="rchk" aria-label={`בחר ${name}`} checked={isSelected} onChange={() => toggleRoastSelection(roast.id)} /></td>
+                        <td className="c"><input type="checkbox" className="rchk" aria-label={`בחירת ${name}`} checked={isSelected} onChange={() => toggleRoastSelection(roast.id)} /></td>
                         <td>
                           <div className="ritem">
-                            <div className={`ri-ico ${isProfile ? 'blend' : 'single'}`}><Icon d={isProfile ? RI.fire : RI.leaf} size={15} /></div>
+                            <div className="ri-ico"><Icon d={isProfile ? RI.fire : RI.leaf} size={15} /></div>
                             <div>
                               <div className="ri-nm">{name} {isProfile && levelPill(profile?.roast_level)}</div>
                               <div className="ri-sub">
@@ -861,11 +858,11 @@ export default function Roasting() {
                           <div className="racts">
                             <button
                               className={`rico${roast.artisan_uuid ? ' has-artisan' : ''}`}
-                              title={roast.artisan_uuid ? 'החלף קובץ Artisan' : 'טען קובץ Artisan'}
+                              title={roast.artisan_uuid ? 'החלפת קובץ Artisan' : 'טעינת קובץ Artisan'}
                               aria-label={`${roast.artisan_uuid ? 'החלפת' : 'טעינת'} קובץ Artisan עבור ${name}`}
                               disabled={uploadingFor != null}
                               onClick={() => pickArtisanFile(roast)}>
-                              <Icon d={uploadingFor === roast.id ? RI.fire : RI.chart} />
+                              {uploadingFor === roast.id ? <Icon d={RI.loading} className="spin" /> : <Icon d={RI.chart} />}
                             </button>
                             <button className="rico" title="עריכה" aria-label={`עריכת ${name}`} onClick={() => startEditRoast(roast)}><Icon d={RI.edit} /></button>
                             <button className="rico danger" title="מחיקה" aria-label={`מחיקת ${name}`} onClick={() => deleteRoast(roast)}><Icon d={RI.trash} /></button>
@@ -880,8 +877,8 @@ export default function Roasting() {
 
             {hasMore && (
               <div className="rmore">
-                <button onClick={() => setDisplayLimit(displayLimit + 20)} className="rbtn ghost">טען עוד 20 קליות</button>
-                <div className="rmore-sub">מציג {displayedRoasts.length} מתוך {filteredRoasts.length}</div>
+                <button onClick={() => setDisplayLimit(displayLimit + 20)} className="btn">טעינת 20 קליות נוספות</button>
+                <div className="rmore-sub">מוצגות {displayedRoasts.length} מתוך {filteredRoasts.length}</div>
               </div>
             )}
           </>
@@ -894,9 +891,9 @@ export default function Roasting() {
           <div className="rdrawer-overlay" onClick={() => setEditingRoast(null)} />
           <aside className="rdrawer" role="dialog" aria-modal="true">
             <div className="rdh">
-              <div className="rdh-ico"><Icon d={RI.edit} size={20} /></div>
+              <div className="rdh-ico"><Icon d={RI.edit} size={18} /></div>
               <div><h2>עריכת קלייה</h2><p>{editingRoast.isProfile ? (getProfileById(editingRoast.profileId)?.name || '') : (getOriginById(editingRoast.originId)?.name || '')}</p></div>
-              <button className="rico rdx" onClick={() => setEditingRoast(null)} aria-label="סגור"><Icon d={RI.x} /></button>
+              <button className="rico rdx" onClick={() => setEditingRoast(null)} aria-label="סגירה"><Icon d={RI.x} /></button>
             </div>
             <div className="rdb">
               <div className="rfield">
@@ -910,18 +907,18 @@ export default function Roasting() {
               <div className="rfield">
                 <label>מפעיל</label>
                 <select value={editingRoast.operator} onChange={e => setEditingRoast({ ...editingRoast, operator: e.target.value })}>
-                  <option value="">בחר מפעיל...</option>
+                  <option value="">בחירת מפעיל…</option>
                   {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
                 </select>
               </div>
               <div className="rartisan-readings">
                 <div className="rar-title">
-                  <Icon d={RI.chart} size={14} /> נתוני Artisan
-                  <button className="rar-load" disabled={uploadingFor != null}
+                  <Icon d={RI.chart} /> נתוני Artisan
+                  <button className="btn sm" disabled={uploadingFor != null}
                     onClick={() => pickArtisanFile({ id: editingRoast.id })}>
                     {uploadingFor === editingRoast.id
                       ? 'טוען…'
-                      : (editingRoast.artisan ? 'החלף קובץ' : 'טען קובץ')}
+                      : (editingRoast.artisan ? 'החלפת קובץ' : 'טעינת קובץ')}
                   </button>
                 </div>
 
@@ -934,7 +931,7 @@ export default function Roasting() {
                       <div><span>סיום BT</span><b>{temp(editingRoast.artisan.drop_bt)}</b></div>
                     </div>
                     {devOf(editingRoast.id) && (
-                      <div className="rar-grid" style={{ marginTop: '8px' }}>
+                      <div className="rar-grid more">
                         <div><span>פיצוח ראשון</span><b>{temp(artisanFor(editingRoast.id)?.computed?.FCs_BT)}</b></div>
                         <div><span>זמן פיתוח</span><b>{devLabel(editingRoast.id)}</b></div>
                       </div>
@@ -944,7 +941,7 @@ export default function Roasting() {
                     )}
                   </>
                 ) : (
-                  <div className="rar-empty">עדיין לא נטען קובץ קלייה. בחר את קובץ ה-alog. ששמרת ב-Artisan.</div>
+                  <div className="rar-empty">עדיין לא נטען קובץ קלייה. אפשר לבחור את קובץ ה-.alog שנשמר ב-Artisan.</div>
                 )}
               </div>
               {editingRoast.isProfile && editingRoast.greenWeight && (
@@ -955,8 +952,8 @@ export default function Roasting() {
               )}
             </div>
             <div className="rdf">
-              <button className="rbtn ghost" onClick={() => setEditingRoast(null)}>ביטול</button>
-              <button className="rbtn roast" onClick={saveEditRoast} disabled={isSaving}>{isSaving ? 'שומר…' : 'שמור שינויים'}</button>
+              <button className="btn" onClick={() => setEditingRoast(null)}>ביטול</button>
+              <button className="btn primary" onClick={saveEditRoast} disabled={isSaving}>{isSaving ? 'שומר…' : 'שמירת שינויים'}</button>
             </div>
           </aside>
         </>
