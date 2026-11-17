@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useUser, useAuth, useClerk } from '@clerk/clerk-react';
+import { toast } from 'sonner';
 import { useSupabaseData, useCostSettings } from './hooks';
 import { supabase, setClerkTokenGetter } from './supabase';
 import {
@@ -18,7 +19,6 @@ export const AppProvider = ({ children }) => {
   const { user } = useUser();
   const { getToken } = useAuth();
   const { signOut } = useClerk();
-  const [toasts, setToasts] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const inactivityTimer = useRef(null);
@@ -147,10 +147,12 @@ export const AppProvider = ({ children }) => {
     costSettings:                 costSettings                       || {}
   };
 
+  // Toasts are rendered by Sonner's <Toaster /> in App.jsx. Callers still pass
+  // the old emoji prefixes (✅ ❌ ⚠️); Sonner draws its own icon, so strip them.
   const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    const text = String(message ?? '').replace(/^\s*(?:✅|❌|⚠️|⚠)\s*/u, '');
+    const show = { success: toast.success, error: toast.error, warning: toast.warning, info: toast.info }[type] || toast;
+    show(text);
   };
 
   const getOriginById = (id) => _getOriginById(data.origins, id);
@@ -197,7 +199,7 @@ export const AppProvider = ({ children }) => {
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, roastChecklistTemplatesDb,
       artisanProfilesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
       costSettings, updateCostSettings,
-      showToast, toasts,
+      showToast,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,
       refreshAll,
     }}>
