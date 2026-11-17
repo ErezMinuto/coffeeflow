@@ -1,0 +1,116 @@
+/* Organic agent admin (/admin/seo-agent). Tags, dots, notices, fields and
+   status colours come from the shared index.css (#548). This file only holds
+   what the shared base does not ship yet: the 36px row action, the 40px icon
+   button, the bordered danger button, reject-reason chips, the segmented view
+   switch, static loading bars, raw-JSON blocks, expandable sections and the
+   dialog. Everything is scoped under .seo-agent. */
+
+.seo-agent {
+  --seo-ease: var(--ease-out-ui, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+/* The base has ok / warn / danger dots; "running" needs an olive one. */
+.seo-agent .dot-brand { background: var(--color-brand-600); }
+
+/* Row action: text button, 36px hit area, ink-2 at rest. `.primary` is the
+   one olive action in a row; `.danger` turns red only on hover/press so a
+   column of rejects does not shout (same idea as .btn-quiet-danger, smaller). */
+.seo-agent .act {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 0 10px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--color-surface-700);
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--seo-ease);
+}
+.seo-agent .act.primary { color: var(--color-brand-600); }
+.seo-agent .act:active:not(:disabled) { transform: scale(0.97); }
+.seo-agent .act:disabled { opacity: 0.4; cursor: not-allowed; }
+.seo-agent .act.danger:active:not(:disabled) { color: var(--color-danger); }
+
+/* Icon-only button: 40x40, transparent until hover. */
+.seo-agent .icon-btn {
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 8px; color: var(--color-surface-700);
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--seo-ease);
+}
+.seo-agent .icon-btn:active:not(:disabled) { transform: scale(0.97); }
+.seo-agent .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Danger button: same size as .btn-secondary, danger text, pale red border.
+   Used once, for "reject" next to "approve & publish". */
+.seo-agent .btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 14px; border-radius: 8px; white-space: nowrap;
+  font-size: 14px; font-weight: 500;
+  background: #fff; color: var(--color-danger); border: 1px solid #F1D3CE;
+  transition: background-color 150ms ease, transform 160ms var(--seo-ease);
+}
+.seo-agent .btn-danger:active:not(:disabled) { transform: scale(0.97); }
+.seo-agent .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Choice chip (one-click reject reasons). */
+.seo-agent .chip {
+  display: inline-flex; align-items: center; min-height: 32px; padding: 0 11px;
+  border-radius: 8px; border: 1px solid var(--color-surface-300); background: #fff;
+  font-size: 13px; color: var(--color-surface-900);
+  transition: background-color 150ms ease, border-color 150ms ease, transform 160ms var(--seo-ease);
+}
+.seo-agent .chip:active:not(:disabled) { transform: scale(0.97); }
+.seo-agent .chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Segmented view switch (Approvals / Workspace / State of Minuto, and the
+   phone panel tabs). Active = olive soft, like the active nav item. */
+.seo-agent .seg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 0 12px; border-radius: 8px; white-space: nowrap;
+  font-size: 13px; font-weight: 500; color: var(--color-surface-700);
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--seo-ease);
+}
+.seo-agent .seg-btn:active { transform: scale(0.97); }
+.seo-agent .seg-btn[aria-pressed="true"] { background: var(--color-brand-100); color: var(--color-brand-600); }
+.seo-agent .seg-btn svg { color: var(--color-surface-500); }
+.seo-agent .seg-btn[aria-pressed="true"] svg { color: var(--color-brand-600); }
+
+@media (hover: hover) and (pointer: fine) {
+  .seo-agent .act:hover:not(:disabled)         { background: var(--color-surface-100); color: var(--color-surface-900); }
+  .seo-agent .act.primary:hover:not(:disabled) { background: var(--color-brand-100); color: var(--color-brand-700); }
+  .seo-agent .act.danger:hover:not(:disabled)  { background: var(--color-danger-soft); color: var(--color-danger); }
+  .seo-agent .icon-btn:hover:not(:disabled)    { background: var(--color-surface-100); color: var(--color-surface-900); }
+  .seo-agent .btn-danger:hover:not(:disabled)  { background: var(--color-danger-soft); }
+  .seo-agent .chip:hover:not(:disabled)        { background: var(--color-danger-soft); border-color: #F1D3CE; }
+  .seo-agent .seg-btn:hover:not([aria-pressed="true"]) { background: var(--color-surface-100); color: var(--color-surface-900); }
+}
+
+/* Icon colour inside the shared .notice tones. */
+.seo-agent .notice .notice-icon        { flex-shrink: 0; margin-top: 2px; }
+.seo-agent .notice-warn .notice-icon   { color: var(--color-warn); }
+.seo-agent .notice-danger .notice-icon { color: var(--color-danger); }
+
+/* Static loading bars: a panel never claims "nothing here" before data. */
+.seo-agent .skel { height: 12px; border-radius: 6px; background: var(--color-surface-100); }
+.seo-agent .skel.lg { height: 20px; }
+
+.seo-agent input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-brand-600); cursor: pointer; }
+
+/* Expandable sections (tool results, task details, review history). */
+.seo-agent details > summary { list-style: none; cursor: pointer; }
+.seo-agent details > summary::-webkit-details-marker { display: none; }
+.seo-agent details > summary .chev { transition: transform 160ms var(--seo-ease); }
+.seo-agent details[open] > summary .chev { transform: rotate(-90deg); }
+
+/* Raw JSON blocks stay left-to-right. */
+.seo-agent .code {
+  direction: ltr; text-align: left; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.55;
+  background: var(--color-surface-50); border: 1px solid var(--color-surface-200); border-radius: 8px;
+  padding: 10px 12px; white-space: pre-wrap; word-break: break-all; color: var(--color-surface-700);
+}
+
+/* Task dialog: scrim fades, panel fades in from 0.97, origin centre. */
+@keyframes seoFade { from { opacity: 0; } }
+@keyframes seoPop  { from { opacity: 0; transform: scale(0.97); } }
+.seo-agent .scrim  { background: rgba(28, 33, 26, 0.32); animation: seoFade 160ms ease-out both; }
+.seo-agent .dialog { box-shadow: 0 12px 32px rgba(28, 33, 26, 0.12); animation: seoPop 180ms var(--seo-ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .seo-agent .scrim, .seo-agent .dialog { animation: none; }
+  .seo-agent details > summary .chev { transition: none; }
+}
