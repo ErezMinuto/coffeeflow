@@ -655,6 +655,46 @@ td.end, th.end { text-align: left; }
   .side, .side.open { transition: none; }
 }
 
+/* ── Dashboard (סקירה) ──────────────────────────────────────────────────── */
+.dash-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: stretch; }
+.dash-grid > .card { margin-bottom: 24px; }
+.dash-attn-text { min-width: 0; }
+.dash-allgood { display: flex; align-items: center; gap: 10px; padding: 20px 18px; color: var(--ink-2); }
+.dash-allgood svg { color: var(--ok); }
+.dash-more {
+  display: block;
+  width: 100%;
+  padding: 12px 18px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--brand);
+  font-weight: 500;
+  font-size: 13px;
+  text-align: center;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: background-color 150ms ease;
+}
+.dash-more:active { background: var(--sunken); }
+@media (hover: hover) and (pointer: fine) { .dash-more:hover { background: var(--surface-2); } }
+.dash-stock { padding: 4px 18px 10px; }
+.dash-srow { display: grid; grid-template-columns: minmax(0, 1fr) 120px 40px; align-items: center; gap: 12px; padding: 12px 0; }
+.dash-srow + .dash-srow { border-top: 1px solid var(--line); }
+.dash-sname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-size { color: var(--muted); font-size: 12.5px; }
+.dash-n { text-align: left; font-weight: 500; }
+.dash-table-wrap { overflow-x: auto; }
+.dash-skel-row { padding: 16px 18px; }
+.dash-skel-row + .dash-skel-row { border-top: 1px solid var(--line); }
+.dash-table-wrap td.end { white-space: nowrap; }
+@media (max-width: 860px) {
+  .dash-kpis { grid-template-columns: 1fr 1fr; }
+  .dash-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .dash-srow { grid-template-columns: minmax(0, 1fr) 80px 32px; }
+  .dash-table-wrap th, .dash-table-wrap td { padding-inline: 12px; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
    Origins (ניהול זנים). Scoped under .origins-page; the local names point at the
    shared tokens, so status tones stay small (tags, dots, a row tint) and olive
