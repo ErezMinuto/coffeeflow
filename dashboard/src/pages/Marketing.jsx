@@ -1,25 +1,45 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import {
+  Sparkles, Zap, Users, FolderOpen, History, Lightbulb, BookOpen, Tag, Leaf,
+  GraduationCap, Mail, RefreshCw, ChevronLeft, ChevronDown, ArrowRight, Check,
+  X, Plus, Search, Image as ImageIcon, MousePointerClick, Package, Eye, Send,
+  FlaskConical, CircleCheck, Coffee, MessageCircle, ShoppingCart, Pencil,
+  Save, Trash2, Copy, ExternalLink, Upload, Download, UserPlus, Info,
+  TriangleAlert, PauseCircle, CalendarDays, FileText,
+} from 'lucide-react';
 import { useApp } from '../lib/context';
 import { callCampaignFunction } from '../lib/brevo';
 import { ProgressBar, useAnimatedProgress } from '../components/shared/ProgressBar';
 // Email HTML is built server-side (edge function) with banner images
 import { supabase } from '../lib/supabase';
+import './marketing.css';
+
+// Progress fill for long-running jobs: Minuto olive, the page's only accent.
+const BRAND = '#3D4A2E';
 
 const TABS = [
-  { id: 'compose',     label: '🚀 קמפיין אוטומטי' },
-  { id: 'automations', label: '⚡ אוטומציות' },
-  { id: 'contacts',    label: '👥 אנשי קשר' },
-  { id: 'groups',      label: '🗂️ קבוצות' },
-  { id: 'history',     label: '📊 היסטוריה' },
+  { id: 'compose',     label: 'קמפיין אוטומטי', icon: Sparkles },
+  { id: 'automations', label: 'אוטומציות',      icon: Zap },
+  { id: 'contacts',    label: 'אנשי קשר',       icon: Users },
+  { id: 'groups',      label: 'קבוצות',         icon: FolderOpen },
+  { id: 'history',     label: 'היסטוריה',       icon: History },
 ];
 
 const THEME_LABELS = {
-  tips:      '💡 טיפים',
-  story:     '📖 סיפור',
-  promo:     '🏷️ מבצע',
-  seasonal:  '🌿 עונתי',
-  education: '📚 חינוך',
+  tips:      'טיפים',
+  story:     'סיפור',
+  promo:     'מבצע',
+  seasonal:  'עונתי',
+  education: 'חינוך',
+};
+
+const THEME_ICONS = {
+  tips:      Lightbulb,
+  story:     BookOpen,
+  promo:     Tag,
+  seasonal:  Leaf,
+  education: GraduationCap,
 };
 
 // localStorage key used to remember the campaign the user is currently editing
@@ -30,37 +50,33 @@ const AUTOSAVE_DEBOUNCE_MS = 1500;
 
 function AutosaveStatus({ saving, dirty, lastSavedAt, onSaveNow, hasDraftId }) {
   if (!hasDraftId) return null;
-  let label, color, bg, border;
+  let label, tone;
   if (saving) {
-    label = '⏳ שומר...';
-    color = '#92400E'; bg = '#FEF3C7'; border = '#FDE68A';
+    label = 'שומר…';
+    tone = 'warn';
   } else if (dirty) {
-    label = '✏️ שינויים לא שמורים';
-    color = '#92400E'; bg = '#FEF3C7'; border = '#FDE68A';
+    label = 'שינויים לא שמורים';
+    tone = 'warn';
   } else if (lastSavedAt) {
-    label = '✅ נשמר אוטומטית';
-    color = '#065F46'; bg = '#DCFCE7'; border = '#BBF7D0';
+    label = 'נשמר אוטומטית';
+    tone = 'ok';
   } else {
-    label = '💾 שמירה אוטומטית פעילה';
-    color = '#3D4A2E'; bg = '#F0FDF4'; border = '#BBF7D0';
+    label = 'שמירה אוטומטית פעילה';
+    tone = '';
   }
   return (
-    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-      <span style={{
-        background: bg, border: `1px solid ${border}`, color,
-        padding: '4px 12px', borderRadius: '12px',
-        fontSize: '0.78rem', fontWeight: 600, direction: 'rtl',
-      }}>
+    <div className="flex items-center gap-1">
+      <span className="mkt-status" aria-live="polite">
+        <i className={`dot ${tone ? `dot-${tone}` : ''}`} aria-hidden="true" />
         {label}
       </span>
       {dirty && !saving && (
         <button
           onClick={onSaveNow}
-          className="btn-small"
-          style={{ fontSize: '0.75rem', padding: '3px 10px' }}
-          title="שמור עכשיו בלי להמתין"
+          className="btn-ghost mkt-btn-sm"
+          title="שמירה עכשיו, בלי להמתין"
         >
-          שמור עכשיו
+          שמירה עכשיו
         </button>
       )}
     </div>
@@ -88,22 +104,39 @@ export default function Marketing() {
     setActiveTab('compose');
   };
 
-  return (
-    <div className="page">
-      <h1>📧 Marketing</h1>
+  // On phones the tab bar scrolls sideways; keep the active tab visible
+  // (a ?tab=history deep link would otherwise land on an off-screen tab).
+  const tabsRef = useRef(null);
+  useEffect(() => {
+    const el = tabsRef.current?.querySelector('[aria-pressed="true"]');
+    el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [activeTab]);
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={activeTab === tab.id ? 'btn-primary' : 'btn-small'}
-            style={{ fontSize: '0.9rem' }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+  return (
+    <div className="mkt fade-up">
+      <header className="page-header">
+        <div>
+          <h1>מחולל מיילים</h1>
+          <p className="page-sub">קמפיינים, אוטומציות ורשימת הנמענים של מינוטו</p>
+        </div>
+      </header>
+
+      <nav className="mkt-tabs" aria-label="אזורי מחולל המיילים" ref={tabsRef}>
+        {TABS.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="mkt-tab"
+              aria-pressed={activeTab === tab.id}
+            >
+              <Icon size={16} aria-hidden="true" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </nav>
 
       {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} editData={editData} clearEdit={() => setEditData(null)} campaignsDb={campaignsDb} />}
       {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
@@ -214,7 +247,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         });
         setDirty(true);
         setStep('draft');
-        showToast('⚠️ שוכפל ללא יצירה מחדש — ערוך ושמור', 'warning');
+        showToast('שוכפל בלי יצירה מחדש. אפשר לערוך ולשמור', 'warning');
       }
       clearDuplicate();
     };
@@ -232,7 +265,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       setIdeas(result.ideas || []);
       setStep('ideas');
     } catch (err) {
-      showToast(`❌ שגיאה בקבלת רעיונות: ${err.message}`, 'error');
+      showToast(`שגיאה בקבלת רעיונות: ${err.message}`, 'error');
     } finally {
       setIdeasLoading(false);
     }
@@ -275,7 +308,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       setDirty(false);
       setStep('draft');
     } catch (err) {
-      showToast(`❌ שגיאה ביצירת קמפיין: ${err.message}`, 'error');
+      showToast(`שגיאה ביצירת קמפיין: ${err.message}`, 'error');
       setStep('ideas');
     }
   };
@@ -300,7 +333,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       setDirty(false);
       setStep('draft');
     } catch (err) {
-      showToast(`❌ שגיאה ביצירת קמפיין: ${err.message}`, 'error');
+      showToast(`שגיאה ביצירת קמפיין: ${err.message}`, 'error');
       setStep('idle');
     }
   };
@@ -358,7 +391,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       try {
         await loadCampaignIntoEditor(editData);
       } catch (err) {
-        showToast(`❌ שגיאה בטעינת הקמפיין: ${err.message}`, 'error');
+        showToast(`שגיאה בטעינת הקמפיין: ${err.message}`, 'error');
       }
       clearEdit();
     })();
@@ -409,7 +442,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
     if (savingLockRef.current) {
       // Another save is in flight; mark dirty so the autosave effect re-queues
       // once it finishes.
-      if (!isAuto) showToast('⏳ עוד שמירה מתבצעת — נסה שוב בעוד רגע', 'warning');
+      if (!isAuto) showToast('שמירה אחרת עדיין רצה. כדאי לנסות שוב בעוד רגע', 'warning');
       return;
     }
     savingLockRef.current = true;
@@ -447,14 +480,14 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         // first mounted, and the history tab shows stale pre-edit content.
         // Fire-and-forget so autosave doesn't block on the network round trip.
         campaignsDb?.refresh?.().catch((e) => console.warn('campaigns refresh failed:', e));
-        if (!isAuto) showToast('✅ השינויים נשמרו');
+        if (!isAuto) showToast('השינויים נשמרו');
       } else if (result?.error) {
         throw new Error(result.error);
       }
     } catch (err) {
       console.error('saveEdits failed:', err);
       const msg = err?.message || 'שגיאה לא ידועה';
-      showToast(`❌ שגיאה בשמירה: ${msg}`, 'error');
+      showToast(`שגיאה בשמירה: ${msg}`, 'error');
     } finally {
       savingLockRef.current = false;
       setSaving(false);
@@ -535,7 +568,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 
   const sendTest = async () => {
     if (!testEmail.trim()) {
-      showToast('⚠️ נא להזין כתובת מייל לטסט', 'warning');
+      showToast('נא להזין כתובת מייל לטסט', 'warning');
       return;
     }
     setStep('sending');
@@ -548,18 +581,18 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       // The function returns 200 even when Resend rejected the email —
       // check sent/errors explicitly so the user sees what really happened.
       if (result && result.sent > 0) {
-        showToast(`✅ טסט נשלח ל-${testEmail}!`);
+        showToast(`טסט נשלח ל-${testEmail}!`);
       } else {
         const firstErr = Array.isArray(result?.errors) && result.errors.length > 0
           ? result.errors[0]
           : 'Resend rejected the send (no details)';
         console.error('send-test failed:', result);
-        showToast(`❌ הטסט לא נשלח: ${firstErr}`, 'error');
+        showToast(`הטסט לא נשלח: ${firstErr}`, 'error');
       }
       setStep('draft');
     } catch (err) {
       console.error('send-test threw:', err);
-      showToast(`❌ שגיאה בשליחת טסט: ${err?.message || 'unknown'}`, 'error');
+      showToast(`שגיאה בשליחת טסט: ${err?.message || 'unknown'}`, 'error');
       setStep('draft');
     }
   };
@@ -574,10 +607,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       : optedInCount;
     if (recipientCount === 0) {
       const msg = sendMode === 'group'
-        ? '⚠️ לא נבחרה קבוצה או שהקבוצה ריקה'
+        ? 'לא נבחרה קבוצה או שהקבוצה ריקה'
         : sendMode === 'selected'
-          ? '⚠️ לא נבחרו נמענים'
-          : '⚠️ אין אנשי קשר שאישרו קבלת מיילים';
+          ? 'לא נבחרו נמענים'
+          : 'אין אנשי קשר שאישרו קבלת מיילים';
       showToast(msg, 'warning');
       return;
     }
@@ -601,10 +634,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       const skipped = result?.consentSkipped
         ? ` (${result.consentSkipped} דולגו: לא אישרו קבלת דיוור)`
         : '';
-      showToast(`✅ הקמפיין נשלח ל-${result.sent} נמענים!${skipped}`);
+      showToast(`הקמפיין נשלח ל-${result.sent} נמענים!${skipped}`);
       setStep('sent');
     } catch (err) {
-      showToast(`❌ שגיאה בשליחה: ${err.message}`, 'error');
+      showToast(`שגיאה בשליחה: ${err.message}`, 'error');
       setStep('draft');
     }
   };
@@ -614,7 +647,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
   const sendToTestGroups = async () => {
     if (!draft?.id) return;
     if (testGroupMembers.length === 0) {
-      showToast('⚠️ אין חברים בקבוצות הבדיקה', 'warning');
+      showToast('אין חברים בקבוצות הבדיקה', 'warning');
       return;
     }
     if (!window.confirm(`לשלוח את הקמפיין ל-${testGroupMembers.length} חברי קבוצת הבדיקה?`)) return;
@@ -629,16 +662,16 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         isTestSend: true,
       });
       if (result && result.sent > 0) {
-        showToast(`✅ נשלח ל-${result.sent} חברי קבוצת בדיקה!`);
+        showToast(`נשלח ל-${result.sent} חברי קבוצת בדיקה!`);
       } else {
         const firstErr = Array.isArray(result?.errors) && result.errors.length > 0
           ? result.errors[0]
           : 'Resend rejected the send (no details)';
-        showToast(`❌ שליחה לקבוצת בדיקה נכשלה: ${firstErr}`, 'error');
+        showToast(`שליחה לקבוצת בדיקה נכשלה: ${firstErr}`, 'error');
       }
       setStep('draft');
     } catch (err) {
-      showToast(`❌ שגיאה: ${err?.message || 'unknown'}`, 'error');
+      showToast(`שגיאה: ${err?.message || 'unknown'}`, 'error');
       setStep('draft');
     }
   };
@@ -650,9 +683,9 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         userId: user.id,
       });
       syncProgress.complete();
-      showToast(`✅ סונכרנו ${result.synced} מוצרים מ-WooCommerce`);
+      showToast(`סונכרנו ${result.synced} מוצרים מ-WooCommerce`);
     } catch (err) {
-      showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
+      showToast(`שגיאה בסנכרון: ${err.message}`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -671,72 +704,58 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 
   if (step === 'idle') {
     return (
-      <div className="section">
-        <div style={{
-          textAlign: 'center', padding: '40px 20px',
-          background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
-          borderRadius: '16px', border: '2px solid #BBF7D0',
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
-          <h2 style={{ color: '#3D4A2E', marginBottom: '8px', fontSize: '1.5rem' }}>
+      <section className="card p-0 max-w-[720px]">
+        <div className="px-5 pt-6 pb-5 sm:px-7 sm:pt-7">
+          <span className="mkt-ico brand w-10 h-10 mb-4" aria-hidden="true">
+            <Sparkles size={18} />
+          </span>
+          <h2 className="text-[17px] font-semibold text-surface-900">
             יצירת קמפיין אוטומטי
           </h2>
-          <p style={{ color: '#666', maxWidth: '420px', margin: '0 auto 20px' }}>
-            ה-AI ייצור מייל מושלם בעברית עם מוצרים מהחנות שלך.
-            <br />רק תאשר ותשלח.
+          <p className="text-sm text-surface-700 mt-1 max-w-[460px] text-pretty">
+            ה-AI כותב מייל בעברית עם מוצרים מהחנות. נשאר רק לבדוק, לאשר ולשלוח.
           </p>
 
           {/* Context / prompt area */}
-          <div style={{ maxWidth: '480px', margin: '0 auto 20px', textAlign: 'right' }}>
+          <div className="mt-5">
             <button
               onClick={() => setShowContext(prev => !prev)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#556B3A', fontSize: '0.9rem', fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: '6px',
-                margin: '0 auto 8px', direction: 'rtl',
-              }}
+              className="btn-ghost mkt-btn-sm"
+              aria-expanded={showContext}
             >
-              <span style={{ transform: showContext ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', display: 'inline-block' }}>◀</span>
-              💡 רוצה לכוון את ה-AI? (אופציונלי)
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className="mkt-chev side text-surface-500"
+              />
+              כיוון ל-AI (לא חובה)
             </button>
 
             {showContext && (
-              <div style={{
-                background: 'white', borderRadius: '12px', padding: '16px',
-                border: '1px solid #D4E8C2', textAlign: 'right', direction: 'rtl',
-              }}>
-                <textarea
-                  placeholder="ספר ל-AI על מה הקמפיין... למשל הגיע קפה חדש, יש מבצע, תקופת חגים..."
+              <div className="mt-2 flex flex-col gap-3">
+                <textarea className="field"
+                  placeholder="על מה הקמפיין? למשל: הגיע קפה חדש, יש מבצע, תקופת חגים"
                   value={hint}
                   onChange={e => setHint(e.target.value)}
                   rows={3}
-                  style={{
-                    width: '100%', padding: '10px 12px', borderRadius: '8px',
-                    border: '1px solid #ddd', fontSize: '0.9rem',
-                    fontFamily: 'inherit', resize: 'vertical', direction: 'rtl',
-                  }}
+                  aria-label="כיוון ל-AI"
                 />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                <div className="mkt-chips">
                   {[
-                    { label: '☀️ קיץ', text: 'תקופת קיץ, קפה קר ומרענן' },
-                    { label: '🎄 חגים', text: 'תקופת חגים, מתנות ומבצעים' },
-                    { label: '🏷️ מבצע', text: 'מבצע מיוחד באתר, הנחות' },
-                    { label: '☕ מוצר חדש', text: 'מוצר חדש שהגיע לחנות' },
-                    { label: '🫘 קלייה חדשה', text: 'קלייה חדשה שהגיעה, מקור יחיד' },
-                    { label: '🎁 כוסות/אביזרים', text: 'קידום כוסות ואביזרי קפה' },
+                    { label: 'קיץ', text: 'תקופת קיץ, קפה קר ומרענן' },
+                    { label: 'חגים', text: 'תקופת חגים, מתנות ומבצעים' },
+                    { label: 'מבצע', text: 'מבצע מיוחד באתר, הנחות' },
+                    { label: 'מוצר חדש', text: 'מוצר חדש שהגיע לחנות' },
+                    { label: 'קלייה חדשה', text: 'קלייה חדשה שהגיעה, מקור יחיד' },
+                    { label: 'כוסות ואביזרים', text: 'קידום כוסות ואביזרי קפה' },
                   ].map(chip => (
                     <button
                       key={chip.label}
                       onClick={() => setHint(prev => prev ? `${prev}, ${chip.text}` : chip.text)}
-                      style={{
-                        background: hint.includes(chip.text) ? '#DCFCE7' : '#F5F5F0',
-                        border: hint.includes(chip.text) ? '1px solid #86EFAC' : '1px solid #E5E5DB',
-                        borderRadius: '20px', padding: '4px 12px', cursor: 'pointer',
-                        fontSize: '0.8rem', color: '#3D4A2E', fontWeight: 500,
-                        transition: 'all 0.15s',
-                      }}
+                      className="mkt-chip"
+                      aria-pressed={hint.includes(chip.text)}
                     >
+                      {hint.includes(chip.text) && <Check size={14} aria-hidden="true" />}
                       {chip.label}
                     </button>
                   ))}
@@ -745,117 +764,112 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap gap-2 mt-6">
             <button
               onClick={getIdeas}
               disabled={ideasLoading}
               className="btn-primary"
-              style={{ fontSize: '1.1rem', padding: '14px 32px' }}
             >
-              {ideasLoading ? '⏳ חושב...' : '💡 תן לי רעיונות'}
+              <Lightbulb size={16} aria-hidden="true" />
+              {ideasLoading ? 'מחפש רעיונות…' : 'רעיונות לקמפיין'}
             </button>
             <button
               onClick={generateCampaign}
-              className="btn-small"
-              style={{ fontSize: '0.95rem', padding: '14px 24px' }}
+              className="btn-secondary"
             >
-              🚀 צור ישירות
+              יצירה ישירה
             </button>
           </div>
-
-          <div style={{ marginTop: '16px' }}>
-            <button onClick={syncProducts} disabled={syncing} className="btn-small" style={{ fontSize: '0.8rem' }}>
-              {syncing ? '⏳ מסנכרן...' : '🔄 סנכרן מוצרים מ-WooCommerce'}
-            </button>
-          </div>
-
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '16px' }}>
-            {optedInCount} נמענים מאושרים
-          </p>
         </div>
-      </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 sm:px-7 border-t border-surface-200 bg-surface-50 rounded-b-[10px]">
+          <span className="text-[13px] text-surface-500">
+            <span className="num font-medium text-surface-900">{optedInCount}</span> נמענים מאושרים
+          </span>
+          <button onClick={syncProducts} disabled={syncing} className="btn-ghost mkt-btn-sm">
+            <RefreshCw size={16} aria-hidden="true" />
+            {syncing ? 'מסנכרן…' : 'סנכרון מוצרים מ-WooCommerce'}
+          </button>
+        </div>
+      </section>
     );
   }
 
   // ── IDEAS: Pick a concept ──────────────────────────────────────────────
 
   if (step === 'ideas') {
-    const themeIcons = { tips: '💡', story: '📖', promo: '🏷️', seasonal: '🌿', education: '📚' };
     return (
-      <div className="section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0 }}>💡 בחר רעיון לקמפיין</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => { setIdeas([]); setStep('idle'); }} className="btn-small">← חזור</button>
-            <button onClick={getIdeas} disabled={ideasLoading} className="btn-small">
-              {ideasLoading ? '⏳' : '🔄'} רעיונות חדשים
+      <section>
+        <div className="mkt-sec-head">
+          <div>
+            <h2>בחירת רעיון לקמפיין</h2>
+            <p className="mkt-sec-sub">בחירה ברעיון יוצרת טיוטה מלאה לעריכה.</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => { setIdeas([]); setStep('idle'); }} className="btn-secondary mkt-btn-sm">
+              <ArrowRight size={16} aria-hidden="true" />
+              חזרה
+            </button>
+            <button onClick={getIdeas} disabled={ideasLoading} className="btn-secondary mkt-btn-sm">
+              <RefreshCw size={16} aria-hidden="true" />
+              רעיונות חדשים
             </button>
           </div>
         </div>
         {ideasLoading && (
-          <div style={{ marginBottom: 16 }}>
-            <ProgressBar progress={ideasProgress.progress} label="מחפש רעיונות..." />
+          <div className="mb-4">
+            <ProgressBar progress={ideasProgress.progress} label="מחפש רעיונות…" color={BRAND} height={6} />
           </div>
         )}
 
         {hint.trim() && (
-          <div style={{
-            background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px',
-            padding: '10px 14px', marginBottom: '16px', fontSize: '0.85rem',
-            color: '#0369A1', direction: 'rtl',
-          }}>
-            <strong>ההקשר שלך:</strong> {hint}
+          <div className="notice text-[13px] mb-4">
+            <Info size={16} aria-hidden="true" />
+            <span><strong>כיוון ל-AI:</strong> {hint}</span>
           </div>
         )}
 
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {ideas.map((idea, i) => (
-            <div
-              key={i}
-              onClick={() => generateFromIdea(idea)}
-              style={{
-                background: '#FFFFFF', borderRadius: '12px', padding: '20px',
-                border: '1px solid #E8E8E0', cursor: 'pointer',
-                transition: 'all 0.15s',
-                display: 'flex', gap: '16px', alignItems: 'flex-start',
-                direction: 'rtl',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#86EFAC'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E8E8E0'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <div style={{ fontSize: '2rem', lineHeight: 1 }}>
-                {themeIcons[idea.theme] || '📧'}
-              </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 6px', color: '#2C3522', fontSize: '1.05rem' }}>{idea.title}</h3>
-                <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem', lineHeight: 1.5 }}>{idea.description}</p>
-                {idea.suggestedProducts && idea.suggestedProducts.length > 0 && (
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {idea.suggestedProducts.map((prod, j) => (
-                      <span key={j} style={{
-                        background: '#F0FDF4', border: '1px solid #BBF7D0',
-                        borderRadius: '12px', padding: '2px 10px',
-                        fontSize: '0.75rem', color: '#3D4A2E',
-                      }}>
-                        {prod}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div style={{ color: '#556B3A', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', alignSelf: 'center' }}>
-                בחר →
-              </div>
-            </div>
-          ))}
+        <div className="mkt-stack-sm">
+          {ideas.map((idea, i) => {
+            const ThemeIcon = THEME_ICONS[idea.theme] || Mail;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => generateFromIdea(idea)}
+                className="mkt-idea"
+              >
+                <span className="mkt-ico" aria-hidden="true">
+                  <ThemeIcon size={18} />
+                </span>
+                <span className="flex-1 min-w-0 block">
+                  <span className="t">{idea.title}</span>
+                  <span className="d">{idea.description}</span>
+                  {idea.suggestedProducts && idea.suggestedProducts.length > 0 && (
+                    <span className="flex flex-wrap gap-1.5 mt-2.5">
+                      {idea.suggestedProducts.map((prod, j) => (
+                        <span key={j} className="tag font-medium">
+                          {prod}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </span>
+                <span className="go">
+                  בחירה
+                  <ChevronLeft size={16} aria-hidden="true" />
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button onClick={generateCampaign} className="btn-small" style={{ fontSize: '0.9rem' }}>
-            🚀 או צור קמפיין ישירות בלי לבחור רעיון
+        <div className="mt-5">
+          <button onClick={generateCampaign} className="btn-ghost mkt-btn-sm">
+            יצירת קמפיין בלי רעיון מוכן
           </button>
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -863,17 +877,16 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 
   if (step === 'generating') {
     return (
-      <div className="section">
-        <div style={{ textAlign: 'center', padding: '40px 20px 20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 2s linear infinite' }}>🤖</div>
-          <h2 style={{ color: '#3D4A2E', marginBottom: '6px' }}>יוצר את הקמפיין שלך...</h2>
-          <p style={{ color: '#666', marginBottom: '28px' }}>מסנכרן מוצרים, יוצר תוכן בעברית, בונה עיצוב</p>
-          <div style={{ maxWidth: 400, margin: '0 auto' }}>
-            <ProgressBar progress={genProgress.progress} label="יצירת קמפיין" />
-          </div>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <section className="card max-w-[720px] px-5 py-8 sm:px-7">
+        <span className="mkt-ico brand w-10 h-10 mb-4" aria-hidden="true">
+          <Sparkles size={18} />
+        </span>
+        <h2 className="text-[17px] font-semibold text-surface-900">יוצרים את הקמפיין…</h2>
+        <p className="text-sm text-surface-500 mt-1 mb-6">סנכרון מוצרים, כתיבת התוכן בעברית ובניית העיצוב</p>
+        <div className="max-w-[420px]" role="status">
+          <ProgressBar progress={genProgress.progress} label="יצירת קמפיין" color={BRAND} height={6} />
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -881,319 +894,313 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 
   if (step === 'sent') {
     return (
-      <div className="section">
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-          <h2 style={{ color: '#065F46' }}>הקמפיין נשלח בהצלחה!</h2>
-          <p style={{ color: '#666', marginBottom: '24px' }}>
-            המייל נשלח ל-{optedInCount} נמענים
-          </p>
-          <button onClick={() => {
-            setDraft(null); setStep('idle'); setHint('');
-            try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
-          }} className="btn-primary">
-            צור קמפיין חדש
-          </button>
-        </div>
-      </div>
+      <section className="card max-w-[720px] px-5 py-8 sm:px-7">
+        <span className="mkt-ico ok w-10 h-10 mb-4" aria-hidden="true">
+          <CircleCheck size={18} />
+        </span>
+        <h2 className="text-[17px] font-semibold text-surface-900">הקמפיין נשלח</h2>
+        <p className="text-sm text-surface-500 mt-1 mb-6">
+          המייל נשלח ל-<span className="num">{optedInCount}</span> נמענים
+        </p>
+        <button onClick={() => {
+          setDraft(null); setStep('idle'); setHint('');
+          try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
+        }} className="btn-primary">
+          <Plus size={16} aria-hidden="true" />
+          קמפיין חדש
+        </button>
+      </section>
     );
   }
 
   // ── DRAFT / SENDING: Review & Approve ─────────────────────────────────
 
   return (
-    <div className="section">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ margin: 0 }}>📝 עריכת הקמפיין</h2>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <section>
+      <div className="mkt-sec-head items-center">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h2>עריכת הקמפיין</h2>
           {draft?.theme && (
-            <span style={{
-              background: '#DCFCE7', padding: '4px 12px', borderRadius: '12px',
-              fontSize: '0.8rem', fontWeight: 600,
-            }}>
+            <span className="tag">
               {THEME_LABELS[draft.theme] || draft.theme}
             </span>
           )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
           <AutosaveStatus saving={saving} dirty={dirty} lastSavedAt={lastSavedAt} onSaveNow={() => saveEdits(false)} hasDraftId={!!draft?.id} />
-          <button onClick={regenerate} className="btn-small">🔄 צור מחדש</button>
+          <button onClick={regenerate} className="btn-secondary mkt-btn-sm">
+            <RefreshCw size={16} aria-hidden="true" />
+            יצירה מחדש
+          </button>
         </div>
       </div>
 
-      <style>{`@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }`}</style>
-
+      <div className="mkt-stack">
       {/* Banner text — subject + preheader overlay */}
-      <div className="form-card" style={{ marginBottom: '12px', background: '#F9F8F5' }}>
-        <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>🖼️ טקסט על הבאנר</label>
-        <div className="form-group" style={{ marginBottom: '8px' }}>
-          <label style={{ fontSize: '0.8rem', color: '#888' }}>כותרת (מופיע על התמונה)</label>
-          <input
-            type="text"
-            value={editSubject}
-            onChange={onFieldChange(setEditSubject)}
-            style={{ fontSize: '1rem', fontWeight: 600 }}
-          />
-        </div>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.8rem', color: '#888' }}>תת-כותרת (מופיע מתחת)</label>
-          <input
-            type="text"
-            value={editPreheader}
-            onChange={onFieldChange(setEditPreheader)}
-            placeholder="משפט קצר שמופיע מתחת לכותרת על הבאנר..."
-            style={{ fontSize: '0.9rem' }}
-          />
+      <div className="card">
+        <h3 className="mkt-card-title"><ImageIcon size={16} aria-hidden="true" />טקסט על הבאנר</h3>
+        <div className="mkt-stack-sm">
+          <label className="mkt-field">
+            <span className="field-label">כותרת (מופיעה על התמונה)</span>
+            <input
+              type="text"
+              value={editSubject}
+              onChange={onFieldChange(setEditSubject)}
+              className="field font-medium"
+            />
+          </label>
+          <label className="mkt-field">
+            <span className="field-label">תת-כותרת (מופיעה מתחת לכותרת)</span>
+            <input className="field"
+              type="text"
+              value={editPreheader}
+              onChange={onFieldChange(setEditPreheader)}
+              placeholder="משפט קצר שמופיע מתחת לכותרת על הבאנר"
+            />
+          </label>
         </div>
       </div>
 
       {/* Greeting + Body */}
-      <div className="form-card" style={{ marginBottom: '12px' }}>
-        <div className="form-group" style={{ marginBottom: '8px' }}>
-          <label style={{ fontWeight: 600 }}>פתיחה</label>
-          <input
-            type="text"
-            value={editGreeting}
-            onChange={onFieldChange(setEditGreeting)}
-            placeholder="היי / שלום / מה קורה"
-            style={{ fontSize: '1rem', fontWeight: 600 }}
-          />
-        </div>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontWeight: 600 }}>תוכן ההודעה</label>
-          <textarea
-            value={editBody}
-            onChange={onFieldChange(setEditBody)}
-            rows={6}
-            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', direction: 'rtl' }}
-          />
-        </div>
-        <div className="form-group" style={{ marginBottom: 0, marginTop: '12px' }}>
-          <label style={{ fontSize: '0.85rem', color: '#888' }}>📅 תאריך סיום מבצע (אופציונלי — מופיע בתחתית המייל)</label>
-          <input
-            type="date"
-            value={promoDeadline}
-            onChange={onFieldChange(setPromoDeadline)}
-            style={{ fontSize: '0.9rem', direction: 'ltr', maxWidth: '200px' }}
-          />
-          {promoDeadline && (
-            <p style={{ fontSize: '0.8rem', color: '#556B3A', margin: '4px 0 0', direction: 'rtl' }}>
-              יוצג: המבצע עד ה־{new Date(promoDeadline).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח
-            </p>
-          )}
+      <div className="card">
+        <h3 className="mkt-card-title"><FileText size={16} aria-hidden="true" />תוכן המייל</h3>
+        <div className="mkt-stack-sm">
+          <label className="mkt-field">
+            <span className="field-label">פתיחה</span>
+            <input className="field"
+              type="text"
+              value={editGreeting}
+              onChange={onFieldChange(setEditGreeting)}
+              placeholder="היי / שלום / מה קורה"
+            />
+          </label>
+          <label className="mkt-field">
+            <span className="field-label">תוכן ההודעה</span>
+            <textarea className="field"
+              value={editBody}
+              onChange={onFieldChange(setEditBody)}
+              rows={6}
+            />
+          </label>
+          <div className="mkt-field">
+            <label className="field-label" htmlFor="mkt-promo-deadline">
+              תאריך סיום מבצע <span className="font-normal text-surface-500">(לא חובה, מופיע בתחתית המייל)</span>
+            </label>
+            <input
+              id="mkt-promo-deadline"
+              type="date"
+              value={promoDeadline}
+              onChange={onFieldChange(setPromoDeadline)}
+              dir="ltr"
+              className="field max-w-[200px]"
+            />
+            {promoDeadline && (
+              <p className="mkt-help flex items-start gap-1.5">
+                <CalendarDays size={14} aria-hidden="true" className="shrink-0 mt-0.5" />
+                <span>יוצג: המבצע עד ה־{new Date(promoDeadline).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח</span>
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* CTA button — text + link */}
-      <div className="form-card" style={{ marginBottom: '12px' }}>
-        <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>🔘 כפתור פעולה (CTA)</label>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <div className="form-group" style={{ flex: '1 1 180px', marginBottom: 0 }}>
-            <label style={{ fontSize: '0.8rem', color: '#888' }}>טקסט הכפתור</label>
-            <input
+      <div className="card">
+        <h3 className="mkt-card-title"><MousePointerClick size={16} aria-hidden="true" />כפתור פעולה (CTA)</h3>
+        <div className="mkt-row-fields">
+          <label className="mkt-field flex-[1_1_180px]">
+            <span className="field-label">טקסט הכפתור</span>
+            <input className="field"
               type="text"
               value={editCtaText}
               onChange={onFieldChange(setEditCtaText)}
               placeholder="לחנות"
-              style={{ fontSize: '0.9rem', direction: 'rtl' }}
             />
-          </div>
-          <div className="form-group" style={{ flex: '2 1 280px', marginBottom: 0 }}>
-            <label style={{ fontSize: '0.8rem', color: '#888' }}>קישור</label>
+          </label>
+          <label className="mkt-field flex-[2_1_280px]">
+            <span className="field-label">קישור</span>
             <input
               type="url"
               value={editCtaUrl}
               onChange={onFieldChange(setEditCtaUrl)}
               placeholder="https://minuto.co.il/shop"
-              style={{ fontSize: '0.9rem', direction: 'ltr', fontFamily: 'monospace' }}
+              dir="ltr"
+              className="field mkt-mono"
             />
-          </div>
+          </label>
         </div>
-        <p style={{ fontSize: '0.75rem', color: '#888', margin: '6px 0 0' }}>
-          השאר ריק כדי להסתיר את הכפתור. שמור שינויים כדי לעדכן את התצוגה.
+        <p className="mkt-help mt-2">
+          שדה ריק מסתיר את הכפתור. התצוגה המקדימה מתעדכנת אחרי השמירה.
         </p>
       </div>
 
       {/* Products — with add/remove */}
-      <div className="form-card" style={{ marginBottom: '12px' }}>
-        <label style={{ fontWeight: 600, display: 'block', marginBottom: '10px' }}>
-          מוצרים ({(draft?.products || []).length})
-        </label>
+      <div className="card">
+        <h3 className="mkt-card-title">
+          <Package size={16} aria-hidden="true" />
+          מוצרים במייל
+          <span className="meta num">{(draft?.products || []).length}</span>
+        </h3>
 
         {/* Always-visible product search with autocomplete dropdown */}
-        <div style={{ position: 'relative', marginBottom: '12px' }}>
-          <input
+        <div className="mkt-search mb-3">
+          <Search size={16} aria-hidden="true" />
+          <input className="field"
             type="text"
             value={productSearch}
             onChange={e => { setProductSearch(e.target.value); if (!allProducts.length) loadAllProducts(); }}
             onFocus={() => { if (!allProducts.length) loadAllProducts(); }}
-            placeholder="🔍 חפש מוצר להוספה..."
-            style={{
-              width: '100%', padding: '8px 12px', borderRadius: '8px',
-              border: '1px solid #ddd', fontSize: '0.9rem', direction: 'rtl',
-              boxSizing: 'border-box',
-            }}
+            placeholder="חיפוש מוצר להוספה"
+            aria-label="חיפוש מוצר להוספה"
           />
           {/* Dropdown — show when search has text OR products loaded and field focused */}
           {productSearch.trim() && (
-            <div style={{
-              position: 'absolute', top: '100%', right: 0, left: 0, zIndex: 100,
-              background: '#fff', border: '1px solid #E8E8E0', borderRadius: '10px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)', maxHeight: '220px', overflowY: 'auto',
-            }}>
+            <div className="mkt-pop mkt-rows">
               {allProducts
                 .filter(p => (p.name || '').toLowerCase().includes(productSearch.toLowerCase()))
                 .slice(0, 15)
                 .map(p => {
                   const alreadyAdded = (draft?.products || []).some(dp => dp.woo_id === p.woo_id);
                   return (
-                    <div
+                    <button
                       key={p.woo_id}
+                      type="button"
                       onClick={() => { if (!alreadyAdded) { addProduct(p); setProductSearch(''); } }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '8px 12px', cursor: alreadyAdded ? 'default' : 'pointer',
-                        opacity: alreadyAdded ? 0.5 : 1, direction: 'rtl',
-                        borderBottom: '1px solid #F5F5F0',
-                      }}
-                      onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.background = '#F0FDF4'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      disabled={alreadyAdded}
+                      className="mkt-opt"
                     >
                       {p.image_url && (
-                        <img src={p.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                        <img src={p.image_url} alt="" className="mkt-thumb" />
                       )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3D4A2E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                        {p.price && <div style={{ fontSize: '0.75rem', color: '#888' }}>₪{parseFloat(p.price).toLocaleString()}</div>}
-                      </div>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] font-medium text-surface-900 truncate">{p.name}</span>
+                        {p.price && <span className="block text-xs text-surface-500 num">₪{parseFloat(p.price).toLocaleString()}</span>}
+                      </span>
                       {alreadyAdded
-                        ? <span style={{ fontSize: '0.75rem', color: '#10B981', flexShrink: 0 }}>✓ נוסף</span>
-                        : <span style={{ fontSize: '0.8rem', color: '#556B3A', flexShrink: 0 }}>➕</span>
+                        ? <span className="inline-flex items-center gap-1 text-xs text-surface-500 shrink-0"><Check size={14} aria-hidden="true" />נוסף</span>
+                        : <Plus size={16} aria-hidden="true" className="text-surface-500 shrink-0" />
                       }
-                    </div>
+                    </button>
                   );
                 })}
               {allProducts.filter(p => (p.name || '').toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
-                <div style={{ padding: '12px', color: '#999', fontSize: '0.85rem', textAlign: 'center' }}>לא נמצאו מוצרים</div>
+                <div className="px-3 py-4 text-[13px] text-surface-500 text-center">לא נמצאו מוצרים</div>
               )}
             </div>
           )}
         </div>
 
         {/* Current products */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+        <div className="flex flex-wrap gap-2">
           {(draft?.products || []).map(p => (
-            <div key={p.woo_id} style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              background: '#F0FDF4', border: '1px solid #BBF7D0',
-              borderRadius: '8px', padding: '6px 10px',
-            }}>
+            <div key={p.woo_id} className="mkt-prod">
               {p.image_url && (
-                <img src={p.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                <img src={p.image_url} alt="" className="mkt-thumb" />
               )}
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3D4A2E' }}>{p.name}</div>
-                {p.price && <div style={{ fontSize: '0.75rem', color: '#556B3A' }}>₪{p.price}</div>}
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium text-surface-900 truncate max-w-[220px]">{p.name}</div>
+                {p.price && <div className="text-xs text-surface-500 num">₪{p.price}</div>}
               </div>
               <button
                 onClick={() => removeProduct(p.woo_id)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: '1rem', color: '#999', padding: '0 4px',
-                }}
+                className="mkt-icon-btn"
+                aria-label={`הסרת ${p.name} מהמייל`}
               >
-                ✕
+                <X size={16} aria-hidden="true" />
               </button>
             </div>
           ))}
           {(draft?.products || []).length === 0 && (
-            <div style={{ color: '#999', fontSize: '0.85rem', fontStyle: 'italic' }}>אין מוצרים. לחץ "הוסף מוצר" למעלה.</div>
+            <p className="text-[13px] text-surface-500">אין מוצרים במייל. אפשר להוסיף מהחיפוש למעלה.</p>
           )}
         </div>
       </div>
 
       {/* Preview updates automatically after autosave. No banner needed. */}
 
-      <div className="form-card" style={{ marginBottom: '12px' }}>
-        <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>👁️ תצוגה מקדימה</label>
+      <div className="card">
+        <h3 className="mkt-card-title"><Eye size={16} aria-hidden="true" />תצוגה מקדימה</h3>
         <iframe
           src={previewBlobUrl || 'about:blank'}
-          style={{ width: '100%', height: '600px', border: '1px solid #ddd', borderRadius: '8px' }}
+          className="mkt-preview h-[600px]"
           title="Email Preview"
         />
       </div>
 
       {/* Actions */}
-      <div className="form-card">
+      <div className="card">
+        <h3 className="mkt-card-title"><Send size={16} aria-hidden="true" />שליחה</h3>
+
         {/* Test send */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <input
-            type="email"
-            placeholder="מייל לטסט (שלך)"
-            value={testEmail}
-            onChange={e => setTestEmail(e.target.value)}
-            style={{ flex: '1 1 200px', fontFamily: 'monospace', fontSize: '0.9rem' }}
-          />
-          <button
-            onClick={sendTest}
-            disabled={step === 'sending'}
-            className="btn-small"
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            {step === 'sending' ? '⏳' : '📧'} שלח טסט
-          </button>
-          {/* One-click: send draft to every member of every test-flagged group */}
-          {testGroupMembers.length > 0 && (
+        <div className="mkt-field mb-5">
+          <span className="field-label" id="mkt-test-label">שליחת טסט</span>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="email"
+              placeholder="כתובת לשליחת טסט"
+              value={testEmail}
+              onChange={e => setTestEmail(e.target.value)}
+              dir="auto"
+              aria-labelledby="mkt-test-label"
+              className="field mkt-mono w-auto flex-[1_1_200px]"
+            />
             <button
-              onClick={sendToTestGroups}
+              onClick={sendTest}
               disabled={step === 'sending'}
-              className="btn-small"
-              style={{ whiteSpace: 'nowrap', background: '#FEF3C7', borderColor: '#FDE68A', color: '#92400E' }}
-              title={`שליחה לקבוצות הבדיקה (${testGroupMembers.length} נמענים)`}
+              className="btn-secondary"
             >
-              🧪 שלח לקבוצת בדיקה ({testGroupMembers.length})
+              <Mail size={16} aria-hidden="true" />
+              שליחת טסט
             </button>
-          )}
+            {/* One-click: send draft to every member of every test-flagged group */}
+            {testGroupMembers.length > 0 && (
+              <button
+                onClick={sendToTestGroups}
+                disabled={step === 'sending'}
+                className="btn-secondary"
+                title={`שליחה לקבוצות הבדיקה (${testGroupMembers.length} נמענים)`}
+              >
+                <FlaskConical size={16} aria-hidden="true" />
+                לקבוצת הבדיקה <span className="num text-surface-500">({testGroupMembers.length})</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Send mode toggle */}
-        <div style={{ marginBottom: '12px' }}>
-          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>📬 שלח אל:</label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="mkt-field mb-3">
+          <span className="field-label" id="mkt-send-mode">נמענים</span>
+          <div className="mkt-seg full" role="group" aria-labelledby="mkt-send-mode">
             <button
               onClick={() => { setSendMode('all'); setShowContactPicker(false); setSelectedGroupId(null); }}
-              className={sendMode === 'all' ? 'btn-primary' : 'btn-small'}
-              style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+              aria-pressed={sendMode === 'all'}
             >
-              כל הנמענים ({optedInCount})
+              כל הנמענים <span className="num">({optedInCount})</span>
             </button>
             <button
               onClick={() => { setSendMode('group'); setShowContactPicker(false); }}
-              className={sendMode === 'group' ? 'btn-primary' : 'btn-small'}
-              style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+              aria-pressed={sendMode === 'group'}
             >
-              קבוצה {selectedGroupId ? `(${selectedContacts.length})` : ''}
+              קבוצה {selectedGroupId ? <span className="num">({selectedContacts.length})</span> : ''}
             </button>
             <button
               onClick={() => { setSendMode('selected'); setShowContactPicker(true); setSelectedGroupId(null); }}
-              className={sendMode === 'selected' ? 'btn-primary' : 'btn-small'}
-              style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+              aria-pressed={sendMode === 'selected'}
             >
-              בחירה ידנית {sendMode === 'selected' && selectedContacts.length > 0 ? `(${selectedContacts.length})` : ''}
+              בחירה ידנית {sendMode === 'selected' && selectedContacts.length > 0 ? <span className="num">({selectedContacts.length})</span> : ''}
             </button>
           </div>
         </div>
 
         {/* Group picker */}
         {sendMode === 'group' && (
-          <div style={{
-            border: '1px solid #D4E8C2', borderRadius: '10px', padding: '12px',
-            marginBottom: '12px', background: '#FAFFF5',
-          }}>
+          <div className="mkt-pick mb-4">
             {(data.contactGroups || []).length === 0 ? (
-              <div style={{ color: '#888', fontSize: '0.85rem', textAlign: 'center', padding: '8px' }}>
-                אין קבוצות עדיין. צור קבוצה בלשונית "קבוצות" מעל.
+              <div className="px-3 py-4 text-[13px] text-surface-500 text-center">
+                אין קבוצות עדיין. אפשר ליצור קבוצה בלשונית "קבוצות".
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div className="mkt-rows" role="radiogroup" aria-label="בחירת קבוצה">
                 {(data.contactGroups || []).map(g => {
                   const groupMembers = (data.contactGroupMembers || []).filter(m => m.group_id === g.id);
                   const count = groupMembers.length;
@@ -1202,12 +1209,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                   return (
                     <label
                       key={g.id}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
-                        borderRadius: '8px', cursor: 'pointer', direction: 'rtl',
-                        background: isSelected ? '#F0FDF4' : '#FFFFFF',
-                        border: isSelected ? '1px solid #86EFAC' : '1px solid #E8E8E0',
-                      }}
+                      className="mkt-pick-row"
+                      data-selected={isSelected}
                     >
                       <input
                         type="radio"
@@ -1222,21 +1225,18 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                             .map(m => ({ email: m.email, name: m.name || undefined }));
                           setSelectedContacts(members);
                         }}
-                        style={{ accentColor: '#3D4A2E' }}
                       />
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2C3522' }}>{g.name}</span>
-                        {g.is_test_group && (
-                          <span style={{
-                            marginRight: '6px', background: '#FEF3C7', color: '#92400E',
-                            border: '1px solid #FDE68A', borderRadius: '10px', padding: '1px 8px',
-                            fontSize: '0.7rem', fontWeight: 600,
-                          }}>🧪 בדיקה</span>
-                        )}
-                        <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                          {count} חברים{sendable < count ? ` · ${sendable} אישרו דיוור` : ''} {g.description ? `• ${g.description}` : ''}
-                        </div>
-                      </div>
+                      <span className="flex-1 min-w-0">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-surface-900">{g.name}</span>
+                          {g.is_test_group && (
+                            <span className="tag tag-warn">בדיקה</span>
+                          )}
+                        </span>
+                        <span className="block text-xs text-surface-500 mt-0.5">
+                          <span className="num">{count}</span> חברים{sendable < count ? ` · ${sendable} אישרו דיוור` : ''}{g.description ? ` · ${g.description}` : ''}
+                        </span>
+                      </span>
                     </label>
                   );
                 })}
@@ -1247,43 +1247,35 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 
         {/* Contact picker */}
         {showContactPicker && (
-          <div style={{
-            border: '1px solid #D4E8C2', borderRadius: '10px', padding: '12px',
-            marginBottom: '12px', background: '#FAFFF5', maxHeight: '300px', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column',
-          }}>
-            <input
-              type="text"
-              placeholder="🔍 חפש לפי שם או אימייל..."
-              value={contactSearch}
-              onChange={e => setContactSearch(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 12px', borderRadius: '8px',
-                border: '1px solid #ddd', fontSize: '0.85rem', marginBottom: '8px',
-                direction: 'rtl',
-              }}
-            />
+          <div className="mkt-pick mb-4 p-3 flex flex-col gap-2.5 max-h-[340px]">
+            <div className="mkt-search">
+              <Search size={16} aria-hidden="true" />
+              <input className="field"
+                type="text"
+                placeholder="חיפוש לפי שם או מייל"
+                aria-label="חיפוש נמענים לפי שם או מייל"
+                value={contactSearch}
+                onChange={e => setContactSearch(e.target.value)}
+              />
+            </div>
             {selectedContacts.length > 0 && (
-              <div style={{ marginBottom: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <div className="flex flex-wrap items-center gap-1.5">
                 {selectedContacts.map(c => (
-                  <span key={c.email} style={{
-                    background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '16px',
-                    padding: '2px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                  }}>
-                    {c.name || c.email}
+                  <span key={c.email} className="mkt-token">
+                    <span>{c.name || c.email}</span>
                     <button
                       onClick={() => setSelectedContacts(prev => prev.filter(s => s.email !== c.email))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#666', padding: 0 }}
-                    >✕</button>
+                      aria-label={`הסרת ${c.name || c.email}`}
+                    ><X size={12} aria-hidden="true" /></button>
                   </span>
                 ))}
                 <button
                   onClick={() => setSelectedContacts([])}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#999' }}
-                >נקה הכל</button>
+                  className="btn-ghost mkt-btn-sm h-7"
+                >ניקוי הבחירה</button>
               </div>
             )}
-            <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+            <div className="overflow-y-auto max-h-[200px] rounded-lg border border-surface-200 mkt-rows">
               {(data.marketingContacts || [])
                 .filter(c => c.opted_in)
                 .filter(c => {
@@ -1295,14 +1287,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                 .map(c => {
                   const isSelected = selectedContacts.some(s => s.email === c.email);
                   return (
-                    <label key={c.id} style={{
-                      display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
-                      borderRadius: '6px', cursor: 'pointer', direction: 'rtl',
-                      background: isSelected ? '#F0FDF4' : 'transparent',
-                    }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#F5F5F0'; }}
-                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
-                    >
+                    <label key={c.id} className="mkt-pick-row" data-selected={isSelected}>
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -1313,12 +1298,11 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                             setSelectedContacts(prev => [...prev, { email: c.email, name: c.name }]);
                           }
                         }}
-                        style={{ accentColor: '#3D4A2E' }}
                       />
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#2C3522' }}>{c.name || '—'}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '8px', fontFamily: 'monospace' }}>{c.email}</span>
-                      </div>
+                      <span className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
+                        <span className="text-[13px] font-medium text-surface-900">{c.name || '—'}</span>
+                        <span className="text-xs text-surface-500 truncate" dir="ltr">{c.email}</span>
+                      </span>
                     </label>
                   );
                 })}
@@ -1330,73 +1314,72 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         <button
           onClick={sendCampaign}
           disabled={step === 'sending' || (sendMode === 'all' ? optedInCount === 0 : selectedContacts.length === 0)}
-          className="btn-primary"
-          style={{ width: '100%', fontSize: '1.1rem', padding: '14px' }}
+          className="btn-primary mkt-btn-lg mt-2"
         >
+          <Send size={16} aria-hidden="true" />
           {step === 'sending'
-            ? '⏳ שולח...'
+            ? 'שולח…'
             : sendMode === 'group'
-              ? `✅ שלח לקבוצה (${selectedContacts.length} חברים)`
+              ? `שליחה לקבוצה (${selectedContacts.length} חברים)`
               : sendMode === 'selected'
-                ? `✅ שלח ל-${selectedContacts.length} נמענים שנבחרו`
-                : `✅ אשר ושלח ל-${optedInCount} נמענים`
+                ? `שליחה ל-${selectedContacts.length} נמענים שנבחרו`
+                : `אישור ושליחה ל-${optedInCount} נמענים`
           }
         </button>
+      </div>
       </div>
 
       {/* ── Send Confirmation Modal ─────────────────────────────────────────── */}
       {showSendConfirm && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.45)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '16px',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: '16px', padding: '28px',
-            maxWidth: '440px', width: '100%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-            direction: 'rtl',
-          }}>
+        <div
+          className="mkt-scrim"
+          onKeyDown={e => { if (e.key === 'Escape') setShowSendConfirm(false); }}
+        >
+          <div
+            className="mkt-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mkt-send-confirm-title"
+          >
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '1.8rem' }}>📤</span>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#1a1a1a' }}>
-                אישור שליחת קמפיין
-              </h3>
+            <div className="flex items-center gap-3 mb-5">
+              <span className="mkt-ico brand" aria-hidden="true"><Send size={18} /></span>
+              <h3 id="mkt-send-confirm-title">אישור שליחת קמפיין</h3>
             </div>
 
             {/* What */}
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 600, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px' }}>נושא המייל</p>
-              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#14532D' }}>
+            <div className="mkt-modal-block mb-3">
+              <p className="b-label">נושא המייל</p>
+              <p className="text-[15px] font-semibold text-surface-900">
                 {editSubject || draft?.subject || '—'}
               </p>
             </div>
 
             {/* To whom */}
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '14px', marginBottom: '20px' }}>
-              <p style={{ margin: '0 0 6px', fontSize: '0.78rem', fontWeight: 600, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>נמענים</p>
+            <div className="mkt-modal-block mb-4">
+              <p className="b-label">נמענים</p>
               {sendMode === 'all' ? (
-                <p style={{ margin: 0, fontSize: '1rem', color: '#1E3A8A' }}>
-                  <strong>{optedInCount}</strong> אנשי קשר שאישרו קבלת מיילים
+                <p className="text-sm text-surface-900">
+                  <strong className="num font-semibold">{optedInCount}</strong> אנשי קשר שאישרו קבלת מיילים
                 </p>
               ) : (
                 <>
-                  <p style={{ margin: '0 0 8px', fontSize: '1rem', color: '#1E3A8A' }}>
-                    <strong>{selectedContacts.length}</strong>
+                  <p className="text-sm text-surface-900 mb-1.5">
+                    <strong className="num font-semibold">{selectedContacts.length}</strong>
                     {sendMode === 'group'
                       ? ` חברים בקבוצה "${(data.contactGroups || []).find(g => g.id === selectedGroupId)?.name || ''}"`
                       : ' נמענים שנבחרו ידנית'}
                   </p>
-                  {selectedContacts.slice(0, 5).map((c, i) => (
-                    <div key={i} style={{ fontSize: '0.82rem', color: '#3B82F6', marginTop: '2px' }}>
-                      • {c.name || c.email} {c.name ? `(${c.email})` : ''}
-                    </div>
-                  ))}
+                  <ul className="flex flex-col gap-0.5">
+                    {selectedContacts.slice(0, 5).map((c, i) => (
+                      <li key={i} className="text-[13px] text-surface-700 truncate">
+                        {c.name || c.email} {c.name ? <span className="text-surface-500" dir="ltr">({c.email})</span> : ''}
+                      </li>
+                    ))}
+                  </ul>
                   {selectedContacts.length > 5 && (
-                    <div style={{ fontSize: '0.8rem', color: '#93C5FD', marginTop: '4px' }}>
-                      + עוד {selectedContacts.length - 5} נמענים...
+                    <div className="text-xs text-surface-500 mt-1">
+                      ועוד <span className="num">{selectedContacts.length - 5}</span> נמענים
                     </div>
                   )}
                 </>
@@ -1404,39 +1387,32 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
             </div>
 
             {/* Warning */}
-            <p style={{ margin: '0 0 20px', fontSize: '0.85rem', color: '#6B7280', textAlign: 'center' }}>
-              ⚠️ לאחר השליחה לא ניתן לבטל. בדוק שהנושא והתוכן נכונים לפני שמאשר.
-            </p>
+            <div className="notice notice-warn mb-5">
+              <TriangleAlert size={16} aria-hidden="true" />
+              <span>אחרי השליחה אי אפשר לבטל. כדאי לוודא שהנושא והתוכן נכונים.</span>
+            </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowSendConfirm(false)}
-                style={{
-                  flex: 1, padding: '12px', borderRadius: '10px',
-                  border: '1.5px solid #E5E7EB', background: '#fff',
-                  fontSize: '0.95rem', fontWeight: 600, color: '#6B7280',
-                  cursor: 'pointer',
-                }}
+                className="btn-secondary flex-1"
+                autoFocus
               >
                 ביטול
               </button>
               <button
                 onClick={executeSend}
-                style={{
-                  flex: 2, padding: '12px', borderRadius: '10px',
-                  border: 'none', background: '#16A34A',
-                  fontSize: '0.95rem', fontWeight: 700, color: '#fff',
-                  cursor: 'pointer',
-                }}
+                className="btn-primary flex-[2]"
               >
-                ✅ כן, שלח עכשיו
+                <Send size={16} aria-hidden="true" />
+                שליחה עכשיו
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -1449,9 +1425,9 @@ function AutomationsTab({ data, user, showToast }) {
   const PLACEHOLDER_AUTOMATIONS = [
     {
       type: 'welcome_signup',
-      icon: '👋',
+      icon: UserPlus,
       title: 'מייל ברוכים הבאים (הרשמה לרשימה)',
-      description: 'נשלח אוטומטית למי שנרשם לרשימת התפוצה (לא הזמנה)',
+      description: 'נשלח אוטומטית לאלו שנרשמו לרשימת התפוצה (בלי הזמנה)',
       trigger: 'הרשמה לרשימה',
       delay: 'מיידי',
     },
@@ -1463,17 +1439,21 @@ function AutomationsTab({ data, user, showToast }) {
   const LIVE_TRIGGERS = ['first_purchase', 'coffee_checkin', 'refill_reminder', 'abandoned_cart_1', 'abandoned_cart_2'];
 
   return (
-    <div className="section">
-      <h2>⚡ אוטומציות מייל</h2>
-      <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-        מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך — באמצעות מערכת CoffeeFlow (לא Flashy).
-      </p>
+    <section>
+      <div className="mkt-sec-head">
+        <div>
+          <h2>אוטומציות מייל</h2>
+          <p className="mkt-sec-sub max-w-[640px]">
+            מיילים שנכתבים פעם אחת ורצים לבד. אירועים ב-WooCommerce מפעילים אותם, והשליחה רצה דרך CoffeeFlow (לא Flashy).
+          </p>
+        </div>
+      </div>
 
       {/* The active automations — each wired to email-automation-scheduler.
           Reads the logged-in user's email from Clerk directly inside the
           component (not from useApp().user, which is a hardcoded stub
           pinned to the legacy marketing_contacts user_id). */}
-      <div style={{ display: 'grid', gap: '12px' }}>
+      <div className="mkt-stack-sm">
         {LIVE_TRIGGERS.map(tt => (
           <EmailAutomationCard key={tt} trigger={tt} showToast={showToast} />
         ))}
@@ -1481,52 +1461,46 @@ function AutomationsTab({ data, user, showToast }) {
 
       <ReminderStopPanel showToast={showToast} />
 
-      <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem', color: '#3D4A2E', fontSize: '1.05rem' }}>בקרוב</h3>
-      <div style={{ display: 'grid', gap: '12px' }}>
-        {PLACEHOLDER_AUTOMATIONS.map(auto => (
-          <div key={auto.type} className="form-card" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', opacity: 0.65 }}>
-            <div style={{ fontSize: '2rem', lineHeight: 1 }}>{auto.icon}</div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{auto.title}</h3>
-              <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem' }}>{auto.description}</p>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#5B21B6' }}>
-                  טריגר: {auto.trigger}
-                </span>
-                <span style={{ background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#92400E' }}>
-                  עיכוב: {auto.delay}
-                </span>
+      <h3 className="text-[15px] font-semibold text-surface-900 mt-8 mb-3">בקרוב</h3>
+      <div className="mkt-stack-sm">
+        {PLACEHOLDER_AUTOMATIONS.map(auto => {
+          const AutoIcon = auto.icon;
+          return (
+            <div key={auto.type} className="card flex gap-3 items-start">
+              <span className="mkt-ico" aria-hidden="true"><AutoIcon size={18} /></span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-[15px] font-semibold text-surface-700">{auto.title}</h4>
+                  <span className="tag">בקרוב</span>
+                </div>
+                <p className="text-[13px] text-surface-500 mt-1">{auto.description}</p>
+                <div className="flex gap-1.5 flex-wrap mt-3">
+                  <span className="tag font-medium">
+                    טריגר: {auto.trigger}
+                  </span>
+                  <span className="tag font-medium">
+                    עיכוב: {auto.delay}
+                  </span>
+                </div>
               </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{
-                display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
-                fontSize: '0.8rem', fontWeight: 600,
-                background: '#FEF3C7', color: '#92400E',
-              }}>
-                🔧 בקרוב
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div style={{
-        marginTop: '1.5rem', padding: '16px',
-        background: '#F0F9FF', border: '1px solid #BAE6FD',
-        borderRadius: '8px', fontSize: '0.85rem', color: '#0369A1',
-      }}>
-        <strong>💡 איך זה עובד?</strong>
-        <br />
-        1. WooCommerce מסנכרן הזמנות ל-CoffeeFlow כל שעה
-        <br />
-        2. ה-scheduler מזהה לקוחות שעברו את התנאי של האוטומציה (לדוגמה — קונה ראשונה, 3 ימים אחרי הזמנה)
-        <br />
-        3. נוצר קופון ייחודי לאותו לקוח ב-WooCommerce, ונשלח מייל דרך Resend
-        <br />
-        4. כל המייל נשמר ב-CoffeeFlow — אפשר לראות מה נשלח ולמי, וזה לא תלוי ב-Flashy
+      <div className="notice text-[13px] mt-6">
+        <Info size={16} aria-hidden="true" />
+        <div>
+          <strong>איך זה עובד</strong>
+          <ol className="list-decimal ps-4 mt-1.5 flex flex-col gap-1">
+            <li>WooCommerce מסנכרן הזמנות ל-CoffeeFlow כל שעה.</li>
+            <li>ה-scheduler מזהה לקוחות שעומדים בתנאי של האוטומציה (למשל קנייה ראשונה, 3 ימים אחרי ההזמנה).</li>
+            <li>נוצר קופון ייחודי ללקוח ב-WooCommerce, והמייל נשלח דרך Resend.</li>
+            <li>כל מייל נשמר ב-CoffeeFlow: אפשר לראות מה נשלח ולמי, בלי תלות ב-Flashy.</li>
+          </ol>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1550,24 +1524,24 @@ function AutomationsTab({ data, user, showToast }) {
 // template's own delay/lookback fields, so copy stays in sync with config.
 const AUTOMATION_META = {
   first_purchase: {
-    icon: '☕',
-    blurb: (t) => `נשלח ${t.delay_days} ימים אחרי ההזמנה הראשונה — רק ללקוחות שהזמנתם הראשונה הייתה ב-${t.max_lookback_days} הימים האחרונים.`,
+    icon: Coffee,
+    blurb: (t) => `נשלח ${t.delay_days} ימים אחרי ההזמנה הראשונה, רק ללקוחות שהזמנתם הראשונה הייתה ב-${t.max_lookback_days} הימים האחרונים.`,
   },
   coffee_checkin: {
-    icon: '💬',
+    icon: MessageCircle,
     blurb: (t) => `לקוחות שאישרו דיוור, עם הזמנה אחת בלבד שכללה פולי קפה: מייל "איך היה הקפה?" פעם אחת, ${t.delay_days} ימים אחרי שההזמנה הושלמה. ללא קופון. ${t.settings?.review_link_enabled ? 'כולל קישור לביקורת בגוגל.' : 'קישור הביקורת בגוגל כבוי (הביקורות בפרופיל מושהות).'}`,
   },
   refill_reminder: {
-    icon: '🔄',
+    icon: RefreshCw,
     blurb: (t) => `לקוחות עם ${t.settings?.min_orders ?? 3} הזמנות ומעלה, שאישרו דיוור: תזכורת לפי הקצב האישי (חציון הזמן בין הזמנות × ${t.settings?.cadence_factor ?? 0.85}). אחת לכל מחזור, עם קישור להפסקת תזכורות.`,
   },
   abandoned_cart_1: {
-    icon: '🛒',
-    blurb: (t) => `תזכורת ראשונה — נשלח ${t.delay_days} יום אחרי שהתחילה הזמנה ולא הושלמה (חלון איסוף ${t.max_lookback_days} ימים).`,
+    icon: ShoppingCart,
+    blurb: (t) => `תזכורת ראשונה: נשלח ${t.delay_days} יום אחרי שהתחילה הזמנה ולא הושלמה (חלון איסוף ${t.max_lookback_days} ימים).`,
   },
   abandoned_cart_2: {
-    icon: '🛒',
-    blurb: (t) => `תזכורת שנייה — נשלח ${t.delay_days} ימים אחרי הזמנה שלא הושלמה, ורק אם מייל 1 כבר נשלח ללקוח.`,
+    icon: ShoppingCart,
+    blurb: (t) => `תזכורת שנייה: נשלח ${t.delay_days} ימים אחרי הזמנה שלא הושלמה, ורק אם מייל 1 כבר נשלח ללקוח.`,
   },
 };
 
@@ -1630,10 +1604,10 @@ function EmailAutomationCard({ trigger, showToast }) {
       .eq('trigger_type', trigger);
     setBusy(false);
     if (error) {
-      showToast(`❌ שגיאה: ${error.message}`, 'error');
+      showToast(`שגיאה: ${error.message}`, 'error');
       return;
     }
-    showToast(template.enabled ? '⏸️ האוטומציה הושבתה' : '✅ האוטומציה הופעלה');
+    showToast(template.enabled ? 'האוטומציה הושבתה' : 'האוטומציה הופעלה');
     loadAll();
   };
 
@@ -1644,11 +1618,11 @@ function EmailAutomationCard({ trigger, showToast }) {
     // to a personal address that isn't the dashboard login email.
     const targetEmail = (emailOverride ?? userEmail ?? '').trim();
     if (!targetEmail) {
-      showToast('❌ הקלד כתובת מייל לבדיקה', 'error');
+      showToast('צריך להזין כתובת מייל לבדיקה', 'error');
       return;
     }
     if (!targetEmail.includes('@')) {
-      showToast('❌ כתובת מייל לא תקינה', 'error');
+      showToast('כתובת מייל לא תקינה', 'error');
       return;
     }
     if (!confirm(`לשלוח מייל בדיקה ל-${targetEmail}? (יוצר קופון אמיתי ב-WooCommerce)`)) return;
@@ -1659,12 +1633,12 @@ function EmailAutomationCard({ trigger, showToast }) {
       });
       if (error) throw error;
       if (data?.ok || data?.id) {
-        showToast(`✅ נשלח ל-${targetEmail}${data.coupon ? ` · קופון: ${data.coupon}` : ''}`);
+        showToast(`נשלח ל-${targetEmail}${data.coupon ? ` · קופון: ${data.coupon}` : ''}`);
       } else {
-        showToast(`❌ שליחה נכשלה: ${data?.error ?? 'unknown'}`, 'error');
+        showToast(`שליחה נכשלה: ${data?.error ?? 'unknown'}`, 'error');
       }
     } catch (e) {
-      showToast(`❌ שגיאה: ${e.message}`, 'error');
+      showToast(`שגיאה: ${e.message}`, 'error');
     } finally { setBusy(false); }
   };
 
@@ -1677,13 +1651,13 @@ function EmailAutomationCard({ trigger, showToast }) {
       if (error) throw error;
       const run = (data?.runs ?? []).find(r => r.trigger === trigger);
       if (!run) {
-        showToast('⚠️ האוטומציה לא מופעלת — אין מה לבדוק', 'warning');
+        showToast('האוטומציה כבויה, אין מה לבדוק', 'warning');
       } else {
-        showToast(`🔍 ${run.candidates_count} לקוחות יקבלו מייל בריצה הבאה`);
+        showToast(`${run.candidates_count} לקוחות יקבלו מייל בריצה הבאה`);
         console.log('[automation dry run]', run);
       }
     } catch (e) {
-      showToast(`❌ שגיאה: ${e.message}`, 'error');
+      showToast(`שגיאה: ${e.message}`, 'error');
     } finally { setBusy(false); }
   };
 
@@ -1705,7 +1679,7 @@ function EmailAutomationCard({ trigger, showToast }) {
 
   const saveEdit = async () => {
     if (!editSubject.trim() || !editBody.trim()) {
-      showToast('❌ נושא וגוף לא יכולים להיות ריקים', 'error');
+      showToast('נושא וגוף לא יכולים להיות ריקים', 'error');
       return;
     }
     setBusy(true);
@@ -1719,10 +1693,10 @@ function EmailAutomationCard({ trigger, showToast }) {
       .eq('trigger_type', trigger);
     setBusy(false);
     if (error) {
-      showToast(`❌ שגיאה בשמירה: ${error.message}`, 'error');
+      showToast(`שגיאה בשמירה: ${error.message}`, 'error');
       return;
     }
-    showToast('✅ התבנית נשמרה');
+    showToast('התבנית נשמרה');
     setEditing(false);
     loadAll();
   };
@@ -1746,160 +1720,167 @@ function EmailAutomationCard({ trigger, showToast }) {
       win.document.write(rendered);
       win.document.close();
     } else {
-      showToast('❌ דפדפן חסם את חלון התצוגה המקדימה', 'error');
+      showToast('דפדפן חסם את חלון התצוגה המקדימה', 'error');
     }
   };
 
   if (loading) {
-    return <div style={{ padding: 24, color: '#666' }}>טוען נתוני אוטומציה…</div>;
+    return (
+      <div className="card flex gap-3 items-start" role="status" aria-label="טוען נתוני אוטומציה">
+        <span className="mkt-ico" aria-hidden="true" />
+        <div className="flex-1 flex flex-col gap-2.5 pt-1.5">
+          <div className="mkt-skel w-1/3" />
+          <div className="mkt-skel w-3/4" />
+          <div className="mkt-skel w-1/2" />
+        </div>
+      </div>
+    );
   }
   if (!template) {
     return (
-      <div className="form-card" style={{ background: '#FEF3C7', borderColor: '#FCD34D' }}>
-        <strong style={{ color: '#92400E' }}>⚠️ התבנית לא נמצאה</strong>
-        <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#92400E' }}>
-          לא נמצאה תבנית עבור הטריגר <code>{trigger}</code>. ודאי שה-migration המתאים רץ ב-Supabase (dev ואז prod).
-        </p>
+      <div className="notice notice-warn">
+        <TriangleAlert size={16} aria-hidden="true" />
+        <div>
+          <strong>התבנית לא נמצאה</strong>
+          <p className="mt-1">
+            לא נמצאה תבנית עבור הטריגר <code dir="ltr">{trigger}</code>. צריך לוודא שה-migration המתאים רץ ב-Supabase (dev ואז prod).
+          </p>
+        </div>
       </div>
     );
   }
 
-  const meta = AUTOMATION_META[trigger] ?? { icon: '✉️', blurb: () => template.display_name };
+  const meta = AUTOMATION_META[trigger] ?? { icon: Mail, blurb: () => template.display_name };
+  const MetaIcon = meta.icon;
   const hasCoupon = (template.coupon_percent ?? 0) > 0;
   const description = meta.blurb(template) +
     (hasCoupon ? ` כולל קופון ייחודי ${template.coupon_percent}% הנחה תקף ל-${template.coupon_expiry_days} ימים.` : '');
   const enabled = template.enabled;
   return (
-    <div className="form-card" style={{
-      borderColor: enabled ? '#10B981' : '#E5E7EB',
-      background: enabled ? '#ECFDF5' : 'white',
-      borderWidth: 2,
-    }}>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <div style={{ fontSize: '2rem', lineHeight: 1 }}>{meta.icon}</div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{template.display_name}</h3>
-          <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem' }}>
+    <div className="card">
+      <div className="flex gap-3 items-start">
+        <span className={`mkt-ico ${enabled ? 'brand' : ''}`} aria-hidden="true"><MetaIcon size={18} /></span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-[15px] font-semibold text-surface-900">{template.display_name}</h3>
+            {enabled
+              ? <span className="tag tag-ok"><i className="dot" aria-hidden="true" />פעיל</span>
+              : <span className="tag"><i className="dot" aria-hidden="true" />כבוי</span>}
+          </div>
+          <p className="text-[13px] text-surface-700 mt-1 leading-relaxed text-pretty">
             {description}
           </p>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: 12 }}>
-            <span style={{ background: '#D1FAE5', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#065F46' }}>
-              ✓ נשלח: {stats.sent}
+          <div className="flex gap-1.5 flex-wrap mt-3">
+            <span className="tag font-medium">
+              נשלחו: <span className="num">{stats.sent}</span>
             </span>
             {stats.failed > 0 && (
-              <span style={{ background: '#FEE2E2', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#991B1B' }}>
-                ✗ נכשל: {stats.failed}
+              <span className="tag tag-danger">
+                נכשלו: <span className="num">{stats.failed}</span>
               </span>
             )}
             {hasCoupon && (
-              <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#5B21B6' }}>
-                קופון: {template.coupon_percent}% · {template.coupon_expiry_days} ימים
+              <span className="tag font-medium">
+                קופון: <span className="num">{template.coupon_percent}%</span> · <span className="num">{template.coupon_expiry_days}</span> ימים
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              onClick={toggleEnabled}
-              disabled={busy}
-              className={enabled ? 'btn-small' : 'btn-primary'}
-              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-            >
-              {enabled ? '⏸️ השבת' : '✅ הפעל אוטומציה'}
-            </button>
-            <button
-              onClick={() => testSend()}
-              disabled={busy || !userEmail}
-              className="btn-small"
-              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-              title={userEmail ? `שלח אל ${userEmail}` : 'לא נמצאה כתובת — השתמש בשדה למטה'}
-            >
-              ✉️ שלח אליי {userEmail ? `(${userEmail.split('@')[0]})` : ''}
-            </button>
-            <input
-              type="email"
-              placeholder="או הקלד כתובת מייל אחרת"
-              value={customTestEmail}
-              onChange={e => setCustomTestEmail(e.target.value)}
-              dir="ltr"
-              style={{
-                fontSize: '0.85rem', padding: '6px 10px', borderRadius: 8,
-                border: '1px solid #D1D5DB', minWidth: 200,
-              }}
-            />
-            <button
-              onClick={() => testSend(customTestEmail)}
-              disabled={busy || !customTestEmail}
-              className="btn-small"
-              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-            >
-              שלח לכתובת הזו
-            </button>
-            <button
-              onClick={dryRun}
-              disabled={busy}
-              className="btn-small"
-              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-            >
-              🔍 בדוק כמה ישלחו בריצה הבאה
-            </button>
-            {recent.length > 0 && (
-              <button
-                onClick={() => setShowHistory(s => !s)}
-                className="btn-small"
-                style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-              >
-                {showHistory ? 'סגור היסטוריה' : `📜 היסטוריה (${recent.length})`}
-              </button>
-            )}
-            <button
-              onClick={openEditor}
-              disabled={busy || editing}
-              className="btn-small"
-              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-            >
-              ✏️ ערוך מייל
-            </button>
-          </div>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <span style={{
-            display: 'inline-block', padding: '4px 12px', borderRadius: 12,
-            fontSize: '0.8rem', fontWeight: 600,
-            background: enabled ? '#10B981' : '#9CA3AF', color: 'white',
-          }}>
-            {enabled ? '● פעיל' : '○ כבוי'}
-          </span>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-surface-200 flex flex-col gap-3">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={toggleEnabled}
+            disabled={busy}
+            className={`${enabled ? 'btn-secondary' : 'btn-primary'} mkt-btn-sm`}
+          >
+            {enabled ? 'השבתה' : 'הפעלת האוטומציה'}
+          </button>
+          <button
+            onClick={openEditor}
+            disabled={busy || editing}
+            className="btn-secondary mkt-btn-sm"
+          >
+            <Pencil size={16} aria-hidden="true" />
+            עריכת המייל
+          </button>
+          <button
+            onClick={dryRun}
+            disabled={busy}
+            className="btn-secondary mkt-btn-sm"
+          >
+            <Search size={16} aria-hidden="true" />
+            כמה יקבלו בריצה הבאה
+          </button>
+          {recent.length > 0 && (
+            <button
+              onClick={() => setShowHistory(s => !s)}
+              className="btn-ghost mkt-btn-sm"
+              aria-expanded={showHistory}
+            >
+              <History size={16} aria-hidden="true" />
+              {showHistory ? 'הסתרת ההיסטוריה' : <>היסטוריה <span className="num text-surface-500">({recent.length})</span></>}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-[13px] text-surface-500 me-1">מייל בדיקה</span>
+          <button
+            onClick={() => testSend()}
+            disabled={busy || !userEmail}
+            className="btn-secondary mkt-btn-sm"
+            title={userEmail ? `שליחה אל ${userEmail}` : 'לא נמצאה כתובת, אפשר להזין כתובת בשדה'}
+          >
+            <Mail size={16} aria-hidden="true" />
+            אליי {userEmail ? <span className="text-surface-500">({userEmail.split('@')[0]})</span> : ''}
+          </button>
+          <input
+            type="email"
+            placeholder="או כתובת מייל אחרת"
+            aria-label="כתובת מייל אחרת לבדיקה"
+            value={customTestEmail}
+            onChange={e => setCustomTestEmail(e.target.value)}
+            dir="auto"
+            className="field min-h-8 h-8 py-1 w-auto flex-[1_1_200px] max-w-[280px] text-[13px]"
+          />
+          <button
+            onClick={() => testSend(customTestEmail)}
+            disabled={busy || !customTestEmail}
+            className="btn-secondary mkt-btn-sm"
+          >
+            שליחה לכתובת הזו
+          </button>
         </div>
       </div>
 
       {showHistory && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E7EB' }}>
-          <table style={{ width: '100%', fontSize: '0.85rem', direction: 'rtl' }}>
+        <div className="mt-4 card-flush overflow-hidden mkt-table-wrap">
+          <table className="mkt-table">
             <thead>
-              <tr style={{ textAlign: 'right', color: '#6B7280' }}>
-                <th style={{ padding: '4px 8px' }}>תאריך</th>
-                <th style={{ padding: '4px 8px' }}>לקוח</th>
-                <th style={{ padding: '4px 8px' }}>קופון</th>
-                <th style={{ padding: '4px 8px' }}>סטטוס</th>
+              <tr>
+                <th>תאריך</th>
+                <th>לקוח</th>
+                <th>קופון</th>
+                <th>סטטוס</th>
               </tr>
             </thead>
             <tbody>
               {recent.map(r => (
-                <tr key={r.id} style={{ borderTop: '1px solid #F3F4F6' }}>
-                  <td style={{ padding: '6px 8px', color: '#6B7280', fontSize: '0.8rem' }}>
+                <tr key={r.id}>
+                  <td className="text-surface-500 whitespace-nowrap">
                     {(r.sent_at ?? r.created_at).slice(0, 10)}
                   </td>
-                  <td style={{ padding: '6px 8px' }}>{r.customer_email}</td>
-                  <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                  <td><span dir="ltr" className="break-all">{r.customer_email}</span></td>
+                  <td className="mkt-mono whitespace-nowrap">
                     {r.coupon_code ?? '—'}
                   </td>
-                  <td style={{ padding: '6px 8px' }}>
-                    <span style={{
-                      padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem',
-                      background: r.status === 'sent' ? '#D1FAE5' : r.status === 'failed' ? '#FEE2E2' : '#FEF3C7',
-                      color:      r.status === 'sent' ? '#065F46' : r.status === 'failed' ? '#991B1B' : '#92400E',
-                    }} title={r.error_msg ?? ''}>
-                      {r.status === 'sent' ? '✓ נשלח' : r.status === 'failed' ? '✗ נכשל' : 'ממתין'}
+                  <td>
+                    <span
+                      className={r.status === 'sent' ? 'tag tag-ok' : r.status === 'failed' ? 'tag tag-danger' : 'tag tag-warn'}
+                      title={r.error_msg ?? ''}
+                    >
+                      {r.status === 'sent' ? 'נשלח' : r.status === 'failed' ? 'נכשל' : 'ממתין'}
                     </span>
                   </td>
                 </tr>
@@ -1910,26 +1891,23 @@ function EmailAutomationCard({ trigger, showToast }) {
       )}
 
       {editing && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E7EB' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3D4A2E', fontSize: '1rem' }}>✏️ עריכת תבנית</h4>
+        <div className="mt-4 pt-4 border-t border-surface-200 flex flex-col gap-3">
+          <h4 className="text-[15px] font-semibold text-surface-900">עריכת תבנית</h4>
 
-          <label style={{ display: 'block', marginBottom: 12 }}>
-            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4, color: '#374151' }}>נושא המייל</span>
-            <input
+          <label className="mkt-field">
+            <span className="field-label">נושא המייל</span>
+            <input className="field"
               type="text"
               value={editSubject}
               onChange={e => setEditSubject(e.target.value)}
               dir="rtl"
-              style={{
-                width: '100%', fontSize: '0.9rem', padding: '8px 12px',
-                borderRadius: 8, border: '1px solid #D1D5DB',
-              }}
             />
           </label>
 
-          <label style={{ display: 'block', marginBottom: 12 }}>
-            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4, color: '#374151' }}>
-              גוף המייל (HTML) — משתנים זמינים: {'{{ first_name }}'}, {'{{ coupon_code }}'}, {'{{ coupon_expiry_days }}'}, {'{{ logo_url }}'}, {'{{ unsubscribe_url }}'}
+          <label className="mkt-field">
+            <span className="field-label">גוף המייל (HTML)</span>
+            <span className="mkt-help">
+              משתנים זמינים: <span dir="ltr">{'{{ first_name }}'}, {'{{ coupon_code }}'}, {'{{ coupon_expiry_days }}'}, {'{{ logo_url }}'}, {'{{ unsubscribe_url }}'}</span>
             </span>
             <textarea
               value={editBody}
@@ -1937,43 +1915,38 @@ function EmailAutomationCard({ trigger, showToast }) {
               rows={20}
               dir="ltr"
               spellCheck={false}
-              style={{
-                width: '100%', fontSize: '0.8rem', padding: '8px 12px',
-                borderRadius: 8, border: '1px solid #D1D5DB',
-                fontFamily: 'monospace', lineHeight: 1.5,
-              }}
+              className="field mkt-mono text-[12.5px]"
             />
           </label>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={saveEdit}
               disabled={busy}
               className="btn-primary"
-              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
-              💾 שמור
+              <Save size={16} aria-hidden="true" />
+              שמירה
             </button>
             <button
               onClick={openPreview}
               disabled={busy}
-              className="btn-small"
-              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+              className="btn-secondary"
             >
-              👁️ תצוגה מקדימה
+              <Eye size={16} aria-hidden="true" />
+              תצוגה מקדימה
             </button>
             <button
               onClick={cancelEdit}
               disabled={busy}
-              className="btn-small"
-              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+              className="btn-ghost"
             >
               ביטול
             </button>
           </div>
 
-          <p style={{ marginTop: 12, fontSize: '0.8rem', color: '#6B7280' }}>
-            💡 השינויים נשמרים מיידית במסד הנתונים. שלח מייל בדיקה אחרי השמירה כדי לוודא שהתוצאה כפי שציפית.
+          <p className="mkt-help">
+            השמירה מעדכנת את התבנית מיד. כדאי לשלוח מייל בדיקה אחרי השמירה ולוודא שהתוצאה נכונה.
           </p>
         </div>
       )}
@@ -2000,7 +1973,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
   const addManualContact = async () => {
     const email = newContactEmail.trim().toLowerCase();
     if (!email || !email.includes('@')) {
-      showToast('⚠️ כתובת מייל לא תקינה', 'warning');
+      showToast('כתובת מייל לא תקינה', 'warning');
       return;
     }
     setAddingContact(true);
@@ -2025,12 +1998,12 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         // Not fatal; Resend has it now and the next sync will reconcile.
         console.warn('mirror insert skipped:', mirrorErr?.message);
       }
-      showToast(`✅ נוסף ${email}`);
+      showToast(`נוסף ${email}`);
       setNewContactEmail('');
       setNewContactName('');
       setShowAddForm(false);
     } catch (err) {
-      showToast(`❌ שגיאה: ${err?.message || 'unknown'}`, 'error');
+      showToast(`שגיאה: ${err?.message || 'unknown'}`, 'error');
     } finally {
       setAddingContact(false);
     }
@@ -2055,9 +2028,9 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
       const result = await callCampaignFunction(supabase, 'sync-resend-contacts', { userId: user.id });
       const removedMsg = result.removed > 0 ? ` (הוסרו ${result.removed} שאינם ב-Resend)` : '';
       syncResendProgress.complete();
-      showToast(`✅ סונכרנו ${result.synced} אנשי קשר מ-Resend${removedMsg}`);
+      showToast(`סונכרנו ${result.synced} אנשי קשר מ-Resend${removedMsg}`);
     } catch (err) {
-      showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
+      showToast(`שגיאה בסנכרון: ${err.message}`, 'error');
     } finally {
       setSyncingResend(false);
     }
@@ -2079,9 +2052,9 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
       }
       const failMsg = totalFailed > 0 ? ` (${totalFailed} נכשלו)` : '';
       pushResendProgress.complete();
-      showToast(`✅ נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
+      showToast(`נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
     } catch (err) {
-      showToast(`❌ שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
+      showToast(`שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
     } finally {
       setPushingResend(false);
     }
@@ -2098,13 +2071,13 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
       try {
         const text = ev.target.result;
         const lines = text.split('\n').filter(l => l.trim());
-        if (lines.length < 2) { showToast('⚠️ קובץ ריק', 'warning'); return; }
+        if (lines.length < 2) { showToast('קובץ ריק', 'warning'); return; }
 
         // Parse header — detect column indices case-insensitively
         const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
         const idx = (keys) => { for (const k of keys) { const i = header.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
         const emailIdx  = idx(['email']);
-        if (emailIdx < 0) { showToast('❌ לא נמצאה עמודת email בקובץ', 'error'); return; }
+        if (emailIdx < 0) { showToast('לא נמצאה עמודת email בקובץ', 'error'); return; }
         const firstIdx  = idx(['first_name', 'firstname', 'first name', 'שם פרטי']);
         const lastIdx   = idx(['last_name', 'lastname', 'last name', 'שם משפחה']);
         const nameIdx   = idx(['name', 'full_name', 'שם']);
@@ -2199,7 +2172,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
 
         const skipped = rows.length - contacts.length;
         if (contacts.length === 0) {
-          showToast(statusIdx >= 0 ? `⚠️ לא נמצאו אנשי קשר מאושרים (${skipped} לא מאושרים דולגו)` : '⚠️ לא נמצאו אנשי קשר תקינים', 'warning');
+          showToast(statusIdx >= 0 ? `לא נמצאו אנשי קשר מאושרים (${skipped} לא מאושרים דולגו)` : 'לא נמצאו אנשי קשר תקינים', 'warning');
           return;
         }
 
@@ -2213,12 +2186,12 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
           imported += batch.length;
         }
         const skippedMsg = skipped > 0 ? ` (${skipped} לא מאושרים דולגו)` : '';
-        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg} — דוחף ל-Resend...`);
+        showToast(`יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg}. דוחף ל-Resend…`);
         marketingContactsDb.refresh();
         // Auto-push all opted-in contacts to Resend (server fetches from Supabase)
         await pushAllToResend();
       } catch (err) {
-        showToast(`❌ שגיאה בייבוא: ${err.message}`, 'error');
+        showToast(`שגיאה בייבוא: ${err.message}`, 'error');
       } finally {
         setImportingFlashy(false);
       }
@@ -2227,94 +2200,62 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
   };
 
   return (
-    <div className="section">
-      <h2>👥 אנשי קשר ({contacts.length})</h2>
-
-      {/* Info banner */}
-      <div style={{
-        background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '10px',
-        padding: '12px 16px', marginBottom: '1rem', fontSize: '0.85rem', color: '#0369A1', direction: 'rtl',
-      }}>
-        <strong>📧 Resend = מקור האמת.</strong> אנשי הקשר מנוהלים ב-Resend.
-        הרשמות מהאתר נכנסות ישירות ל-Resend. לחץ "סנכרן" לעדכון התצוגה.
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ background: '#DCFCE7', borderRadius: '10px', padding: '8px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#065F46' }}>{optedIn}</div>
-          <div style={{ fontSize: '0.7rem', color: '#065F46' }}>מאושרים</div>
+    <section>
+      <div className="mkt-sec-head">
+        <div>
+          <h2>אנשי קשר</h2>
+          <p className="mkt-sec-sub">Resend הוא מקור האמת. הרשמות מהאתר נכנסות ישירות ל-Resend, והסנכרון מעדכן את הרשימה כאן.</p>
         </div>
-        <div style={{ background: '#FEE2E2', borderRadius: '10px', padding: '8px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991B1B' }}>{optedOut}</div>
-          <div style={{ fontSize: '0.7rem', color: '#991B1B' }}>הוסרו</div>
-        </div>
-        <div style={{ background: '#F3F4F6', borderRadius: '10px', padding: '8px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#374151' }}>{contacts.length}</div>
-          <div style={{ fontSize: '0.7rem', color: '#6B7280' }}>סה״כ</div>
-        </div>
-      </div>
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '1rem' }}>
-        {[
-          { id: 'all', label: `הכל (${contacts.length})` },
-          { id: 'opted_in', label: `✅ מאושרים (${optedIn})` },
-          { id: 'opted_out', label: `🔕 הוסרו (${optedOut})` },
-        ].map(f => (
-          <button
-            key={f.id}
-            onClick={() => setContactFilter(f.id)}
-            className={contactFilter === f.id ? 'btn-primary' : 'btn-small'}
-            style={{ fontSize: '0.8rem', padding: '5px 12px' }}
-          >
-            {f.label}
-          </button>
-        ))}
+        <button onClick={() => setShowAddForm(v => !v)} className={showAddForm ? 'btn-secondary' : 'btn-primary'} aria-expanded={showAddForm}>
+          {showAddForm ? <X size={16} aria-hidden="true" /> : <UserPlus size={16} aria-hidden="true" />}
+          {showAddForm ? 'סגירה' : 'הוספת איש קשר'}
+        </button>
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-        <button onClick={() => setShowAddForm(v => !v)} className="btn-primary" style={{ fontSize: '0.85rem' }}>
-          {showAddForm ? '✕ סגור' : '➕ הוסף איש קשר'}
+      <div className="flex gap-2 flex-wrap mb-4">
+        <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-secondary mkt-btn-sm">
+          <Download size={16} aria-hidden="true" />
+          {syncingResend ? 'מסנכרן…' : 'סנכרון מ-Resend'}
         </button>
-        <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-small" style={{ fontSize: '0.85rem' }}>
-          {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
+        <button onClick={pushAllToResend} disabled={pushingResend || syncingResend} className="btn-secondary mkt-btn-sm">
+          <Upload size={16} aria-hidden="true" />
+          {pushingResend ? 'דוחף…' : 'דחיפה ל-Resend'}
         </button>
-        <button onClick={pushAllToResend} disabled={pushingResend || syncingResend} className="btn-small" style={{ fontSize: '0.85rem' }}>
-          {pushingResend ? '⏳ דוחף...' : '📤 דחוף ל-Resend'}
-        </button>
-        <label style={{ cursor: importingFlashy ? 'not-allowed' : 'pointer' }}>
-          <input type="file" accept=".csv" style={{ display: 'none' }} onChange={importFlashyCSV} disabled={importingFlashy} />
-          <span className="btn-small" style={{ fontSize: '0.85rem', pointerEvents: importingFlashy ? 'none' : 'auto', opacity: importingFlashy ? 0.6 : 1 }}>
-            {importingFlashy ? '⏳ מייבא...' : '📥 ייבא מ-Flashy CSV'}
+        <label className={importingFlashy ? 'cursor-not-allowed' : 'cursor-pointer'}>
+          <input type="file" accept=".csv" className="sr-only" onChange={importFlashyCSV} disabled={importingFlashy} />
+          <span className={`btn-secondary mkt-btn-sm ${importingFlashy ? 'pointer-events-none opacity-60' : ''}`}>
+            <FileText size={16} aria-hidden="true" />
+            {importingFlashy ? 'מייבא…' : 'ייבוא CSV מ-Flashy'}
           </span>
         </label>
         <a
           href="https://resend.com/audience?limit=120"
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-small"
-          style={{ textDecoration: 'none', fontSize: '0.85rem' }}
+          className="btn-ghost mkt-btn-sm"
         >
-          📋 ניהול אנשי קשר ב-Resend
+          ניהול ב-Resend
+          <ExternalLink size={14} aria-hidden="true" />
         </a>
       </div>
 
       {/* Manual add contact form */}
       {showAddForm && (
-        <div className="form-card" style={{ marginTop: '12px', marginBottom: '12px', background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>➕ הוסף איש קשר ידנית</label>
-          <p style={{ fontSize: '0.78rem', color: '#666', margin: '0 0 10px' }}>
-            יתווסף ל-Resend ולרשימה המקומית מיד. אין צורך בסנכרון.
+        <div className="card mb-4">
+          <h3 className="mkt-card-title mb-1"><UserPlus size={16} aria-hidden="true" />הוספה ידנית</h3>
+          <p className="text-[13px] text-surface-500 mb-3">
+            איש הקשר נוסף ל-Resend ולרשימה המקומית מיד, בלי צורך בסנכרון.
           </p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="flex gap-2 flex-wrap">
             <input
               type="email"
               value={newContactEmail}
               onChange={e => setNewContactEmail(e.target.value)}
               placeholder="example@gmail.com"
-              style={{ flex: '2 1 220px', fontFamily: 'monospace', fontSize: '0.9rem', direction: 'ltr' }}
+              aria-label="כתובת מייל"
+              dir="ltr"
+              className="field mkt-mono w-auto flex-[2_1_220px]"
               onKeyDown={e => { if (e.key === 'Enter') addManualContact(); }}
               autoFocus
             />
@@ -2322,17 +2263,17 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
               type="text"
               value={newContactName}
               onChange={e => setNewContactName(e.target.value)}
-              placeholder="שם (אופציונלי)"
-              style={{ flex: '1 1 140px', fontSize: '0.9rem' }}
+              placeholder="שם (לא חובה)"
+              aria-label="שם"
+              className="field w-auto flex-[1_1_140px]"
               onKeyDown={e => { if (e.key === 'Enter') addManualContact(); }}
             />
             <button
               onClick={addManualContact}
               disabled={addingContact || !newContactEmail.trim()}
               className="btn-primary"
-              style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >
-              {addingContact ? '⏳ מוסיף...' : '✅ הוסף'}
+              {addingContact ? 'מוסיף…' : 'הוספה'}
             </button>
           </div>
         </div>
@@ -2340,88 +2281,121 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
 
       {/* Progress bars for long-running contact ops */}
       {syncingResend && (
-        <div style={{ marginBottom: '1rem' }}>
-          <ProgressBar progress={syncResendProgress.progress} label="מסנכרן אנשי קשר מ-Resend..." color="#0369A1" />
+        <div className="mb-4" role="status">
+          <ProgressBar progress={syncResendProgress.progress} label="מסנכרן אנשי קשר מ-Resend…" color={BRAND} height={6} />
         </div>
       )}
       {pushingResend && (
-        <div style={{ marginBottom: '1rem' }}>
-          <ProgressBar progress={pushResendProgress.progress} label="דוחף אנשי קשר ל-Resend..." color="#065F46" />
+        <div className="mb-4" role="status">
+          <ProgressBar progress={pushResendProgress.progress} label="דוחף אנשי קשר ל-Resend…" color={BRAND} height={6} />
         </div>
       )}
 
-      {/* Search */}
-      <div style={{ marginBottom: '1rem' }}>
-        <input
-          type="text"
-          placeholder="🔍 חפש לפי שם או אימייל..."
-          value={searchQuery}
-          onChange={e => { setSearchQuery(e.target.value); setVisibleCount(50); }}
-          style={{
-            width: '100%', padding: '10px 14px', borderRadius: '8px',
-            border: '1px solid #ddd', fontSize: '0.9rem', direction: 'rtl',
-          }}
-        />
-        {searchQuery && (
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '4px' }}>
-            נמצאו {filteredContacts.length} תוצאות
-          </p>
-        )}
+      {/* Stats row */}
+      <div className="mkt-kpis cols-3 mb-4">
+        <div className="mkt-kpi">
+          <div className="k-label">מאושרים</div>
+          <div className="k-value">{optedIn}</div>
+        </div>
+        <div className="mkt-kpi">
+          <div className="k-label">הוסרו</div>
+          <div className="k-value">{optedOut}</div>
+        </div>
+        <div className="mkt-kpi">
+          <div className="k-label">סה״כ</div>
+          <div className="k-value">{contacts.length}</div>
+        </div>
       </div>
 
-      {/* Contacts table */}
-      {filteredContacts.length > 0 ? (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>שם</th>
-                <th>אימייל</th>
-                <th>סטטוס</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredContacts.slice(0, visibleCount).map(c => (
-                <tr key={c.id}>
-                  <td><strong>{c.name || '—'}</strong></td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.email}</td>
-                  <td>
-                    <span style={{
-                      background: c.opted_in ? '#DCFCE7' : '#FEE2E2',
-                      color: c.opted_in ? '#065F46' : '#991B1B',
-                      padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                    }}>
-                      {c.opted_in ? '✅ מאושר' : '🔕 הוסר'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredContacts.length > visibleCount && (
-            <div style={{ textAlign: 'center', marginTop: '12px' }}>
+      <div className="card-flush overflow-hidden">
+        <div className="card-head flex-wrap">
+          {/* Filter tabs */}
+          <div className="mkt-seg" role="group" aria-label="סינון לפי סטטוס">
+            {[
+              { id: 'all', label: 'הכל', count: contacts.length },
+              { id: 'opted_in', label: 'מאושרים', count: optedIn },
+              { id: 'opted_out', label: 'הוסרו', count: optedOut },
+            ].map(f => (
               <button
-                onClick={() => setVisibleCount(prev => prev + 50)}
-                className="btn-small"
-                style={{ fontSize: '0.85rem' }}
+                key={f.id}
+                onClick={() => setContactFilter(f.id)}
+                aria-pressed={contactFilter === f.id}
               >
-                טען עוד ({filteredContacts.length - visibleCount} נותרו)
+                {f.label} <span className="num">{f.count}</span>
               </button>
-            </div>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="mkt-search flex-[1_1_220px] max-w-[360px] ms-auto">
+            <Search size={16} aria-hidden="true" />
+            <input className="field"
+              type="text"
+              placeholder="חיפוש לפי שם או מייל"
+              aria-label="חיפוש אנשי קשר לפי שם או מייל"
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setVisibleCount(50); }}
+            />
+          </div>
+          {searchQuery && (
+            <p className="w-full text-xs text-surface-500" aria-live="polite">
+              נמצאו <span className="num">{filteredContacts.length}</span> תוצאות
+            </p>
           )}
-          <p style={{ textAlign: 'center', color: '#888', fontSize: '0.8rem', marginTop: '8px' }}>
-            מציג {Math.min(visibleCount, filteredContacts.length)} מתוך {filteredContacts.length}
-          </p>
         </div>
-      ) : (
-        <div className="empty-state">
-          {contacts.length === 0
-            ? 'אין אנשי קשר. לחץ "סנכרן מ-Resend" לטעינת הרשימה.'
-            : 'אין תוצאות לפילטר הנוכחי.'
-          }
-        </div>
-      )}
-    </div>
+
+        {/* Contacts table */}
+        {filteredContacts.length > 0 ? (
+          <>
+            <div className="mkt-table-wrap">
+              <table className="mkt-table">
+                <thead>
+                  <tr>
+                    <th>שם</th>
+                    <th>מייל</th>
+                    <th>סטטוס</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredContacts.slice(0, visibleCount).map(c => (
+                    <tr key={c.id}>
+                      <td className="font-medium">{c.name || <span className="text-surface-400">—</span>}</td>
+                      <td className="text-surface-700 text-[13px]"><span dir="ltr" className="break-all">{c.email}</span></td>
+                      <td>
+                        <span className={c.opted_in ? 'tag tag-ok' : 'tag'}>
+                          {c.opted_in ? 'מאושר' : 'הוסר'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-t border-surface-200">
+              <p className="text-xs text-surface-500">
+                <span className="num">{Math.min(visibleCount, filteredContacts.length)}</span> מתוך <span className="num">{filteredContacts.length}</span> מוצגים
+              </p>
+              {filteredContacts.length > visibleCount && (
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 50)}
+                  className="btn-secondary mkt-btn-sm"
+                >
+                  הצגת עוד <span className="num text-surface-500">(נותרו {filteredContacts.length - visibleCount})</span>
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="mkt-empty">
+            <Users size={20} aria-hidden="true" />
+            {contacts.length === 0
+              ? 'אין אנשי קשר עדיין. "סנכרון מ-Resend" טוען את הרשימה.'
+              : 'אין תוצאות לסינון הנוכחי.'
+            }
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -2456,7 +2430,7 @@ function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) 
   const saveGroup = async () => {
     const trimmed = nameDraft.trim();
     if (!trimmed) {
-      showToast('⚠️ שם הקבוצה חובה', 'warning');
+      showToast('שם הקבוצה חובה', 'warning');
       return;
     }
     setSaving(true);
@@ -2468,18 +2442,18 @@ function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) 
           is_test_group: isTestDraft,
           updated_at: new Date().toISOString(),
         });
-        showToast('✅ הקבוצה עודכנה');
+        showToast('הקבוצה עודכנה');
       } else {
         await contactGroupsDb.insert({
           name: trimmed,
           description: descDraft.trim() || null,
           is_test_group: isTestDraft,
         });
-        showToast('✅ הקבוצה נוצרה');
+        showToast('הקבוצה נוצרה');
       }
       resetForm();
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -2494,9 +2468,9 @@ function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) 
     try {
       await contactGroupsDb.remove(group.id);
       await contactGroupMembersDb.refresh();
-      showToast('🗑️ הקבוצה נמחקה');
+      showToast('הקבוצה נמחקה');
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     }
   };
 
@@ -2509,67 +2483,79 @@ function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) 
   };
 
   return (
-    <div className="section">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ margin: 0 }}>🗂️ קבוצות אנשי קשר</h2>
+    <section>
+      <div className="mkt-sec-head">
+        <div>
+          <h2>קבוצות אנשי קשר</h2>
+          <p className="mkt-sec-sub max-w-[620px]">
+            קבוצה מאפשרת לשלוח קמפיין לחלק מאנשי הקשר. קבוצה שמסומנת כ"קבוצת בדיקה" מקבלת כפתור שליחה מהיר במחולל.
+          </p>
+        </div>
         {!showCreate && (
-          <button onClick={() => setShowCreate(true)} className="btn-primary" style={{ fontSize: '0.9rem', padding: '8px 18px' }}>
-            ➕ צור קבוצה
+          <button onClick={() => setShowCreate(true)} className="btn-primary">
+            <Plus size={16} aria-hidden="true" />
+            קבוצה חדשה
           </button>
         )}
       </div>
-      <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '16px' }}>
-        קבוצות מאפשרות לשלוח קמפיינים לתת-קבוצה של אנשי קשר. סמן קבוצה כ"קבוצת בדיקה" כדי לשלוח אליה בלחיצה אחת מתוך מחולל הקמפיינים.
-      </p>
 
       {/* Create / edit form */}
       {showCreate && (
-        <div className="form-card" style={{ marginBottom: '16px', background: '#F9F8F5', border: '1px solid #D4E8C2' }}>
-          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-            {editingId ? '✏️ עריכת קבוצה' : '➕ קבוצה חדשה'}
-          </label>
-          <div className="form-group" style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '0.8rem', color: '#888' }}>שם הקבוצה</label>
-            <input
-              type="text"
-              value={nameDraft}
-              onChange={e => setNameDraft(e.target.value)}
-              placeholder="למשל: לקוחות VIP, צוות בדיקה, בעלי Jura"
-              autoFocus
-            />
+        <div className="card mb-4">
+          <h3 className="mkt-card-title">
+            {editingId ? 'עריכת קבוצה' : 'קבוצה חדשה'}
+          </h3>
+          <div className="mkt-stack-sm">
+            <label className="mkt-field">
+              <span className="field-label">שם הקבוצה</span>
+              <input className="field"
+                type="text"
+                value={nameDraft}
+                onChange={e => setNameDraft(e.target.value)}
+                placeholder="למשל: לקוחות VIP, צוות בדיקה, בעלי Jura"
+                autoFocus
+              />
+            </label>
+            <label className="mkt-field">
+              <span className="field-label">תיאור <span className="font-normal text-surface-500">(לא חובה)</span></span>
+              <input className="field"
+                type="text"
+                value={descDraft}
+                onChange={e => setDescDraft(e.target.value)}
+                placeholder="למה משמשת הקבוצה"
+              />
+            </label>
+            <label className="flex items-start gap-2.5 cursor-pointer min-h-[32px] pt-1">
+              <input
+                type="checkbox"
+                checked={isTestDraft}
+                onChange={e => setIsTestDraft(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-surface-900">
+                קבוצת בדיקה
+                <span className="block text-xs text-surface-500 mt-0.5">מוסיפה כפתור שליחה מהיר במחולל המיילים</span>
+              </span>
+            </label>
           </div>
-          <div className="form-group" style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '0.8rem', color: '#888' }}>תיאור (אופציונלי)</label>
-            <input
-              type="text"
-              value={descDraft}
-              onChange={e => setDescDraft(e.target.value)}
-              placeholder="למה משמשת הקבוצה"
-            />
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: 'pointer', direction: 'rtl' }}>
-            <input
-              type="checkbox"
-              checked={isTestDraft}
-              onChange={e => setIsTestDraft(e.target.checked)}
-              style={{ accentColor: '#3D4A2E' }}
-            />
-            <span style={{ fontSize: '0.9rem' }}>🧪 סמן כקבוצת בדיקה (תופיע כפתור מהיר במחולל הקמפיינים)</span>
-          </label>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-            <button onClick={saveGroup} disabled={saving} className="btn-primary" style={{ fontSize: '0.85rem', padding: '8px 20px' }}>
-              {saving ? '⏳ שומר...' : '💾 שמור'}
+          <div className="flex gap-2 mt-4">
+            <button onClick={saveGroup} disabled={saving} className="btn-primary">
+              <Save size={16} aria-hidden="true" />
+              {saving ? 'שומר…' : 'שמירה'}
             </button>
-            <button onClick={resetForm} className="btn-small" style={{ fontSize: '0.85rem' }}>ביטול</button>
+            <button onClick={resetForm} className="btn-ghost">ביטול</button>
           </div>
         </div>
       )}
 
       {/* Groups list */}
       {groups.length === 0 ? (
-        <div className="empty-state">אין קבוצות עדיין. לחץ "צור קבוצה" כדי להתחיל.</div>
+        <div className="card-flush overflow-hidden mkt-empty">
+          <FolderOpen size={20} aria-hidden="true" />
+          אין קבוצות עדיין. "קבוצה חדשה" פותחת את הטופס.
+        </div>
       ) : (
-        <div style={{ display: 'grid', gap: '10px' }}>
+        <div className="card-flush overflow-hidden mkt-rows">
           {groups.map(g => (
             <GroupRow
               key={g.id}
@@ -2585,7 +2571,7 @@ function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) 
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -2603,25 +2589,25 @@ function GroupRow({ group, memberCount, members, contacts, contactGroupMembersDb
       await contactGroupMembersDb.insert({ group_id: group.id, email, name: c.name || null });
       setMemberSearch('');
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     }
   };
 
   const addManualEmail = async () => {
     const email = manualEmail.toLowerCase().trim();
     if (!email || !email.includes('@')) {
-      showToast('⚠️ כתובת מייל לא תקינה', 'warning');
+      showToast('כתובת מייל לא תקינה', 'warning');
       return;
     }
     if (memberEmails.has(email)) {
-      showToast('⚠️ המייל כבר בקבוצה', 'warning');
+      showToast('המייל כבר בקבוצה', 'warning');
       return;
     }
     try {
       await contactGroupMembersDb.insert({ group_id: group.id, email, name: null });
       setManualEmail('');
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     }
   };
 
@@ -2629,91 +2615,89 @@ function GroupRow({ group, memberCount, members, contacts, contactGroupMembersDb
     try {
       await contactGroupMembersDb.remove(memberId);
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     }
   };
 
   return (
-    <div style={{
-      background: '#FFFFFF',
-      border: '1px solid #E8E8E0',
-      borderRadius: '12px',
-      padding: '14px 16px',
-      direction: 'rtl',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontWeight: 600, color: '#2C3522', fontSize: '0.95rem' }}>{group.name}</span>
+    <div className="px-4 py-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[180px]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-surface-900">{group.name}</span>
             {group.is_test_group && (
-              <span style={{
-                background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A',
-                borderRadius: '12px', padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600,
-              }}>🧪 קבוצת בדיקה</span>
+              <span className="tag tag-warn">קבוצת בדיקה</span>
             )}
           </div>
-          <div style={{ fontSize: '0.8rem', color: '#888' }}>
-            {memberCount} חברים {group.description ? `• ${group.description}` : ''}
+          <div className="text-xs text-surface-500 mt-0.5">
+            <span className="num">{memberCount}</span> חברים{group.description ? ` · ${group.description}` : ''}
           </div>
         </div>
-        <button onClick={() => setExpanded(v => !v)} className="btn-small" style={{ fontSize: '0.8rem' }}>
-          {expanded ? '✕ סגור' : '👥 חברים'}
-        </button>
-        <button onClick={onEdit} className="btn-small" style={{ fontSize: '0.8rem' }}>✏️ ערוך</button>
-        <button onClick={onDelete} className="btn-small" style={{ fontSize: '0.8rem', color: '#991B1B' }}>🗑️</button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setExpanded(v => !v)} className="btn-secondary mkt-btn-sm" aria-expanded={expanded}>
+            <Users size={16} aria-hidden="true" />
+            {expanded ? 'הסתרה' : 'חברים'}
+          </button>
+          <button onClick={onEdit} className="mkt-icon-btn" aria-label={`עריכת הקבוצה ${group.name}`} title="עריכה">
+            <Pencil size={16} aria-hidden="true" />
+          </button>
+          <button onClick={onDelete} className="mkt-icon-btn danger" aria-label={`מחיקת הקבוצה ${group.name}`} title="מחיקה">
+            <Trash2 size={16} aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {expanded && (
-        <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px dashed #E8E8E0' }}>
+        <div className="mt-3 pt-3 border-t border-surface-200 flex flex-col gap-2.5">
           {/* Current members */}
           {members.length > 0 ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+            <div className="flex flex-wrap gap-1.5">
               {members.map(m => (
-                <span key={m.id} style={{
-                  background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '16px',
-                  padding: '3px 10px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  direction: 'ltr',
-                }}>
+                <span key={m.id} className="mkt-token" dir="ltr">
                   <span>{m.email}</span>
                   <button
                     onClick={() => removeMember(m.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0, fontSize: '0.85rem' }}
-                  >✕</button>
+                    aria-label={`הסרת ${m.email} מהקבוצה`}
+                  ><X size={12} aria-hidden="true" /></button>
                 </span>
               ))}
             </div>
           ) : (
-            <div style={{ color: '#999', fontStyle: 'italic', fontSize: '0.85rem', marginBottom: '12px' }}>
-              אין חברים עדיין. הוסף למטה.
-            </div>
+            <p className="text-[13px] text-surface-500">
+              אין חברים בקבוצה עדיין.
+            </p>
           )}
 
           {/* Add manual email */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+          <div className="flex gap-2">
             <input
               type="email"
               value={manualEmail}
               onChange={e => setManualEmail(e.target.value)}
-              placeholder="הוסף מייל ידני (למשל tester@gmail.com)"
-              style={{ flex: 1, fontSize: '0.85rem', direction: 'ltr', fontFamily: 'monospace' }}
+              placeholder="הוספת מייל (למשל tester@gmail.com)"
+              aria-label="הוספת מייל לקבוצה"
+              dir="auto"
+              className="field mkt-mono flex-1 min-w-0"
               onKeyDown={e => { if (e.key === 'Enter') addManualEmail(); }}
             />
-            <button onClick={addManualEmail} className="btn-small" style={{ fontSize: '0.8rem' }}>➕</button>
+            <button onClick={addManualEmail} className="btn-secondary w-[38px] px-0" aria-label="הוספת המייל לקבוצה">
+              <Plus size={16} aria-hidden="true" />
+            </button>
           </div>
 
           {/* Pick from existing contacts */}
-          <input
-            type="text"
-            value={memberSearch}
-            onChange={e => setMemberSearch(e.target.value)}
-            placeholder="🔍 חפש בין אנשי הקשר הקיימים..."
-            style={{ width: '100%', fontSize: '0.85rem', marginBottom: '6px', boxSizing: 'border-box' }}
-          />
+          <div className="mkt-search">
+            <Search size={16} aria-hidden="true" />
+            <input className="field"
+              type="text"
+              value={memberSearch}
+              onChange={e => setMemberSearch(e.target.value)}
+              placeholder="חיפוש באנשי הקשר הקיימים"
+              aria-label="חיפוש באנשי הקשר הקיימים"
+            />
+          </div>
           {memberSearch.trim() && (
-            <div style={{
-              maxHeight: '160px', overflowY: 'auto', background: '#FAFAF7',
-              border: '1px solid #E8E8E0', borderRadius: '8px',
-            }}>
+            <div className="mkt-pick mkt-rows max-h-[200px] overflow-y-auto">
               {contacts
                 .filter(c => c.opted_in)
                 .filter(c => {
@@ -2724,21 +2708,21 @@ function GroupRow({ group, memberCount, members, contacts, contactGroupMembersDb
                 .map(c => {
                   const already = memberEmails.has((c.email || '').toLowerCase());
                   return (
-                    <div
+                    <button
                       key={c.id}
+                      type="button"
                       onClick={() => !already && addContact(c)}
-                      style={{
-                        padding: '6px 10px', cursor: already ? 'default' : 'pointer',
-                        opacity: already ? 0.5 : 1, fontSize: '0.82rem',
-                        display: 'flex', justifyContent: 'space-between', gap: '8px',
-                        borderBottom: '1px solid #F0F0E8',
-                      }}
-                      onMouseEnter={e => { if (!already) e.currentTarget.style.background = '#F0FDF4'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      disabled={already}
+                      className="mkt-opt"
                     >
-                      <span>{c.name || '—'} <span style={{ color: '#888', fontFamily: 'monospace', fontSize: '0.78rem' }}>{c.email}</span></span>
-                      {already ? <span style={{ color: '#10B981' }}>✓</span> : <span>➕</span>}
-                    </div>
+                      <span className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
+                        <span className="text-[13px] font-medium text-surface-900">{c.name || '—'}</span>
+                        <span className="text-xs text-surface-500 truncate" dir="ltr">{c.email}</span>
+                      </span>
+                      {already
+                        ? <span className="inline-flex items-center gap-1 text-xs text-surface-500 shrink-0"><Check size={14} aria-hidden="true" />בקבוצה</span>
+                        : <Plus size={16} aria-hidden="true" className="text-surface-500 shrink-0" />}
+                    </button>
                   );
                 })}
             </div>
@@ -2761,7 +2745,7 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
   const handleResume = async (c) => {
     const remaining = (data.marketing_contacts || []).filter(mc => mc.opted_in).length - (c.recipient_count || 0);
     if (remaining <= 0) {
-      showToast('✅ כל הנמענים כבר קיבלו את הקמפיין', 'info');
+      showToast('כל הנמענים כבר קיבלו את הקמפיין', 'info');
       return;
     }
     if (!window.confirm(`לשלוח את הקמפיין ל-${remaining} הנותרים שטרם קיבלו?`)) return;
@@ -2773,9 +2757,9 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
         resume: true,
       });
       const errMsg = result.errorCount > 0 ? ` (${result.errorCount} שגיאות)` : '';
-      showToast(`✅ נשלח ל-${result.sent} נמענים נוספים${errMsg}`);
+      showToast(`נשלח ל-${result.sent} נמענים נוספים${errMsg}`);
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`שגיאה: ${err.message}`, 'error');
     } finally {
       setResumingId(null);
     }
@@ -2802,29 +2786,45 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
   };
 
   const statusLabel = (s) =>
-    s === 'sent' ? '✅ נשלח' : s === 'failed' ? '❌ נכשל' : '📝 טיוטה';
-  const statusStyle = (s) => ({
-    background: s === 'sent' ? '#DCFCE7' : s === 'failed' ? '#FEE2E2' : '#FEF3C7',
-    color: s === 'sent' ? '#065F46' : s === 'failed' ? '#991B1B' : '#92400E',
-    padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-  });
+    s === 'sent' ? 'נשלח' : s === 'failed' ? 'נכשל' : 'טיוטה';
+  const statusClass = (s) =>
+    s === 'sent' ? 'tag tag-ok' : s === 'failed' ? 'tag tag-danger' : 'tag';
 
   return (
-    <div className="section">
-      <h2>📊 היסטוריית קמפיינים</h2>
-      <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1rem' }}>
-        {campaigns.length} קמפיינים. לחץ על שורה לפרטים.
-      </p>
+    <section>
+      <div className="mkt-sec-head">
+        <div>
+          <h2>היסטוריית קמפיינים</h2>
+          <p className="mkt-sec-sub">
+            <span className="num">{campaigns.length}</span> קמפיינים. לחיצה על שורה פותחת פרטים ותצוגה של המייל.
+          </p>
+        </div>
+      </div>
+
+      {campaigns.length > 0 ? (
+        <div className="card-flush overflow-hidden">
+          {/* Select all + bulk actions */}
+          <div className="card-head flex-wrap">
+            <label className="inline-flex items-center gap-2.5 text-[13px] text-surface-700 cursor-pointer min-h-[32px]">
+              <input
+                type="checkbox"
+                checked={selectedIds.size === campaigns.length && campaigns.length > 0}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedIds(new Set(campaigns.map(c => c.id)));
+                  } else {
+                    setSelectedIds(new Set());
+                  }
+                }}
+              />
+              בחירת הכל
+            </label>
 
       {/* Bulk actions bar */}
       {selectedIds.size > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px',
-          background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px',
-          marginBottom: '10px', direction: 'rtl',
-        }}>
-          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#991B1B' }}>
-            {selectedIds.size} נבחרו
+        <div className="flex items-center gap-2 flex-wrap ms-auto">
+          <span className="text-[13px] font-medium text-surface-900">
+            <span className="num">{selectedIds.size}</span> נבחרו
           </span>
           <button
             onClick={async () => {
@@ -2833,69 +2833,36 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
               try {
                 const { error: delErr } = await supabase.from('campaigns').delete().in('id', [...selectedIds]);
                 if (delErr) throw delErr;
-                showToast(`🗑️ ${selectedIds.size} קמפיינים נמחקו`);
+                showToast(`${selectedIds.size} קמפיינים נמחקו`);
                 setSelectedIds(new Set());
                 setExpandedId(null);
               } catch (err) {
-                showToast(`❌ שגיאה: ${err.message}`, 'error');
+                showToast(`שגיאה: ${err.message}`, 'error');
               } finally {
                 setDeleting(false);
               }
             }}
             disabled={deleting}
-            style={{
-              background: '#DC2626', color: 'white', border: 'none', borderRadius: '8px',
-              padding: '6px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
-            }}
+            className="btn-quiet-danger mkt-btn-sm"
           >
-            {deleting ? '⏳ מוחק...' : `🗑️ מחק ${selectedIds.size}`}
+            <Trash2 size={16} aria-hidden="true" />
+            {deleting ? 'מוחק…' : `מחיקת ${selectedIds.size}`}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#991B1B' }}
+            className="btn-ghost mkt-btn-sm"
           >
-            ✕ בטל בחירה
+            ביטול הבחירה
           </button>
         </div>
       )}
+          </div>
 
-      {campaigns.length > 0 ? (
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {/* Select all */}
-          <label style={{
-            display: 'flex', alignItems: 'center', gap: '8px', direction: 'rtl',
-            fontSize: '0.8rem', color: '#888', padding: '0 4px', cursor: 'pointer',
-          }}>
-            <input
-              type="checkbox"
-              checked={selectedIds.size === campaigns.length && campaigns.length > 0}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setSelectedIds(new Set(campaigns.map(c => c.id)));
-                } else {
-                  setSelectedIds(new Set());
-                }
-              }}
-              style={{ accentColor: '#3D4A2E' }}
-            />
-            בחר הכל
-          </label>
-
+          <div className="mkt-rows">
           {campaigns.map(c => (
-            <div key={c.id}>
+            <div key={c.id} className={selectedIds.has(c.id) ? 'bg-brand-50' : ''}>
               {/* Campaign row */}
-              <div
-                style={{
-                  background: selectedIds.has(c.id) ? '#FEF2F2' : expandedId === c.id ? '#F9F8F5' : '#FFFFFF',
-                  border: selectedIds.has(c.id) ? '1px solid #FECACA' : expandedId === c.id ? '1px solid #BBF7D0' : '1px solid #E8E8E0',
-                  borderRadius: expandedId === c.id ? '12px 12px 0 0' : '12px',
-                  padding: '14px 16px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  direction: 'rtl', transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if (expandedId !== c.id && !selectedIds.has(c.id)) e.currentTarget.style.borderColor = '#D1D5DB'; }}
-                onMouseLeave={e => { if (expandedId !== c.id && !selectedIds.has(c.id)) e.currentTarget.style.borderColor = '#E8E8E0'; }}
-              >
+              <div className="flex items-center gap-3 ps-4">
                 <input
                   type="checkbox"
                   checked={selectedIds.has(c.id)}
@@ -2909,103 +2876,113 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
                     });
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ accentColor: '#3D4A2E', flexShrink: 0 }}
+                  aria-label={`בחירת הקמפיין ${c.subject || 'ללא נושא'}`}
                 />
-                <div style={{ flex: 1 }} onClick={() => toggleExpand(c)}>
-                  <div style={{ fontWeight: 600, color: '#2C3522', marginBottom: '4px', fontSize: '0.95rem' }}>
-                    {c.subject || 'ללא נושא'}
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', fontSize: '0.8rem', color: '#888' }}>
-                    <span>{new Date(c.created_at).toLocaleDateString('he-IL')}</span>
-                    <span>•</span>
-                    <span>{c.channel === 'email' ? '✉️ מייל' : '💬 WhatsApp'}</span>
-                    <span>•</span>
-                    <span>{c.recipient_count || 0} נמענים</span>
-                  </div>
-                </div>
-                <span style={statusStyle(c.status)}>{statusLabel(c.status)}</span>
-                <span onClick={() => toggleExpand(c)} style={{ fontSize: '0.8rem', color: '#AAA', transform: expandedId === c.id ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▶</span>
+                <button
+                  type="button"
+                  onClick={() => toggleExpand(c)}
+                  className="mkt-press flex-1 min-w-0 py-3 pe-3"
+                  aria-expanded={expandedId === c.id}
+                >
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold text-surface-900 truncate">
+                      {c.subject || 'ללא נושא'}
+                    </span>
+                    <span className="flex gap-x-2 gap-y-0.5 items-center flex-wrap text-xs text-surface-500 mt-0.5">
+                      <span className="num">{new Date(c.created_at).toLocaleDateString('he-IL')}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        {c.channel === 'email'
+                          ? <><Mail size={12} aria-hidden="true" />מייל</>
+                          : <><MessageCircle size={12} aria-hidden="true" />WhatsApp</>}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span><span className="num">{c.recipient_count || 0}</span> נמענים</span>
+                    </span>
+                  </span>
+                  <span className={statusClass(c.status)}>{statusLabel(c.status)}</span>
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className="mkt-chev text-surface-400 shrink-0"
+                  />
+                </button>
               </div>
 
               {/* Expanded detail */}
               {expandedId === c.id && (
-                <div style={{
-                  background: '#FFFFFF', border: '1px solid #BBF7D0', borderTop: 'none',
-                  borderRadius: '0 0 12px 12px', padding: '16px',
-                }}>
+                <div className="px-4 pb-4 pt-1 flex flex-col gap-3">
                   {/* Stats row */}
-                  <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                    <div style={{ background: '#F0FDF4', borderRadius: '10px', padding: '12px 20px', textAlign: 'center', flex: 1, minWidth: '80px' }}>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#065F46' }}>{c.recipient_count || 0}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#888' }}>נשלחו</div>
+                  <div className={`mkt-kpis ${c.sent_at ? 'cols-4' : 'cols-3'}`}>
+                    <div className="mkt-kpi">
+                      <div className="k-label">נשלחו</div>
+                      <div className="k-value">{c.recipient_count || 0}</div>
                     </div>
-                    <div style={{ background: '#F0F9FF', borderRadius: '10px', padding: '12px 20px', textAlign: 'center', flex: 1, minWidth: '80px' }}>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0369A1' }}>{c.open_count || '—'}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#888' }}>פתחו</div>
+                    <div className="mkt-kpi">
+                      <div className="k-label">פתחו</div>
+                      <div className="k-value">{c.open_count || '—'}</div>
                     </div>
-                    <div style={{ background: '#FDF4FF', borderRadius: '10px', padding: '12px 20px', textAlign: 'center', flex: 1, minWidth: '80px' }}>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#7E22CE' }}>{c.click_count || '—'}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#888' }}>לחצו</div>
+                    <div className="mkt-kpi">
+                      <div className="k-label">לחצו</div>
+                      <div className="k-value">{c.click_count || '—'}</div>
                     </div>
                     {c.sent_at && (
-                      <div style={{ background: '#F5F5F0', borderRadius: '10px', padding: '12px 20px', textAlign: 'center', flex: 1, minWidth: '80px' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#3D4A2E' }}>
+                      <div className="mkt-kpi">
+                        <div className="k-label">נשלח בתאריך</div>
+                        <div className="k-value sm">
                           {new Date(c.sent_at).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#888' }}>נשלח בתאריך</div>
                       </div>
                     )}
                   </div>
 
                   {/* Error info */}
                   {c.error && (
-                    <div style={{
-                      background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px',
-                      padding: '8px 12px', marginBottom: '12px', fontSize: '0.8rem', color: '#991B1B', direction: 'ltr',
-                    }}>
-                      {c.error}
+                    <div className="notice notice-danger">
+                      <TriangleAlert size={16} aria-hidden="true" />
+                      <span dir="ltr" className="text-start break-words min-w-0">{c.error}</span>
                     </div>
                   )}
 
                   {/* HTML preview */}
                   {previewUrl && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <label style={{ fontWeight: 600, fontSize: '0.85rem', display: 'block', marginBottom: '6px' }}>👁️ תצוגת המייל</label>
+                    <div className="mkt-field">
+                      <span className="field-label inline-flex items-center gap-1.5"><Eye size={14} aria-hidden="true" className="text-surface-500" />תצוגת המייל</span>
                       <iframe
                         src={previewUrl}
-                        style={{ width: '100%', height: '400px', border: '1px solid #E8E8E0', borderRadius: '8px' }}
+                        className="mkt-preview h-[400px]"
                         title="Campaign Preview"
                       />
                     </div>
                   )}
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={(e) => { e.stopPropagation(); onDuplicate(c); }}
-                      className="btn-primary"
-                      style={{ fontSize: '0.85rem', padding: '8px 18px' }}
+                      className="btn-primary mkt-btn-sm"
                     >
-                      📋 שכפל קמפיין
+                      <Copy size={16} aria-hidden="true" />
+                      שכפול הקמפיין
                     </button>
                     {c.status === 'draft' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(c); }}
-                        className="btn-small"
-                        style={{ fontSize: '0.85rem' }}
+                        className="btn-secondary mkt-btn-sm"
                       >
-                        ✏️ המשך עריכה
+                        <Pencil size={16} aria-hidden="true" />
+                        המשך עריכה
                       </button>
                     )}
                     {c.status === 'sent' && c.channel === 'email' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResume(c); }}
                         disabled={resumingId === c.id}
-                        className="btn-small"
-                        style={{ fontSize: '0.85rem' }}
-                        title="שלח למי שעדיין לא קיבל (מדלג על מי שכבר קיבל)"
+                        className="btn-secondary mkt-btn-sm"
+                        title="שליחה לאלו שעוד לא קיבלו (מדלג על אלו שכבר קיבלו)"
                       >
-                        {resumingId === c.id ? '⏳ שולח...' : '📨 שלח לנותרים'}
+                        <Send size={16} aria-hidden="true" />
+                        {resumingId === c.id ? 'שולח…' : 'שליחה לנותרים'}
                       </button>
                     )}
                     <button
@@ -3015,27 +2992,31 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
                         try {
                           const { error: delErr } = await supabase.from('campaigns').delete().eq('id', c.id);
                           if (delErr) throw delErr;
-                          showToast('🗑️ הקמפיין נמחק');
+                          showToast('הקמפיין נמחק');
                           setExpandedId(null);
                         } catch (err) {
-                          showToast(`❌ שגיאה: ${err.message}`, 'error');
+                          showToast(`שגיאה: ${err.message}`, 'error');
                         }
                       }}
-                      className="btn-small"
-                      style={{ fontSize: '0.85rem', color: '#991B1B' }}
+                      className="btn-quiet-danger mkt-btn-sm ms-auto"
                     >
-                      🗑️ מחק
+                      <Trash2 size={16} aria-hidden="true" />
+                      מחיקה
                     </button>
                   </div>
                 </div>
               )}
             </div>
           ))}
+          </div>
         </div>
       ) : (
-        <div className="empty-state">אין קמפיינים עדיין. צור את הקמפיין הראשון!</div>
+        <div className="card-flush overflow-hidden mkt-empty">
+          <History size={20} aria-hidden="true" />
+          אין קמפיינים עדיין. הקמפיין הראשון נוצר בלשונית "קמפיין אוטומטי".
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -3058,52 +3039,52 @@ function ReminderStopPanel({ showToast }) {
       setStatus(data);
       return data;
     } catch (e) {
-      showToast(`❌ שגיאה: ${e.message}`, 'error');
+      showToast(`שגיאה: ${e.message}`, 'error');
       return null;
     } finally { setBusy(false); }
   };
 
   const lookup = () => {
     const e = email.trim().toLowerCase();
-    if (!e.includes('@')) { showToast('❌ כתובת מייל לא תקינה', 'error'); return; }
+    if (!e.includes('@')) { showToast('כתובת מייל לא תקינה', 'error'); return; }
     call({ action: 'reminder_status', email: e });
   };
   const setStopped = async (stop) => {
     const d = await call({ action: 'set_reminders', email: email.trim().toLowerCase(), stop, actor });
-    if (d) showToast(stop ? '⏸️ התזכורות ללקוח הופסקו' : '▶️ התזכורות ללקוח חודשו');
+    if (d) showToast(stop ? 'התזכורות ללקוח הופסקו' : 'התזכורות ללקוח חודשו');
   };
 
   return (
-    <div className="form-card" style={{ marginTop: '1.5rem' }}>
-      <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>⏸️ הפסקת תזכורות ללקוח</h3>
-      <p style={{ margin: '0 0 12px', color: '#666', fontSize: '0.9rem' }}>
+    <div className="card mt-6">
+      <h3 className="mkt-card-title mb-1"><PauseCircle size={16} aria-hidden="true" />הפסקת תזכורות ללקוח</h3>
+      <p className="text-[13px] text-surface-500 mb-3 text-pretty">
         מחפשים לפי כל כתובת מייל של הלקוח. הפסקה כאן זהה ללחיצה של הלקוח על "להפסקת תזכורות" במייל.
       </p>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div className="flex gap-2 flex-wrap">
         <input type="email" value={email} onChange={e => { setEmail(e.target.value); setStatus(null); }}
-          placeholder="customer@example.com" dir="ltr" style={{ flex: '1 1 220px' }}
+          placeholder="customer@example.com" dir="ltr" className="field w-auto flex-[1_1_220px] max-w-[360px]"
+          aria-label="כתובת המייל של הלקוח"
           onKeyDown={e => { if (e.key === 'Enter') lookup(); }} />
-        <button className="btn-small" onClick={lookup} disabled={busy}>חיפוש</button>
+        <button className="btn-secondary" onClick={lookup} disabled={busy}>
+          <Search size={16} aria-hidden="true" />
+          חיפוש
+        </button>
       </div>
       {status && !status.found && (
-        <p style={{ margin: '12px 0 0', color: '#92400E' }}>לא נמצא לקוח עם הכתובת הזו.</p>
+        <p className="mt-3 text-[13px] text-surface-500">לא נמצא לקוח עם הכתובת הזו.</p>
       )}
       {status?.found && (
-        <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>{status.paid_orders} הזמנות</span>
-          <span style={{
-            padding: '2px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600,
-            background: status.reminders_stopped ? '#FEE2E2' : '#DCFCE7',
-            color: status.reminders_stopped ? '#991B1B' : '#166534',
-          }}>
+        <div className="mt-3 pt-3 border-t border-surface-200 flex gap-3 items-center flex-wrap">
+          <span className="text-sm text-surface-900"><span className="num font-medium">{status.paid_orders}</span> הזמנות</span>
+          <span className={status.reminders_stopped ? 'tag tag-warn' : 'tag tag-ok'}>
             {status.reminders_stopped ? 'תזכורות מופסקות' : 'תזכורות פעילות'}
           </span>
           {status.last_reminder_at && (
-            <span style={{ color: '#666', fontSize: '0.85rem' }}>
-              תזכורת אחרונה: {new Date(status.last_reminder_at).toLocaleDateString('he-IL')}
+            <span className="text-[13px] text-surface-500">
+              תזכורת אחרונה: <span className="num">{new Date(status.last_reminder_at).toLocaleDateString('he-IL')}</span>
             </span>
           )}
-          <button className="btn-small" disabled={busy} onClick={() => setStopped(!status.reminders_stopped)}>
+          <button className="btn-secondary mkt-btn-sm ms-auto" disabled={busy} onClick={() => setStopped(!status.reminders_stopped)}>
             {status.reminders_stopped ? 'חידוש תזכורות' : 'הפסקת תזכורות'}
           </button>
         </div>

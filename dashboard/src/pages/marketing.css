@@ -1,0 +1,257 @@
+/* Email generator (/marketing). Page-scoped: every selector sits under
+   .mkt so it can't leak into other pages or collide with parallel page PRs.
+   Builds on the shared classes in index.css (.page-header, .card-flush,
+   .card-head, .field, .tag, .notice, .btn-ghost, .btn-quiet-danger) and
+   only adds what the email generator needs on top. No literal colours:
+   everything is a brand-*, surface-* or status token. */
+@reference "../index.css";
+
+@layer components {
+
+/* ── Tabs (the page header itself is the shared .page-header) ──────── */
+.mkt-tabs {
+  @apply flex gap-1 mb-6 border-b border-surface-200 overflow-x-auto;
+  scrollbar-width: none;
+}
+.mkt-tabs::-webkit-scrollbar { display: none; }
+.mkt-tab {
+  @apply inline-flex items-center gap-2 h-11 px-3 text-sm font-medium text-surface-700 whitespace-nowrap cursor-pointer;
+  transition: color 150ms ease, box-shadow 150ms ease;
+}
+.mkt-tab svg { @apply text-surface-500; }
+.mkt-tab[aria-pressed="true"] { @apply text-brand-600; box-shadow: inset 0 -2px 0 var(--color-brand-600); }
+.mkt-tab[aria-pressed="true"] svg { @apply text-brand-600; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-tab:hover { @apply text-surface-900; }
+}
+
+/* ── Section heads ──────────────────────────────────────────────────── */
+.mkt-sec-head { @apply flex flex-wrap items-start justify-between gap-3 mb-4; }
+.mkt-sec-head h2 { @apply text-[17px] font-semibold text-surface-900; }
+.mkt-sec-sub { @apply text-[13px] text-surface-500 mt-0.5; text-wrap: pretty; }
+.mkt-stack { @apply flex flex-col gap-4; }
+.mkt-stack-sm { @apply flex flex-col gap-3; }
+
+/* Card title row: 15px/600, muted line icon. */
+.mkt-card-title { @apply flex items-center gap-2 text-[15px] font-semibold text-surface-900 mb-3; }
+.mkt-card-title svg { @apply text-surface-500 shrink-0; }
+.mkt-card-title .meta { @apply ms-auto text-[13px] font-normal text-surface-500; }
+
+/* ── Fields ─────────────────────────────────────────────────────────── */
+.mkt input[type="checkbox"], .mkt input[type="radio"] { @apply w-4 h-4 shrink-0 accent-brand-600 cursor-pointer; }
+
+/* Inputs use the shared .field / .field-label; this wrapper stacks label, field and help. */
+.mkt-field { @apply flex flex-col gap-1.5; }
+.mkt-field .field-label { @apply mb-0; }
+.mkt textarea.field { @apply leading-relaxed; resize: vertical; }
+.mkt-help { @apply text-xs text-surface-500; text-wrap: pretty; }
+.mkt-mono { font-family: var(--font-mono); font-size: 13px; }
+/* Hebrew placeholders stay in Heebo; only typed addresses/URLs go mono. */
+.mkt-mono::placeholder { font-family: var(--font-sans); }
+.mkt-row-fields { @apply flex flex-wrap gap-3; }
+
+/* Search field with a leading icon (inline-start in RTL = right). */
+.mkt-search { @apply relative; }
+.mkt-search svg { @apply absolute top-1/2 -translate-y-1/2 start-3 text-surface-400 pointer-events-none; }
+.mkt .mkt-search input { @apply ps-9; }
+
+/* ── Button sizes on top of the shared .btn-* classes ─────────────────── */
+.mkt .mkt-btn-sm { @apply h-8 px-[11px] text-[13px] gap-1.5; }
+.mkt .mkt-btn-lg { @apply h-11 text-[15px] w-full; }
+/* Quiet icon-only button: ink-2 at rest, red only on hover for deletes. */
+.mkt-icon-btn {
+  @apply inline-flex items-center justify-center w-9 h-9 rounded-lg text-surface-500 shrink-0 cursor-pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out-ui);
+}
+.mkt-icon-btn:active:not(:disabled) { transform: scale(0.97); }
+.mkt-icon-btn:disabled { @apply opacity-35 cursor-not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-icon-btn:hover:not(:disabled) { @apply bg-surface-100 text-surface-900; }
+  .mkt-icon-btn.danger:hover:not(:disabled) { @apply bg-danger-soft text-danger; }
+}
+
+/* ── Chips + segmented control ──────────────────────────────────────── */
+.mkt-chips { @apply flex flex-wrap gap-2; }
+.mkt-chip {
+  @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-surface-200 bg-white text-[13px] text-surface-700 cursor-pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out-ui);
+}
+.mkt-chip:active { transform: scale(0.97); }
+.mkt-chip[aria-pressed="true"] { @apply bg-brand-100 border-brand-200 text-brand-700; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-chip:hover:not([aria-pressed="true"]) { @apply bg-surface-100; }
+}
+/* Removable token (selected recipient, group member). */
+.mkt-token {
+  @apply inline-flex items-center gap-1 h-7 ps-2.5 pe-1 rounded-full border border-surface-200 bg-surface-50 text-xs text-surface-700 max-w-full;
+}
+.mkt-token > span { @apply truncate; }
+.mkt-token button {
+  @apply relative inline-flex items-center justify-center w-5 h-5 rounded-full text-surface-500 cursor-pointer shrink-0;
+}
+/* 20px glyph, 32px hit area. */
+.mkt-token button::after { content: ""; position: absolute; inset: -6px; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-token button:hover { @apply bg-surface-200 text-surface-900; }
+}
+
+.mkt-seg { @apply inline-flex flex-wrap gap-0.5 p-[3px] rounded-[10px] bg-surface-100 self-start; }
+.mkt-seg button {
+  @apply inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium text-surface-700 whitespace-nowrap cursor-pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.mkt-seg button[aria-pressed="true"] {
+  @apply bg-white text-surface-900;
+  box-shadow: 0 0 0 1px var(--color-surface-200);
+}
+.mkt-seg .num { @apply text-surface-500 font-normal; }
+@media (max-width: 1023px) {
+  .mkt-seg.full { @apply flex w-full; }
+  .mkt-seg.full button { @apply flex-1 px-2; }
+}
+
+/* ── Status ─────────────────────────────────────────────────────────── */
+.mkt-status { @apply inline-flex items-center gap-1.5 text-[13px] text-surface-500 whitespace-nowrap; }
+
+/* Notices are the shared .notice; only the icon alignment is page-level. */
+.mkt .notice > svg { @apply shrink-0 mt-0.5; }
+.mkt .notice:not([class*="notice-"]) > svg { @apply text-surface-500; }
+.mkt .notice { text-wrap: pretty; }
+
+/* KPI strip: one card split by hairlines. */
+.mkt-kpis { @apply grid bg-white rounded-[10px] border border-surface-200 overflow-hidden; }
+.mkt-kpis.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mkt-kpis.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mkt-kpi { @apply px-4 py-3 border-s border-surface-200 min-w-0; }
+.mkt-kpi:first-child { @apply border-s-0; }
+.mkt-kpi .k-label { @apply text-[13px] text-surface-500; }
+.mkt-kpi .k-value { @apply text-2xl font-medium text-surface-900 mt-0.5; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mkt-kpi .k-value.sm { @apply text-[15px] font-semibold mt-1.5; letter-spacing: 0; }
+@media (max-width: 639px) {
+  .mkt-kpis.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mkt-kpis.cols-4 .mkt-kpi:nth-child(3) { @apply border-s-0; }
+  .mkt-kpis.cols-4 .mkt-kpi:nth-child(n+3) { @apply border-t border-surface-200; }
+  .mkt-kpi .k-value { @apply text-xl; }
+}
+
+/* ── Lists + rows ───────────────────────────────────────────────────── */
+.mkt-rows > * + * { @apply border-t border-surface-200; }
+.mkt-ico {
+  @apply inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface-100 text-surface-700 shrink-0;
+}
+.mkt-ico.brand { @apply bg-brand-100 text-brand-600; }
+.mkt-ico.ok { @apply bg-ok-soft text-ok; }
+
+/* Clickable row as a real <button>. */
+.mkt-press {
+  @apply flex items-center gap-3 w-full text-start cursor-pointer;
+  transition: background-color 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mkt-press:hover:not(:disabled) { @apply bg-surface-50; }
+}
+.mkt-press:disabled { @apply cursor-default; }
+
+/* Disclosure chevron: turns with the owning button's aria-expanded.
+   .side = points toward the inline end while collapsed (RTL: left). */
+.mkt-chev { transition: transform 200ms var(--ease-out-ui); }
+.mkt-chev.side { transform: rotate(90deg); }
+[aria-expanded="true"] > .mkt-chev { transform: rotate(180deg); }
+[aria-expanded="true"] > .mkt-chev.side { transform: rotate(0deg); }
+
+/* Keyboard focus on the visually hidden CSV input shows on its button. */
+.mkt label:has(> input[type="file"]:focus-visible) > span {
+  box-shadow: 0 0 0 3px rgb(61 74 46 / 0.22);
+}
+
+/* Idea cards. */
+.mkt-idea {
+  @apply flex items-start gap-3.5 w-full p-4 text-start bg-white rounded-[10px] border border-surface-200 cursor-pointer;
+  transition: border-color 150ms ease, transform 160ms var(--ease-out-ui);
+}
+.mkt-idea:active { transform: scale(0.99); }
+.mkt-idea .t { @apply block text-[15px] font-semibold text-surface-900; }
+.mkt-idea .d { @apply block text-[13px] text-surface-700 mt-1 leading-relaxed; text-wrap: pretty; }
+.mkt-idea .go { @apply inline-flex items-center gap-1 self-center text-[13px] font-medium text-surface-700 whitespace-nowrap; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-idea:hover { @apply border-surface-300; }
+  .mkt-idea:hover .go { @apply text-brand-600; }
+}
+
+/* Pick lists (groups, contacts) inside the send card. */
+.mkt-pick { @apply rounded-lg border border-surface-200 bg-white overflow-hidden; }
+.mkt-pick-row {
+  @apply flex items-center gap-3 px-3 py-2.5 min-h-[44px] cursor-pointer;
+  transition: background-color 150ms ease;
+}
+.mkt-pick-row[data-selected="true"] { @apply bg-brand-50; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-pick-row:not([data-selected="true"]):hover { @apply bg-surface-50; }
+}
+
+/* Floating results list under a search field. */
+.mkt-pop {
+  @apply absolute top-full mt-1 inset-x-0 z-50 bg-white rounded-[10px] border border-surface-200 overflow-y-auto;
+  max-height: 264px;
+  box-shadow: 0 12px 32px rgb(28 33 26 / 0.12), 0 2px 6px rgb(28 33 26 / 0.06);
+}
+.mkt-opt {
+  @apply flex items-center gap-2.5 w-full px-3 py-2 min-h-[44px] text-start cursor-pointer;
+  transition: background-color 150ms ease;
+}
+.mkt-opt:disabled { @apply cursor-default opacity-50; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-opt:hover:not(:disabled) { @apply bg-surface-50; }
+}
+
+/* Product thumbnails: 1px inset outline instead of a tinted border. */
+.mkt-thumb { @apply w-9 h-9 rounded-md object-cover shrink-0; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+.mkt-prod {
+  @apply flex items-center gap-2.5 ps-1.5 pe-1 py-1.5 rounded-lg border border-surface-200 bg-white min-w-0;
+}
+
+/* Email preview frame. The email itself is customer content and keeps
+   its own branding; only the frame around it is styled here. */
+.mkt-preview { @apply block w-full rounded-lg border border-surface-200 bg-white; }
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+.mkt-table-wrap { @apply overflow-x-auto; }
+.mkt-table { @apply w-full text-sm; border-collapse: collapse; }
+.mkt-table th {
+  @apply px-4 py-2.5 text-start text-[12.5px] font-medium text-surface-500 bg-surface-50 border-b border-surface-200 whitespace-nowrap;
+}
+.mkt-table td { @apply px-4 py-2.5 text-surface-900 border-b border-surface-200 align-middle; font-variant-numeric: tabular-nums; }
+.mkt-table tbody tr:last-child td { @apply border-b-0; }
+@media (hover: hover) and (pointer: fine) {
+  .mkt-table tbody tr:hover td { @apply bg-surface-50; }
+}
+@media (max-width: 639px) {
+  .mkt-table th, .mkt-table td { @apply px-3; }
+}
+
+.mkt-empty { @apply flex flex-col items-center gap-2 px-6 py-10 text-center text-sm text-surface-500; text-wrap: pretty; }
+.mkt-empty svg { @apply text-surface-400; }
+.mkt-skel { @apply h-3 rounded-full bg-surface-100; }
+
+/* ── Confirm dialog ─────────────────────────────────────────────────── */
+.mkt-scrim {
+  @apply fixed inset-0 z-[1000] grid place-items-center p-4;
+  background: rgb(28 33 26 / 0.32);
+  animation: mktFade 150ms ease-out both;
+}
+.mkt-modal {
+  @apply w-full max-w-[440px] bg-white rounded-xl p-6;
+  box-shadow: 0 24px 48px rgb(28 33 26 / 0.18), 0 2px 8px rgb(28 33 26 / 0.08);
+  animation: mktPop 180ms var(--ease-out-ui) both;
+}
+.mkt-modal h3 { @apply text-[17px] font-semibold text-surface-900; }
+.mkt-modal-block { @apply rounded-lg border border-surface-200 bg-surface-50 px-3.5 py-3; }
+.mkt-modal-block .b-label { @apply text-xs font-medium text-surface-500 mb-1; }
+@keyframes mktFade { from { opacity: 0; } }
+@keyframes mktPop { from { opacity: 0; transform: scale(0.97); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-scrim, .mkt-modal { animation: mktFade 150ms ease-out both; }
+}
+
+}
