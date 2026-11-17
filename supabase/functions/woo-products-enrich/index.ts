@@ -22,6 +22,12 @@
 //     that used to CREATE rows was decommissioned, so this function now owns the
 //     whole sync — otherwise new WooCommerce products never land locally and
 //     don't show up in CoffeeFlow (stock search, marketing).
+//   • After a COMPLETE pass (last page reached, no page errors, inside the
+//     budget), rows for products WooCommerce no longer returns (deleted, drafted,
+//     made private) are set to stock_status='outofstock'. Before this, a removed
+//     product kept its last status forever, so the campaign generator and the
+//     agents kept offering coffees and machines the shop no longer sells. Rows are
+//     never deleted, and synced_at is left as the last time the product was seen.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
@@ -47,6 +53,9 @@ const redact = (s: string) => s.replace(/(consumer_(?:key|secret)=)[^&\s)"']+/gi
 
 const BUDGET_MS = 120_000     // leave headroom under the gateway
 const PAGE_SIZE = 50
+// A pass that would retire more than this share of the locally-listed products
+// is treated as a bad WooCommerce response, not a real catalogue change.
+const MAX_RETIRE_SHARE = 0.3
 
 // HTML-strip + whitespace-collapse — descriptions in WC are usually rich
 // HTML (paragraphs, lists, embedded media); we want clean text for search +
@@ -88,7 +97,9 @@ serve(async (req) => {
 
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE)
     const startedAt = Date.now()
-    const stats = { pages: 0, scanned: 0, upserted: 0, missing_locally: 0, errors: [] as string[], hit_budget: false }
+    const stats = { pages: 0, scanned: 0, upserted: 0, missing_locally: 0, retired: 0, errors: [] as string[], hit_budget: false }
+    const seen = new Set<number>()   // every woo_id WooCommerce returned this pass
+    let reachedEnd = false           // true only when paging ended on the real last page
 
     // Every woo_products row is stamped with the CoffeeFlow owner user_id (NOT NULL,
     // part of the (user_id, woo_id) unique key). Reuse whatever existing rows use so
@@ -148,7 +159,8 @@ serve(async (req) => {
       }
       let arr: any[] = []
       try { arr = await res.json() } catch { stats.errors.push(`page ${page} non-JSON`); break }
-      if (!Array.isArray(arr) || arr.length === 0) break  // end of pages
+      if (!Array.isArray(arr)) { stats.errors.push(`page ${page} not an array`); break }
+      if (arr.length === 0) { reachedEnd = true; break }  // end of pages
 
       stats.pages++
       stats.scanned += arr.length
@@ -156,6 +168,7 @@ serve(async (req) => {
       for (const p of arr) {
         const wooId = Number(p.id)
         if (!wooId) continue
+        seen.add(wooId)
         const imgs = Array.isArray(p.images) ? p.images.map((i: any) => i?.src).filter(Boolean) : null
         const cats = Array.isArray(p.categories) ? p.categories.map((c: any) => c?.name).filter(Boolean) : null
         const txt = (v: any) => (v === '' || v == null ? null : String(v))
@@ -191,7 +204,7 @@ serve(async (req) => {
         if (backfillIds.size === 0 && page >= 1) { /* keep going to refresh */ }
       }
 
-      if (arr.length < PAGE_SIZE) break  // last page
+      if (arr.length < PAGE_SIZE) { reachedEnd = true; break }  // last page
       page++
       if (page > 50) break  // hard safety: 50 pages × 50 = 2500 products
     }
@@ -200,11 +213,48 @@ serve(async (req) => {
     // counted, with only a few samples, so a bad run cannot write 2,500 rows.
     const upsertErrs = stats.errors.filter((e) => e.startsWith('upsert '))
     const pageErrs   = stats.errors.filter((e) => !e.startsWith('upsert '))
+
+    // ── Retire products the shop no longer returns ─────────────────────────
+    // Only after a complete pass: a partial one would retire everything on the
+    // pages it never reached.
+    if (reachedEnd && !stats.hit_budget && pageErrs.length === 0 && seen.size > 0) {
+      const listed: number[] = []
+      for (let from = 0; ; from += 1000) {   // PostgREST returns at most 1,000 rows a request
+        const { data, error } = await sb.from('woo_products')
+          .select('woo_id')
+          .eq('user_id', OWNER)
+          .neq('stock_status', 'outofstock')
+          .order('woo_id', { ascending: true })
+          .range(from, from + 999)
+        if (error) { stats.errors.push(`retire list: ${error.message}`); listed.length = 0; break }
+        for (const r of data ?? []) listed.push(Number((r as any).woo_id))
+        if (!data || data.length < 1000) break
+      }
+      const gone = listed.filter((id) => id && !seen.has(id))
+      if (gone.length && gone.length > Math.max(20, listed.length * MAX_RETIRE_SHARE)) {
+        log.warn('products.retire.skipped', `${gone.length} of ${listed.length} listed products missing from WooCommerce; too many to trust, nothing retired`, { gone: gone.length, listed: listed.length, sample: gone.slice(0, 10) })
+      } else if (gone.length) {
+        for (let i = 0; i < gone.length; i += 200) {
+          const chunk = gone.slice(i, i + 200)
+          const { error } = await sb.from('woo_products')
+            .update({ stock_status: 'outofstock' })
+            .eq('user_id', OWNER)
+            .in('woo_id', chunk)
+          if (error) { stats.errors.push(`retire update: ${error.message}`); break }
+          stats.retired += chunk.length
+        }
+        log.info('products.retired', `${stats.retired} product(s) no longer in WooCommerce set to outofstock`, { retired: stats.retired, sample: gone.slice(0, 20) })
+      }
+    } else if (!reachedEnd || stats.hit_budget) {
+      log.info('products.retire.skipped', 'incomplete pass, removed products not checked', { reached_end: reachedEnd, hit_budget: stats.hit_budget })
+    }
+    const retireErrs = stats.errors.filter((e) => e.startsWith('retire '))
+    if (retireErrs.length) log.error('products.retire.fail', retireErrs[0].slice(0, 500), { errors: retireErrs })
     if (pageErrs.length) log.error('woo.page.fail', redact(pageErrs[0]).slice(0, 500), { page: stats.pages + 1, errors: pageErrs.map(redact) })
     if (upsertErrs.length) log.error('products.upsert.fail', `${upsertErrs.length} woo_products upsert(s) failed`, { count: upsertErrs.length, sample: upsertErrs.slice(0, 5).map(redact) })
     if (stats.scanned === 0 && !pageErrs.length) log.warn('woo.empty', 'WooCommerce returned no products')
     if (stats.hit_budget) log.warn('run.budget', `stopped at the ${BUDGET_MS}ms budget after ${stats.pages} page(s)`)
-    const summary = { pages: stats.pages, scanned: stats.scanned, upserted: stats.upserted, errors: stats.errors.length, hit_budget: stats.hit_budget }
+    const summary = { pages: stats.pages, scanned: stats.scanned, upserted: stats.upserted, retired: stats.retired, errors: stats.errors.length, hit_budget: stats.hit_budget }
     await log.finish(
       stats.errors.length === 0 && stats.scanned > 0 ? 'success'
         : stats.upserted > 0 ? 'partial' : 'error',
