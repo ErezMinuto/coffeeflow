@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { PackageCheck, Pencil, Check } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import { reservedBagsByProduct, storeStock, webOwed } from '../../lib/reservedStock';
 import PackingList from './PackingList';
 import B2BAllocations from './B2BAllocations';
+import { PageHeader } from '../shared/ui';
+import './packaging.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,8 +54,8 @@ export default function Packaging() {
   // ── Record new packing ────────────────────────────────────────────────────
 
   const recordPacking = async () => {
-    if (!selectedProduct) { showToast('⚠️ נא לבחור מוצר', 'warning'); return; }
-    if (bags <= 0)         { showToast('⚠️ נא להזין כמות שקיות', 'warning'); return; }
+    if (!selectedProduct) { showToast('נא לבחור מוצר', 'warning'); return; }
+    if (bags <= 0)         { showToast('נא להזין כמות שקיות', 'warning'); return; }
 
     const deductions = calcDeductions(selectedProduct, bags, data.origins, data.roastProfiles);
 
@@ -99,12 +102,12 @@ export default function Packaging() {
         reported_by: 'מערכת',
       });
 
-      showToast(`✅ נרשמה אריזה: ${bags} שקיות ${selectedProduct.name} ${selectedProduct.size}g`);
+      showToast(`נרשמה אריזה: ${bags} שקיות ${selectedProduct.name} ${selectedProduct.size}g`);
       setPackProductId('');
       setPackBags('');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה ברישום האריזה', 'error');
+      showToast('שגיאה ברישום האריזה', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -171,10 +174,10 @@ export default function Packaging() {
       ]);
 
       setEditingLogId(null);
-      showToast(`✅ תוקן: ${log.product_name} — ${newBags} שקיות`);
+      showToast(`תוקן: ${log.product_name}, ${newBags} שקיות`);
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה בתיקון הרישום', 'error');
+      showToast('שגיאה בתיקון הרישום', 'error');
     } finally {
       setCorrecting(false);
     }
@@ -183,220 +186,196 @@ export default function Packaging() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="page">
-      <div style={{ marginBottom: '20px' }}>
-        <h1>🎁 אריזה</h1>
-      </div>
-
-      <PackingList />
+    <div className="page pack-page">
+      <PageHeader
+        title="אריזה"
+        subtitle="רישום אריזות, מלאי שקיות לחנות והקצאות ללקוחות B2B"
+      />
 
       {/* Packing form */}
-      <div className="form-card" style={{ marginBottom: '24px', background: '#F0FFF4', border: '2px solid #059669' }}>
-        <h3>רישום אריזה</h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>מוצר *</label>
-            <select value={packProductId} onChange={e => setPackProductId(e.target.value)}>
-              <option value="">בחר מוצר...</option>
+      <section className="card flush">
+        <div className="card-head"><h2>רישום אריזה</h2></div>
+        <div className="card-body pack-form">
+          <div className="form-group">
+            <label htmlFor="pack-product">מוצר</label>
+            <select id="pack-product" value={packProductId} onChange={e => setPackProductId(e.target.value)}>
+              <option value="">בחירת מוצר</option>
               {data.products.map(p => (
                 <option key={p.id} value={p.id}>{p.name} {p.size}g</option>
               ))}
             </select>
           </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>כמות שקיות *</label>
+          <div className="form-group">
+            <label htmlFor="pack-bags">כמות שקיות</label>
             <input
+              id="pack-bags"
               type="number" min="1" placeholder="0"
               value={packBags}
               onChange={e => setPackBags(e.target.value)}
             />
           </div>
+          <button
+            type="button"
+            onClick={recordPacking}
+            className="btn primary pack-submit"
+            disabled={submitting}
+          >
+            <PackageCheck aria-hidden="true" />
+            {submitting ? 'שומר...' : 'שמירת אריזה'}
+          </button>
         </div>
+      </section>
 
-        <button
-          onClick={recordPacking}
-          className="btn-primary"
-          disabled={submitting}
-          style={{ width: '100%' }}
-        >
-          {submitting ? '⏳ שומר...' : '✅ שמור אריזה'}
-        </button>
-      </div>
+      <PackingList />
 
       {/* Product stock overview */}
-      <h3 style={{ marginBottom: '12px' }}>📦 מלאי שקיות ארוזות</h3>
-
-      {data.products.length === 0 ? (
-        <div className="empty-state">אין מוצרים מוגדרים עדיין.</div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-          {data.products.map(product => {
-            // Bags allocated to a B2B customer are not store stock.
-            const reservedBags = reserved[product.id] || 0;
-            const stock    = storeStock(product, reserved);
-            const minStock = product.min_packed_stock ?? 0;
-            const isEmpty  = stock === 0;
-            const isLow    = !isEmpty && minStock > 0 && stock <= minStock;
-            const color    = isEmpty ? '#DC2626' : isLow ? '#D97706' : '#059669';
-            const bg       = isEmpty ? '#FEF2F2' : isLow ? '#FFFBEB' : '#F0FFF4';
-            const border   = isEmpty ? '#FCA5A5' : isLow ? '#FCD34D' : '#6EE7B7';
-
-            return (
-              <div key={product.id} style={{
-                background: bg, border: `1.5px solid ${border}`,
-                borderRadius: '10px', padding: '16px', textAlign: 'center'
-              }}>
-                <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px', color: '#374151' }}>
-                  {product.name}
-                </div>
-                <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
-                  {product.size}g
-                </div>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                  {stock}
-                </div>
-                <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות לחנות</div>
-                {reservedBags > 0 && (
-                  <div style={{ fontSize: '11px', color: '#6B3A1F', marginTop: '4px' }}>
-                    🏷️ +{reservedBags} מוקצות ל-B2B
-                  </div>
-                )}
-                {webOwed(product) > 0 && (
-                  <div style={{ fontSize: '11px', color: '#B45309', marginTop: '4px', fontWeight: '500' }}
-                       title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
-                    🌐 {webOwed(product)} חסרות להזמנות אתר
-                  </div>
-                )}
-                {minStock > 0 && (
-                  <div style={{ fontSize: '11px', color, marginTop: '6px', fontWeight: '500' }}>
-                    {isEmpty ? '❌ אזל מהמלאי' : isLow ? `⚠️ מינימום: ${minStock}` : `✓ מינימום: ${minStock}`}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      <section className="card flush">
+        <div className="card-head">
+          <h2>מלאי שקיות ארוזות</h2>
+          {data.products.length > 0 && <span className="meta num">{data.products.length} מוצרים</span>}
         </div>
-      )}
-      <div style={{ marginTop: '28px' }}>
-        <B2BAllocations />
-      </div>
 
-      {/* Packing logs */}
-      <h3 style={{ margin: '28px 0 12px' }}>📋 היסטוריית אריזות</h3>
+        {data.products.length === 0 ? (
+          <div className="empty-state">אין מוצרים מוגדרים עדיין.</div>
+        ) : (
+          <div className="pack-stock">
+            {data.products.map(product => {
+              // Bags allocated to a B2B customer are not store stock.
+              const reservedBags = reserved[product.id] || 0;
+              const stock    = storeStock(product, reserved);
+              const minStock = product.min_packed_stock ?? 0;
+              const isEmpty  = stock === 0;
+              const isLow    = !isEmpty && minStock > 0 && stock <= minStock;
+              const tone     = isEmpty ? 'danger' : isLow ? 'warn' : 'ok';
 
-      {data.packingLogs && data.packingLogs.length === 0 ? (
-        <div className="empty-state">אין רישומי אריזה עדיין.</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {(data.packingLogs || []).slice().reverse().map(log => {
-            const isEditing = editingLogId === log.id;
-            return (
-              <div key={log.id} style={{
-                background: '#FAFAFA', border: '1px solid #E5E7EB',
-                borderRadius: '10px', padding: '14px 16px',
-                display: 'flex', alignItems: 'flex-start', gap: '12px'
-              }}>
-                {/* Log details */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '14px', color: '#111827', marginBottom: '4px' }}>
-                    {log.product_name}
-                  </div>
-
-                  {isEditing ? (
-                    /* ── Inline edit ── */
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                      <span style={{ fontSize: '13px', color: '#6B7280' }}>שקיות:</span>
-                      <input
-                        type="number" min="1"
-                        value={editBags}
-                        onChange={e => setEditBags(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter')  { e.preventDefault(); submitCorrection(log); }
-                          if (e.key === 'Escape') { e.preventDefault(); if (!correcting) setEditingLogId(null); }
-                        }}
-                        aria-label="מספר שקיות מתוקן"
-                        style={{
-                          // 16px: iPhone zooms the page into smaller inputs.
-                          width: '80px', padding: '4px 8px', fontSize: '16px', fontVariantNumeric: 'tabular-nums',
-                          border: '1.5px solid #059669', borderRadius: '6px',
-                          textAlign: 'center'
-                        }}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => submitCorrection(log)}
-                        disabled={correcting}
-                        style={{
-                          padding: '4px 12px', fontSize: '13px',
-                          cursor: correcting ? 'default' : 'pointer', opacity: correcting ? 0.6 : 1,
-                          background: '#059669', color: '#fff', border: 'none',
-                          borderRadius: '6px', fontWeight: '600'
-                        }}
-                      >
-                        {correcting ? '⏳' : '✅ שמור'}
-                      </button>
-                      <button
-                        onClick={() => setEditingLogId(null)}
-                        disabled={correcting}
-                        style={{
-                          padding: '4px 10px', fontSize: '13px',
-                          cursor: correcting ? 'default' : 'pointer', opacity: correcting ? 0.6 : 1,
-                          background: '#F3F4F6', color: '#374151', border: '1px solid #D1D5DB',
-                          borderRadius: '6px'
-                        }}
-                      >
-                        ביטול
-                      </button>
+              return (
+                <div className="pack-srow" key={product.id}>
+                  <span className={`dot ${tone}`} aria-hidden="true" />
+                  <div className="pack-sinfo">
+                    <div className="pack-sname">
+                      <span className="attn-what">{product.name}</span>{' '}
+                      <span className="pack-size">{product.size}g</span>
                     </div>
-                  ) : (
-                    /* ── Normal view ── */
-                    <div style={{ fontSize: '13px', color: '#374151' }}>
-                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
-                        {log.bags_count}
-                      </span>
-                      {' '}שקיות
-                      {log.reported_by && (
-                        <span style={{ color: '#9CA3AF', marginRight: '8px' }}>
-                          · {log.reported_by}
+                    <div className="pack-sdetail num">
+                      {minStock > 0 && (
+                        <span className={isEmpty ? 'pack-out' : isLow ? 'pack-low' : undefined}>
+                          {isEmpty ? 'אזל מהמלאי' : `מינימום ${minStock}`}
+                        </span>
+                      )}
+                      {reservedBags > 0 && <span>ועוד {reservedBags} מוקצות ל־B2B</span>}
+                      {webOwed(product) > 0 && (
+                        <span className="tag warn" title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
+                          {webOwed(product)} חסרות להזמנות אתר
                         </span>
                       )}
                     </div>
-                  )}
-
-                  {/* Deduction detail */}
-                  {!isEditing && log.roasted_deducted && log.roasted_deducted.length > 0 && (
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#6B7280' }}>
-                      {log.roasted_deducted.map((d, i) => (
-                        <span key={i} style={{ marginLeft: '8px' }}>
-                          ♻️ {d.name}: {d.kg?.toFixed(2)} ק"ג
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
-                    {new Date(log.packed_at).toLocaleString('he-IL')}
+                  </div>
+                  <div className={`pack-sn num ${tone}`}>
+                    {stock}
+                    <small>לחנות</small>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-                {/* Edit button */}
-                {!isEditing && (
-                  <button
-                    className="btn-icon"
-                    title="תקן רישום"
-                    aria-label="תקן רישום"
-                    onClick={() => { setEditingLogId(log.id); setEditBags(String(log.bags_count)); }}
-                    style={{ borderColor: '#D1D5DB', flexShrink: 0 }}
-                  >
-                    ✏️
-                  </button>
-                )}
-              </div>
-            );
-          })}
+      <B2BAllocations />
+
+      {/* Packing logs */}
+      <section className="card flush">
+        <div className="card-head">
+          <h2>היסטוריית אריזות</h2>
+          {data.packingLogs && data.packingLogs.length > 0 && (
+            <span className="meta num">{data.packingLogs.length} רישומים</span>
+          )}
         </div>
-      )}
+
+        {data.packingLogs && data.packingLogs.length === 0 ? (
+          <div className="empty-state">אין רישומי אריזה עדיין.</div>
+        ) : (
+          <div className="pack-logs">
+            {(data.packingLogs || []).slice().reverse().map(log => {
+              const isEditing = editingLogId === log.id;
+              return (
+                <div className="pack-log" key={log.id}>
+                  {/* Log details */}
+                  <div className="pack-log-main">
+                    <div className="attn-what">{log.product_name}</div>
+
+                    {isEditing ? (
+                      /* ── Inline edit ── */
+                      <div className="pack-log-edit">
+                        <span className="text-muted">שקיות:</span>
+                        <input
+                          className="pack-edit-input"
+                          type="number" min="1"
+                          value={editBags}
+                          onChange={e => setEditBags(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter')  { e.preventDefault(); submitCorrection(log); }
+                            if (e.key === 'Escape') { e.preventDefault(); if (!correcting) setEditingLogId(null); }
+                          }}
+                          aria-label="מספר שקיות מתוקן"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn primary sm"
+                          onClick={() => submitCorrection(log)}
+                          disabled={correcting}
+                        >
+                          <Check aria-hidden="true" />
+                          {correcting ? 'שומר...' : 'שמירה'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          onClick={() => setEditingLogId(null)}
+                          disabled={correcting}
+                        >
+                          ביטול
+                        </button>
+                      </div>
+                    ) : (
+                      /* ── Normal view ── */
+                      <div className="pack-log-meta">
+                        <span className="pack-log-bags num">{log.bags_count} שקיות</span>
+                        {log.reported_by && <span>{log.reported_by}</span>}
+                        <span className="num">{new Date(log.packed_at).toLocaleString('he-IL')}</span>
+                      </div>
+                    )}
+
+                    {/* Deduction detail */}
+                    {!isEditing && log.roasted_deducted && log.roasted_deducted.length > 0 && (
+                      <div className="pack-log-deduct num">
+                        {log.roasted_deducted.map((d, i) => (
+                          <span key={i}>{d.name}: {d.kg?.toFixed(2)} ק״ג</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Edit button */}
+                  {!isEditing && (
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      title="תיקון רישום"
+                      aria-label="תיקון רישום"
+                      onClick={() => { setEditingLogId(log.id); setEditBags(String(log.bags_count)); }}
+                    >
+                      <Pencil aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+

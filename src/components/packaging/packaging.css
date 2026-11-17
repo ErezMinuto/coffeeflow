@@ -1,0 +1,176 @@
+/* Packaging page (אריזה). Everything scoped under .pack-page; shared pieces
+   (cards, buttons, tags, dots, tables, inputs) come from App.css. */
+
+.pack-page .form-group { margin-bottom: 0; }
+.pack-page .form-group :where(input, select) { width: 100%; }
+.pack-page .pack-size { color: var(--muted); font-size: 12.5px; font-weight: 400; }
+
+/* ── Packing form: product, bags, save on one row ───────────────────────── */
+.pack-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 14px 16px;
+  align-items: end;
+}
+.pack-submit { min-width: 150px; }
+
+/* ── What to pack ───────────────────────────────────────────────────────── */
+.pack-list-intro { padding-block: 12px; }
+.pack-list-intro + .pack-table-wrap,
+.pack-list-intro + .pack-list-body { border-top: 1px solid var(--line); }
+.pack-table-wrap { overflow-x: auto; }
+.pack-table-wrap td.end { white-space: nowrap; }
+.pack-td-name { overflow-wrap: anywhere; }
+.pack-allocated { color: var(--faint); }
+.pack-topack { font-weight: 600; color: var(--brand); }
+.pack-send {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+}
+.pack-page .pack-phone { flex: 1 1 200px; direction: ltr; text-align: right; }
+
+/* ── Packed stock: two columns of hairline rows ─────────────────────────── */
+.pack-stock { padding: 0 18px; }
+.pack-srow {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.pack-srow + .pack-srow { border-top: 1px solid var(--line); }
+/* Wide screens: two columns, each starting without a top hairline. */
+@media (min-width: 1100px) {
+  .pack-stock { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+  .pack-srow:nth-child(2) { border-top: 0; }
+}
+.pack-sname { overflow-wrap: anywhere; }
+.pack-sdetail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pack-sdetail .tag { font-weight: 500; }
+.pack-out { color: var(--danger); font-weight: 500; }
+.pack-low { color: var(--warn); font-weight: 500; }
+.pack-sn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.pack-sn small { font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.pack-sn.danger { color: var(--danger); }
+.pack-sn.warn   { color: var(--warn); }
+
+/* ── B2B allocations ────────────────────────────────────────────────────── */
+.pack-help { margin-bottom: 14px; }
+.pack-help b { color: var(--ink-2); font-weight: 600; }
+.pack-alloc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px 16px;
+  margin-bottom: 16px;
+}
+.pack-alloc-list { border-top: 1px solid var(--line); }
+.pack-alloc-group { padding: 10px 18px 12px; }
+.pack-alloc-group + .pack-alloc-group { border-top: 1px solid var(--line); }
+.pack-alloc-cust { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.pack-alloc-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.pack-alloc-text { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--ink-2); }
+.pack-alloc-text b { color: var(--ink); font-weight: 600; }
+
+/* Customer list (collapsible) */
+.pack-cust { border-top: 1px solid var(--line); }
+.pack-cust-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: right;
+  transition: background-color 150ms ease;
+}
+.pack-cust-toggle svg { width: 17px; height: 17px; color: var(--muted); transition: transform 200ms var(--ease); }
+.pack-cust-toggle svg.is-open { transform: rotate(180deg); }
+.pack-cust-toggle:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+@media (hover: hover) and (pointer: fine) { .pack-cust-toggle:hover { background: var(--surface-2); } }
+.pack-cust-body { padding: 4px 18px 16px; }
+.pack-cust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px 16px;
+  margin-bottom: 14px;
+}
+.pack-cust-actions { display: flex; gap: 8px; margin: 16px 0 12px; }
+.pack-cust-list { border-top: 1px solid var(--line); }
+.pack-cust-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; }
+.pack-cust-row + .pack-cust-row { border-top: 1px solid var(--line); }
+.pack-cust-info { flex: 1; min-width: 0; }
+.pack-cust-row.is-hidden .pack-cust-info { opacity: 0.55; }
+.pack-cust-contact { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* ── Packing history ────────────────────────────────────────────────────── */
+.pack-log {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 18px;
+}
+.pack-log + .pack-log { border-top: 1px solid var(--line); }
+.pack-log-main { flex: 1; min-width: 0; }
+.pack-log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pack-log-bags { color: var(--ink); font-weight: 600; }
+.pack-log-deduct {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.pack-log-edit { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.pack-page .pack-edit-input {
+  width: 88px;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 16px; /* iPhone zooms the page into smaller inputs */
+  text-align: center;
+}
+
+/* ── Phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .pack-form { grid-template-columns: minmax(0, 1fr) 110px; }
+  .pack-submit { grid-column: 1 / -1; }
+  .pack-stock { padding: 0 16px; }
+  .pack-table-wrap th, .pack-table-wrap td { padding-inline: 10px; }
+  .pack-alloc-grid, .pack-cust-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pack-alloc-grid > :nth-child(-n+2) { grid-column: 1 / -1; }
+  .pack-alloc-row { flex-wrap: wrap; }
+  .pack-alloc-text { flex-basis: 100%; }
+  .pack-alloc-row .btn:first-of-type { margin-inline-start: auto; }
+  .pack-send .btn { flex: 1 1 100%; }
+}
