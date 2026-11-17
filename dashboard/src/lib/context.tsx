@@ -3,6 +3,7 @@
  * Loads email-marketing data (contacts, campaigns, groups) from CoffeeFlow
  * Supabase for the Marketing (email generator) page.
  */
+import { toast, Toaster } from 'sonner'
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabase'
 
@@ -89,16 +90,16 @@ function useTable(table: string) {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null)
 
   const marketingContactsDb = useTable('marketing_contacts')
   const campaignsDb       = useTable('campaigns')
   const contactGroupsDb       = useTable('contact_groups')
   const contactGroupMembersDb = useTable('contact_group_members')
 
+  // Rendered by Sonner's <Toaster /> below.
   const showToast = (msg: string, type = 'success') => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
+    const show = { success: toast.success, error: toast.error, warning: toast.warning, info: toast.info }[type] ?? toast
+    show(msg)
   }
 
   const value: AppContextValue = {
@@ -129,17 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={value}>
       {children}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: toast.type === 'error' ? '#DC2626' : '#2c1a0e',
-          color: '#fff', padding: '12px 24px', borderRadius: 12,
-          fontSize: '0.9rem', zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-          animation: 'fadeUp 0.2s ease',
-        }}>
-          {toast.msg}
-        </div>
-      )}
+      <Toaster position="bottom-center" richColors closeButton duration={3500} />
     </AppContext.Provider>
   )
 }

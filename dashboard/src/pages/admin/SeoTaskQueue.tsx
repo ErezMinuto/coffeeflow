@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, RefreshCw, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -137,7 +138,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('cancel', t)
     } catch (e) {
       console.error('[SeoTaskQueue] cancel failed:', e)
-      window.alert('Cancel failed. See console.')
+      toast.error('Cancel failed. See console.')
     } finally {
       setBusy(null)
     }
@@ -161,7 +162,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('approve', t)
     } catch (e) {
       console.error('[SeoTaskQueue] approve failed:', e)
-      window.alert('Approve failed. See console.')
+      toast.error('Approve failed. See console.')
     } finally {
       setBusy(null)
     }
@@ -175,7 +176,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     const rd = (t.result_data ?? {}) as Record<string, any>
     const creationId = rd.ig_creation_id as string | undefined
     if (!creationId) {
-      window.alert('No staged Instagram container (ig_creation_id) on this task — nothing to publish. The post may need to be re-prepared.')
+      toast.warning('No staged Instagram container (ig_creation_id) on this task — nothing to publish. The post may need to be re-prepared.')
       return
     }
     if (!window.confirm('Publish this post LIVE to @minuto_cafe now? It goes public immediately.')) return
@@ -199,7 +200,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('approve', t)
     } catch (e: any) {
       console.error('[SeoTaskQueue] IG publish failed:', e)
-      window.alert(`Publish failed: ${e?.message ?? e}`)
+      toast.error(`Publish failed: ${e?.message ?? e}`)
     } finally {
       setBusy(null)
     }
@@ -218,8 +219,8 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       .from('seo_tasks').select('*')
       .eq('task_type', 'instagram_post').eq('parent_task_id', t.id)
       .order('created_at', { ascending: false }).limit(1)
-    if (error) { window.alert(`Could not load the post: ${error.message}`); return }
-    if (!data?.length) { window.alert('No Instagram post uses this image yet.'); return }
+    if (error) { toast.error(`Could not load the post: ${error.message}`); return }
+    if (!data?.length) { toast.warning('No Instagram post uses this image yet.'); return }
     setViewing(data[0] as SeoTaskRow)
   }
 
@@ -232,7 +233,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     const brief = (t.brief_data ?? {}) as Record<string, any>
     const mediaType = (rd.media_type as string) ?? (brief.media_type as string) ?? 'feed_image'
     const type = mediaType === 'story' ? 'story' : mediaType === 'feed_image' ? 'feed' : null
-    if (!type) { window.alert(`Choosing an image isn't supported for ${mediaType} posts.`); return }
+    if (!type) { toast.warning(`Choosing an image isn't supported for ${mediaType} posts.`); return }
     const caption = (rd.caption as string) ?? (brief.caption_he as string) ?? ''
     if (!window.confirm(`Use attempt ${attempt} for this ${type}? It is staged for your review; nothing goes live until you press Approve & Publish.`)) return
     setBusy(t.id)
@@ -255,7 +256,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       setViewing(v => (v && v.id === t.id ? { ...v, result_data: updated } : v))
     } catch (e: any) {
       console.error('[SeoTaskQueue] choose attempt failed:', e)
-      window.alert(`Could not stage that image: ${e?.message ?? e}`)
+      toast.error(`Could not stage that image: ${e?.message ?? e}`)
     } finally {
       setBusy(null)
     }
@@ -281,7 +282,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('cancel', t)
     } catch (e: any) {
       console.error('[SeoTaskQueue] IG reject failed:', e)
-      window.alert('Reject failed. See console.')
+      toast.error('Reject failed. See console.')
     } finally {
       setBusy(null)
     }
