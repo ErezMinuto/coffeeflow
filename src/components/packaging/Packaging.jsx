@@ -62,7 +62,8 @@ export default function Packaging() {
       const msg = shortages.map(s =>
         `${s.item.name}: יש ${(s.item.roasted_stock ?? 0).toFixed(1)} ק"ג, צריך ${s.kgNeeded.toFixed(2)} ק"ג`
       ).join(' | ');
-      showToast(`⛔ אין מספיק מלאי קלוי: ${msg}`, 'error');
+      // Stays until closed: it is the message that says what to roast next.
+      showToast(`אין מספיק מלאי קלוי: ${msg}`, 'error', { duration: Infinity });
       return;
     }
 
@@ -110,6 +111,13 @@ export default function Packaging() {
   };
 
   // ── Correct an existing packing log ──────────────────────────────────────
+
+  const submitCorrection = (log) => {
+    if (correcting) return;
+    const n = parseInt(editBags);
+    if (!n || n <= 0) { showToast('כמות לא תקינה', 'warning'); return; }
+    correctPacking(log, n);
+  };
 
   const correctPacking = async (log, newBags) => {
     const diff = newBags - log.bags_count;
@@ -209,7 +217,7 @@ export default function Packaging() {
         <button
           onClick={recordPacking}
           className="btn-primary"
-          disabled={submitting || !packProductId || !packBags}
+          disabled={submitting}
           style={{ width: '100%' }}
         >
           {submitting ? '⏳ שומר...' : '✅ שמור אריזה'}
@@ -245,7 +253,7 @@ export default function Packaging() {
                 <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
                   {product.size}g
                 </div>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color, lineHeight: 1 }}>
+                <div style={{ fontSize: '32px', fontWeight: 'bold', color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                   {stock}
                 </div>
                 <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות לחנות</div>
@@ -303,22 +311,25 @@ export default function Packaging() {
                         type="number" min="1"
                         value={editBags}
                         onChange={e => setEditBags(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter')  { e.preventDefault(); submitCorrection(log); }
+                          if (e.key === 'Escape') { e.preventDefault(); if (!correcting) setEditingLogId(null); }
+                        }}
+                        aria-label="מספר שקיות מתוקן"
                         style={{
-                          width: '80px', padding: '4px 8px', fontSize: '14px',
+                          // 16px: iPhone zooms the page into smaller inputs.
+                          width: '80px', padding: '4px 8px', fontSize: '16px', fontVariantNumeric: 'tabular-nums',
                           border: '1.5px solid #059669', borderRadius: '6px',
                           textAlign: 'center'
                         }}
                         autoFocus
                       />
                       <button
-                        onClick={() => {
-                          const n = parseInt(editBags);
-                          if (!n || n <= 0) { showToast('⚠️ כמות לא תקינה', 'warning'); return; }
-                          correctPacking(log, n);
-                        }}
+                        onClick={() => submitCorrection(log)}
                         disabled={correcting}
                         style={{
-                          padding: '4px 12px', fontSize: '13px', cursor: 'pointer',
+                          padding: '4px 12px', fontSize: '13px',
+                          cursor: correcting ? 'default' : 'pointer', opacity: correcting ? 0.6 : 1,
                           background: '#059669', color: '#fff', border: 'none',
                           borderRadius: '6px', fontWeight: '600'
                         }}
@@ -329,7 +340,8 @@ export default function Packaging() {
                         onClick={() => setEditingLogId(null)}
                         disabled={correcting}
                         style={{
-                          padding: '4px 10px', fontSize: '13px', cursor: 'pointer',
+                          padding: '4px 10px', fontSize: '13px',
+                          cursor: correcting ? 'default' : 'pointer', opacity: correcting ? 0.6 : 1,
                           background: '#F3F4F6', color: '#374151', border: '1px solid #D1D5DB',
                           borderRadius: '6px'
                         }}
@@ -340,7 +352,7 @@ export default function Packaging() {
                   ) : (
                     /* ── Normal view ── */
                     <div style={{ fontSize: '13px', color: '#374151' }}>
-                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#059669' }}>
+                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                         {log.bags_count}
                       </span>
                       {' '}שקיות
@@ -371,13 +383,11 @@ export default function Packaging() {
                 {/* Edit button */}
                 {!isEditing && (
                   <button
+                    className="btn-icon"
                     title="תקן רישום"
+                    aria-label="תקן רישום"
                     onClick={() => { setEditingLogId(log.id); setEditBags(String(log.bags_count)); }}
-                    style={{
-                      background: 'none', border: '1px solid #D1D5DB', borderRadius: '6px',
-                      padding: '5px 8px', cursor: 'pointer', fontSize: '15px', color: '#6B7280',
-                      flexShrink: 0, lineHeight: 1
-                    }}
+                    style={{ borderColor: '#D1D5DB', flexShrink: 0 }}
                   >
                     ✏️
                   </button>

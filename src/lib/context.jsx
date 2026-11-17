@@ -149,10 +149,12 @@ export const AppProvider = ({ children }) => {
 
   // Toasts are rendered by Sonner's <Toaster /> in App.jsx. Callers still pass
   // the old emoji prefixes (✅ ❌ ⚠️); Sonner draws its own icon, so strip them.
-  const showToast = (message, type = 'success') => {
-    const text = String(message ?? '').replace(/^\s*(?:✅|❌|⚠️|⚠)\s*/u, '');
+  // `options` goes straight to Sonner, e.g. { duration: Infinity } for an error
+  // the user has to read in full.
+  const showToast = (message, type = 'success', options) => {
+    const text = String(message ?? '').replace(/^\s*(?:✅|❌|⚠️|⚠|⛔)\s*/u, '');
     const show = { success: toast.success, error: toast.error, warning: toast.warning, info: toast.info }[type] || toast;
-    show(text);
+    show(text, options);
   };
 
   const getOriginById = (id) => _getOriginById(data.origins, id);
