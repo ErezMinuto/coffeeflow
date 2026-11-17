@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Search, Plus, Download, Trash2 } from 'lucide-react';
 import { useApp } from '../../lib/context';
+import { PageHeader } from '../shared/ui';
+import './vehicle.css';
 import { supabase } from '../../lib/supabase';
 
 // ── Vehicle log (admin) ──────────────────────────────────────────────────────
@@ -32,16 +35,12 @@ function duration(fromIso, toIso) {
 }
 
 function StatusCell({ trip }) {
-  if (!trip.ended_at) return <span style={pill('#DBEAFE', '#1E40AF')}>עדיין בנסיעה</span>;
-  if (trip.end_reason === 'handover') return <span style={pill('#FEF3C7', '#92400E')}>⚠️ לא סימן החזרה</span>;
-  if (trip.end_reason === 'admin') return <span style={pill('#F3F4F6', '#374151')}>נסגר ע״י מנהל</span>;
-  if (trip.end_reason === 'manual') return <span style={pill('#EDE9FE', '#5B21B6')}>✍️ נרשם ידנית</span>;
-  return <span style={pill('#DCFCE7', '#166534')}>הוחזר</span>;
+  if (!trip.ended_at) return <span className="tag"><span className="dot ok" aria-hidden="true" />עדיין בנסיעה</span>;
+  if (trip.end_reason === 'handover') return <span className="tag warn">לא סומנה החזרה</span>;
+  if (trip.end_reason === 'admin') return <span className="tag">נסגר ע״י הנהלה</span>;
+  if (trip.end_reason === 'manual') return <span className="tag">נרשם ידנית</span>;
+  return <span className="vehicle-returned">הוחזר</span>;
 }
-
-const pill = (bg, color) => ({
-  background: bg, color, borderRadius: '999px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap',
-});
 
 export default function VehicleLog() {
   const { showToast, employees } = useApp();
@@ -60,7 +59,7 @@ export default function VehicleLog() {
     (b.active === true) - (a.active === true) || String(a.name).localeCompare(String(b.name), 'he'));
 
   async function load() {
-    if (!from || !to) { showToast('⚠️ נא לבחור תאריך התחלה וסיום', 'warning'); return; }
+    if (!from || !to) { showToast('נא לבחור תאריך התחלה וסיום', 'warning'); return; }
     if (from > to) { showToast('⚠️ תאריך ההתחלה מאוחר מהסיום', 'warning'); return; }
     setLoading(true);
     try {
@@ -68,7 +67,7 @@ export default function VehicleLog() {
       if (error) throw error;
       setTrips(data || []);
     } catch (e) {
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(`${e.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -77,7 +76,7 @@ export default function VehicleLog() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function lookup() {
-    if (!at) { showToast('⚠️ נא לבחור תאריך ושעה', 'warning'); return; }
+    if (!at) { showToast('נא לבחור תאריך ושעה', 'warning'); return; }
     setAtLoading(true); setAtResult(null);
     try {
       // datetime-local gives "YYYY-MM-DDTHH:MM" in Israel wall-clock time
@@ -85,7 +84,7 @@ export default function VehicleLog() {
       if (error) throw error;
       setAtResult(data || []);
     } catch (e) {
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(`${e.message}`, 'error');
     } finally {
       setAtLoading(false);
     }
@@ -93,7 +92,7 @@ export default function VehicleLog() {
 
   async function addManual() {
     const { employeeId, start, end, note } = man;
-    if (!employeeId || !start || !end) { showToast('⚠️ נא לבחור נהג/ת, שעת לקיחה ושעת החזרה', 'warning'); return; }
+    if (!employeeId || !start || !end) { showToast('נא לבחור נהג/ת, שעת לקיחה ושעת החזרה', 'warning'); return; }
     if (end <= start) { showToast('⚠️ שעת ההחזרה חייבת להיות אחרי שעת הלקיחה', 'warning'); return; }
     setSaving(true);
     try {
@@ -116,11 +115,11 @@ export default function VehicleLog() {
         p_note: note || null,
       });
       if (error) throw error;
-      showToast('✅ הנסיעה נוספה ליומן', 'success');
+      showToast('הנסיעה נוספה ליומן', 'success');
       setMan({ employeeId: '', start: '', end: '', note: '' });
       load();
     } catch (e) {
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(`${e.message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -129,8 +128,8 @@ export default function VehicleLog() {
   async function removeManual(t) {
     if (!window.confirm(`למחוק את הנסיעה הידנית של ${t.driver_name} (${fmt(t.started_at)})?`)) return;
     const { error } = await supabase.rpc('vehicle_trip_delete_manual', { p_id: t.id });
-    if (error) { showToast(`❌ ${error.message}`, 'error'); return; }
-    showToast('🗑️ הנסיעה נמחקה', 'success');
+    if (error) { showToast(`${error.message}`, 'error'); return; }
+    showToast('הנסיעה נמחקה', 'success');
     load();
   }
 
@@ -146,132 +145,158 @@ export default function VehicleLog() {
     URL.revokeObjectURL(url);
   }
 
-  const card = { background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxWidth: '900px', margin: '1.25rem auto' };
-  const btn = (bg, disabled) => ({ padding: '0.7rem 1.1rem', fontSize: '0.95rem', fontWeight: 700, color: 'white', background: disabled ? '#9CA3AF' : bg, border: 'none', borderRadius: '8px', cursor: disabled ? 'default' : 'pointer', marginInlineEnd: '0.6rem' });
-  const input = { padding: '0.55rem 0.7rem', fontSize: '0.95rem', border: '1px solid #D5DBC8', borderRadius: '8px', marginInlineEnd: '0.6rem', marginInlineStart: '0.4rem' };
-  const label = { fontSize: '0.85rem', color: '#374151', display: 'inline-block', marginBottom: '0.5rem' };
-  const th = { textAlign: 'right', padding: '0.5rem 0.7rem', borderBottom: '2px solid #E5E7EB', fontSize: '0.85rem', color: '#374151' };
-  const td = { padding: '0.45rem 0.7rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.88rem' };
-
   const missedReturns = (trips || []).filter((t) => t.end_reason === 'handover').length;
 
   return (
-    <div style={{ direction: 'rtl', paddingBottom: '3rem' }}>
-      <h2 style={{ textAlign: 'center', marginTop: '1.25rem' }}>יומן רכב</h2>
+    <div className="page vehicle-page">
+      <PageHeader title="יומן רכב" subtitle="מי לקח את רכב העבודה ומתי, לפי הרישום בבוט הצוות" />
 
-      {/* Fine lookup */}
-      <div style={card}>
-        <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>🔎 מי היה עם הרכב? (לדוחות)</h3>
-        <label style={label}>תאריך ושעה מהדוח
-          <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} style={input} />
-        </label>
-        <button style={btn('#3D4A2E', atLoading)} disabled={atLoading} onClick={lookup}>{atLoading ? 'מחפש…' : 'חפש'}</button>
-
-        {atResult && (
-          atResult.length === 0 ? (
-            <p style={{ background: '#FEF3C7', color: '#92400E', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: 0 }}>
-              בזמן הזה הרכב לא היה רשום על אף אחד. כדאי לבדוק בטבלה למטה מי לקח לפני ואחרי.
-            </p>
-          ) : (
-            <div style={{ marginTop: '0.75rem' }}>
-              {atResult.map((t, i) => (
-                <div key={i} style={{ background: '#F0FDF4', borderRadius: '8px', padding: '0.7rem 0.9rem', marginBottom: '0.4rem' }}>
-                  <strong style={{ fontSize: '1.05rem' }}>{t.driver_name}</strong>
-                  <span style={{ color: '#4B5563', fontSize: '0.88rem', marginInlineStart: '0.6rem' }}>
-                    {fmt(t.started_at)} → {t.ended_at ? fmt(t.ended_at) : 'עדיין בנסיעה'}
-                  </span>
-                  {t.end_reason === 'handover' && <span style={{ ...pill('#FEF3C7', '#92400E'), marginInlineStart: '0.6rem' }}>⚠️ לא סימן החזרה — שעת הסיום משוערת</span>}
-                  {t.end_reason === 'manual' && <span style={{ ...pill('#EDE9FE', '#5B21B6'), marginInlineStart: '0.6rem' }}>✍️ נרשם ידנית</span>}
-                </div>
-              ))}
+      <div className="vehicle-grid">
+        {/* Fine lookup */}
+        <section className="card flush">
+          <div className="card-head"><h2>מי היה עם הרכב? (לדוחות)</h2></div>
+          <div className="card-body">
+            <div className="vehicle-fields">
+              <div className="form-group grow">
+                <label htmlFor="veh-at">תאריך ושעה מהדוח</label>
+                <input id="veh-at" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
+              </div>
+              <button type="button" className="btn primary" disabled={atLoading} onClick={lookup}>
+                <Search aria-hidden="true" />{atLoading ? 'בחיפוש…' : 'חיפוש'}
+              </button>
             </div>
-          )
-        )}
-      </div>
 
-      {/* Manual trip: someone took the car without recording it */}
-      <div style={card}>
-        <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>✍️ הוספת נסיעה שלא נרשמה</h3>
-        <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 0 }}>
-          למקרה שמישהו לקח את הרכב בלי לסמן בבוט. הנסיעה תסומן ביומן כ״נרשם ידנית״.
-        </p>
-        <label style={label}>נהג/ת
-          <select value={man.employeeId} onChange={(e) => setMan({ ...man, employeeId: e.target.value })} style={input}>
-            <option value="">בחירה…</option>
-            {drivers.map((e) => (
-              <option key={e.id} value={e.id}>{e.name}{e.active === false ? ' (לא פעיל/ה)' : ''}</option>
-            ))}
-          </select>
-        </label>
-        <label style={label}>לקיחה
-          <input type="datetime-local" value={man.start} max={man.end || undefined} onChange={(e) => setMan({ ...man, start: e.target.value })} style={input} />
-        </label>
-        <label style={label}>החזרה
-          <input type="datetime-local" value={man.end} min={man.start || undefined} onChange={(e) => setMan({ ...man, end: e.target.value })} style={input} />
-        </label>
-        <div>
-          <label style={label}>הערה (לא חובה)
-            <input type="text" value={man.note} maxLength={200} placeholder="למשל: לפי מה שסיפר/ה" onChange={(e) => setMan({ ...man, note: e.target.value })} style={{ ...input, width: '260px' }} />
-          </label>
-          <button style={btn('#5B21B6', saving)} disabled={saving} onClick={addManual}>{saving ? 'שומר…' : 'הוספה ליומן'}</button>
-        </div>
+            {atResult && (
+              atResult.length === 0 ? (
+                <p className="notice warn vehicle-result">
+                  בזמן הזה הרכב לא היה רשום על אף אחד. כדאי לבדוק בטבלה למטה מי לקח לפני ואחרי.
+                </p>
+              ) : (
+                <ul className="vehicle-hits vehicle-result">
+                  {atResult.map((t, i) => (
+                    <li key={i} className="vehicle-hit">
+                      <strong className="vehicle-hit-name">{t.driver_name}</strong>
+                      <span className="vehicle-hit-time num">
+                        {fmt(t.started_at)} ← {t.ended_at ? fmt(t.ended_at) : 'עדיין בנסיעה'}
+                      </span>
+                      {t.end_reason === 'handover' && <span className="tag warn">לא סומנה החזרה, שעת הסיום משוערת</span>}
+                      {t.end_reason === 'manual' && <span className="tag">נרשם ידנית</span>}
+                    </li>
+                  ))}
+                </ul>
+              )
+            )}
+          </div>
+        </section>
+
+        {/* Manual trip: someone took the car without recording it */}
+        <section className="card flush">
+          <div className="card-head"><h2>הוספת נסיעה שלא נרשמה</h2></div>
+          <div className="card-body">
+            <p className="field-help vehicle-intro">
+              למקרה שהרכב נלקח בלי סימון בבוט. הנסיעה תסומן ביומן כ״נרשם ידנית״.
+            </p>
+            <div className="vehicle-form">
+              <div className="form-group span-2">
+                <label htmlFor="veh-driver">נהג/ת</label>
+                <select id="veh-driver" value={man.employeeId} onChange={(e) => setMan({ ...man, employeeId: e.target.value })}>
+                  <option value="">בחירה…</option>
+                  {drivers.map((e) => (
+                    <option key={e.id} value={e.id}>{e.name}{e.active === false ? ' (לא פעיל/ה)' : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="veh-start">לקיחה</label>
+                <input id="veh-start" type="datetime-local" value={man.start} max={man.end || undefined} onChange={(e) => setMan({ ...man, start: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="veh-end">החזרה</label>
+                <input id="veh-end" type="datetime-local" value={man.end} min={man.start || undefined} onChange={(e) => setMan({ ...man, end: e.target.value })} />
+              </div>
+              <div className="form-group span-2">
+                <label htmlFor="veh-note">הערה (לא חובה)</label>
+                <input id="veh-note" type="text" value={man.note} maxLength={200} placeholder="למשל: לפי מה שסיפר/ה" onChange={(e) => setMan({ ...man, note: e.target.value })} />
+              </div>
+            </div>
+            <button type="button" className="btn" disabled={saving} onClick={addManual}>
+              <Plus aria-hidden="true" />{saving ? 'בשמירה…' : 'הוספה ליומן'}
+            </button>
+          </div>
+        </section>
       </div>
 
       {/* Trips table */}
-      <div style={card}>
-        <label style={label}>מתאריך
-          <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} style={input} />
-        </label>
-        <label style={label}>עד תאריך
-          <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} style={input} />
-        </label>
-        <button style={btn('#16A34A', loading)} disabled={loading} onClick={load}>{loading ? 'טוען…' : 'הצג'}</button>
-        {trips?.length > 0 && <button style={btn('#6B7280', loading)} disabled={loading} onClick={exportCsv}>ייצוא CSV</button>}
+      <section className="card flush">
+        <div className="card-head">
+          <h2>נסיעות</h2>
+          {trips && (
+            <span className="meta num">
+              {trips.length} נסיעות{missedReturns > 0 ? ` · ${missedReturns} בלי סימון החזרה` : ''}
+            </span>
+          )}
+        </div>
+        <div className="vehicle-filters">
+          <div className="form-group">
+            <label htmlFor="veh-from">מתאריך</label>
+            <input id="veh-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="veh-to">עד תאריך</label>
+            <input id="veh-to" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+          </div>
+          <div className="vehicle-filter-actions">
+            <button type="button" className="btn" disabled={loading} onClick={load}>{loading ? 'בטעינה…' : 'הצגה'}</button>
+            {trips?.length > 0 && (
+              <button type="button" className="btn ghost" disabled={loading} onClick={exportCsv}>
+                <Download aria-hidden="true" />ייצוא CSV
+              </button>
+            )}
+          </div>
+        </div>
 
         {trips && (
-          <div style={{ marginTop: '1rem', overflowX: 'auto' }}>
-            <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 0 }}>
-              {trips.length} נסיעות{missedReturns > 0 ? ` · ${missedReturns} בלי סימון החזרה` : ''}
-            </p>
-            {trips.length === 0 ? (
-              <p style={{ color: '#6B7280' }}>אין נסיעות בטווח שנבחר.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
+          trips.length === 0 ? (
+            <p className="empty-state">אין נסיעות בטווח שנבחר.</p>
+          ) : (
+            <div className="vehicle-table-wrap">
+              <table>
                 <thead>
                   <tr>
-                    <th style={th}>נהג</th>
-                    <th style={th}>לקיחה</th>
-                    <th style={th}>החזרה</th>
-                    <th style={{ ...th, textAlign: 'center' }}>משך</th>
-                    <th style={th}>סטטוס</th>
-                    <th style={th}></th>
+                    <th>נהג/ת</th>
+                    <th>לקיחה</th>
+                    <th>החזרה</th>
+                    <th>משך</th>
+                    <th>סטטוס</th>
+                    <th aria-label="פעולות" />
                   </tr>
                 </thead>
                 <tbody>
                   {trips.map((t) => (
                     <tr key={t.id}>
-                      <td style={{ ...td, fontWeight: 600 }}>{t.driver_name}</td>
-                      <td style={td}>{fmt(t.started_at)}</td>
-                      <td style={td}>{t.ended_at ? fmt(t.ended_at) : '—'}</td>
-                      <td style={{ ...td, textAlign: 'center' }}>{duration(t.started_at, t.ended_at)}</td>
-                      <td style={td}>
+                      <td className="vehicle-driver">{t.driver_name}</td>
+                      <td className="num">{fmt(t.started_at)}</td>
+                      <td className="num">{t.ended_at ? fmt(t.ended_at) : <span className="text-muted">בנסיעה</span>}</td>
+                      <td className="num">{duration(t.started_at, t.ended_at)}</td>
+                      <td>
                         <StatusCell trip={t} />
-                        {t.note && <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: '0.2rem' }}>{t.note}</div>}
+                        {t.note && <div className="vehicle-note">{t.note}</div>}
                       </td>
-                      <td style={{ ...td, textAlign: 'center' }}>
+                      <td className="vehicle-act">
                         {t.end_reason === 'manual' && (
-                          <button title="מחיקת נסיעה ידנית" onClick={() => removeManual(t)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>🗑️</button>
+                          <button type="button" className="btn-icon danger" title="מחיקת נסיעה ידנית" aria-label="מחיקת נסיעה ידנית" onClick={() => removeManual(t)}>
+                            <Trash2 aria-hidden="true" />
+                          </button>
                         )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,0 +1,79 @@
+/* ── Vehicle log (יומן רכב) ─────────────────────────────────────────────── */
+/* Page-scoped: every rule sits under .vehicle-page. */
+
+.vehicle-page .vehicle-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.vehicle-page .vehicle-grid > .card { margin-bottom: 24px; }
+
+.vehicle-page .form-group { margin-bottom: 0; }
+.vehicle-page .form-group input,
+.vehicle-page .form-group select { width: 100%; }
+
+/* Lookup: one field and its button on one line. */
+.vehicle-page .vehicle-fields { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.vehicle-page .vehicle-fields .grow { flex: 1 1 220px; }
+
+.vehicle-page .vehicle-result { margin: 16px 0 0; }
+.vehicle-page .vehicle-hits {
+  list-style: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.vehicle-page .vehicle-hit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 12px 14px;
+}
+.vehicle-page .vehicle-hit + .vehicle-hit { border-top: 1px solid var(--line); }
+.vehicle-page .vehicle-hit-name { font-size: 15px; font-weight: 600; }
+.vehicle-page .vehicle-hit-time { color: var(--ink-2); font-size: 13px; }
+
+/* Manual trip form */
+.vehicle-page .vehicle-intro { margin: 0 0 14px; }
+.vehicle-page .vehicle-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px 16px;
+  margin-bottom: 16px;
+}
+.vehicle-page .vehicle-form .span-2 { grid-column: 1 / -1; }
+
+/* Trips: date range + actions above the table */
+.vehicle-page .vehicle-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 16px 18px;
+}
+.vehicle-page .vehicle-filters .form-group { flex: 0 1 180px; }
+.vehicle-page .vehicle-filter-actions { display: flex; gap: 8px; }
+
+.vehicle-page .vehicle-table-wrap { overflow-x: auto; }
+.vehicle-page .vehicle-table-wrap table { min-width: 640px; }
+.vehicle-page .vehicle-table-wrap td { vertical-align: middle; }
+.vehicle-page .vehicle-table-wrap td.num { white-space: nowrap; }
+.vehicle-page .vehicle-driver { font-weight: 500; white-space: nowrap; }
+.vehicle-page .vehicle-returned { color: var(--muted); font-size: 13px; }
+.vehicle-page .vehicle-note { margin-top: 4px; color: var(--muted); font-size: 12.5px; }
+.vehicle-page .vehicle-act { width: 56px; padding-block: 4px; text-align: left; }
+
+@media (max-width: 860px) {
+  .vehicle-page .vehicle-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .vehicle-page .vehicle-form { grid-template-columns: minmax(0, 1fr); }
+  .vehicle-page .vehicle-fields .btn,
+  .vehicle-page .vehicle-form + .btn { width: 100%; }
+  .vehicle-page .vehicle-filters { padding: 14px 16px; }
+  .vehicle-page .vehicle-filters .form-group { flex: 1 1 140px; }
+  .vehicle-page .vehicle-filter-actions { flex: 1 1 100%; }
+  .vehicle-page .vehicle-filter-actions .btn { flex: 1; }
+  .vehicle-page .vehicle-table-wrap th,
+  .vehicle-page .vehicle-table-wrap td { padding-inline: 12px; }
+}
