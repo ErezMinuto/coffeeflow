@@ -72,6 +72,8 @@ h1 24px/600 + one muted line of context; actions on the opposite side, primary a
 - Default: 38px h · 0 14px · 8px radius · 14px/500 · white with `--line-strong` border.
 - Primary: brand fill, white text. Danger: danger text, pale red border. Ghost: no border.
 - Small: 32px h · 0 11px · 13px. Icon-only `.btn-icon`: 40×40, transparent until hover.
+- Delete icon (`.btn-icon.danger`): ink-2 at rest, red only on hover/press, so a column of row deletes doesn't shout. Disabled icon buttons: 35% opacity.
+- Utilities: `.sr-only` (clip-path, safe inside scrolling tables), `.muted` (colour only; `.text-muted` also sets 13px), `.skel` / `.skel.lg` static loading bars.
 - Press `scale(0.97)` 160ms `cubic-bezier(0.23,1,0.32,1)`; hover only under `(hover:hover) and (pointer:fine)`; focus = 3px olive ring at 22%.
 
 ### Card
@@ -105,4 +107,6 @@ Inputs/selects 38px, 1px `--line-strong`, 8px radius, olive focus ring; global r
 | Heebo, one family | Hebrew-first sans with good numerals; display faces don't belong in labels and data. | 2026-11-17 |
 | Right-side sidebar instead of top navbar | 10+ destinations with Hebrew labels didn't fit a top bar (it mixed English labels and wrapped on phones). | 2026-11-17 |
 | Page CSS in page-scoped files | Parallel page PRs must not collide in App.css; shared rules stay in the foundation section. | 2026-11-17 |
+| Quiet delete icons | Products, Tasks and Settings each have a delete per row; red at rest made a red column. | 2026-11-17 |
+| Loading = static placeholders | A page must never claim "nothing needs attention" before data arrives; `dataLoading` in context latches after the first load. | 2026-11-17 |
 | Only real numbers on the dashboard | "קליות החודש" used to count every roast ever; every KPI states its source. | 2026-11-17 |

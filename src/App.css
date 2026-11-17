@@ -307,12 +307,15 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease);
 }
 .btn-icon svg { width: 17px; height: 17px; }
-.btn-icon.danger { color: var(--danger); }
+/* Delete icons stay quiet in lists and turn red only when aimed at. */
+.btn-icon.danger { color: var(--ink-2); }
+.btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
 @media (hover: hover) and (pointer: fine) {
   .btn-icon:hover { background: var(--sunken); color: var(--ink); }
   .btn-icon.danger:hover { background: var(--danger-soft); color: var(--danger); }
 }
 .btn-icon:active:not(:disabled) { transform: scale(0.95); }
+.btn-icon.danger:active:not(:disabled) { color: var(--danger); }
 
 /* ── Form controls ──────────────────────────────────────────────────────── */
 /* :where() keeps these at zero specificity so page-scoped rules still win. */
@@ -515,6 +518,18 @@ td.end, th.end { text-align: left; }
 .text-danger  { color: var(--danger); font-weight: 600; }
 .text-muted,
 .text-small   { font-size: 13px; color: var(--muted); }
+.muted        { color: var(--muted); }
+
+/* Visually hidden, still read by screen readers. clip-path keeps it from
+   widening a scrolling table on phones. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .empty-state { text-align: center; padding: 40px 16px; color: var(--muted); }
 
