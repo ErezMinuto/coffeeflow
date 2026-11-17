@@ -24,8 +24,9 @@
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 500;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease);
 }
+.tasks-page .tasks-seg button:active { transform: scale(0.97); }
 .tasks-page .tasks-seg button.active {
   background: var(--surface);
   color: var(--ink);
