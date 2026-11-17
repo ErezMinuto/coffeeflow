@@ -360,7 +360,7 @@ ${heroImage ? `<tr><td class="px" style="padding:28px 40px 0;">
   const productName = (p: EmailProduct) => p.display_name || shortProductName(p.name);
   const productNote = (p: EmailProduct) => p.note || badgeFor(p);
 
-  const card = (p: EmailProduct) => `<td class="stack-card" width="50%" valign="top" style="padding:8px;">
+  const card = (p: EmailProduct, width = "50%") => `<td class="stack-card" width="${width}" valign="top" style="padding:8px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${t.card};border:1px solid ${t.line};border-radius:10px;">
     <tr><td bgcolor="${imageBg(p.image_url, t.panel)}" style="background:${imageBg(p.image_url, t.panel)};background-image:${solid(imageBg(p.image_url, t.panel))};border-radius:10px 10px 0 0;padding:16px 12px 6px;text-align:center;">
       <a href="${escapeHtml(productHref(p))}" style="text-decoration:none;">${p.image_url
@@ -372,7 +372,7 @@ ${heroImage ? `<tr><td class="px" style="padding:28px 40px 0;">
       ${productNote(p) ? `<div style="margin-top:4px;font-size:14px;line-height:1.45;color:${t.muted};">${escapeHtml(productNote(p))}</div>` : ""}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;"><tr>
         <td style="direction:rtl;text-align:right;font-family:${BODY_FONT};">${priceHtml(p, t)}</td>
-        <td style="text-align:left;"><a href="${escapeHtml(productHref(p))}" style="display:inline-block;padding:7px 14px;border:1px solid ${t.accent};border-radius:999px;font-family:${BODY_FONT};font-size:14px;line-height:16px;font-weight:700;color:${t.accent};text-decoration:none;">לרכישה</a></td>
+        <td style="text-align:left;"><a href="${escapeHtml(productHref(p))}" style="display:inline-block;padding:10px 18px;border:1px solid ${t.accent};border-radius:999px;font-family:${BODY_FONT};font-size:14px;line-height:16px;font-weight:700;color:${t.accent};text-decoration:none;">לרכישה</a></td>
       </tr></table>
     </td></tr>
   </table>
@@ -387,7 +387,7 @@ ${heroImage ? `<tr><td class="px" style="padding:28px 40px 0;">
     <td valign="middle" style="direction:rtl;text-align:right;font-family:${BODY_FONT};">
       <a href="${escapeHtml(productHref(p))}" style="display:block;font-family:${t.headFont};font-size:19px;line-height:1.3;font-weight:700;color:${t.ink};text-decoration:none;">${escapeHtml(productName(p))}</a>
       ${productNote(p) ? `<div style="margin-top:3px;font-size:14px;line-height:1.45;color:${t.muted};">${escapeHtml(productNote(p))}</div>` : ""}
-      <div style="margin-top:6px;font-size:15px;">${priceHtml(p, t, 15)}&nbsp;&nbsp;<a href="${escapeHtml(productHref(p))}" style="display:inline-block;padding:7px 14px;border:1px solid ${t.accent};border-radius:999px;font-family:${BODY_FONT};font-size:14px;line-height:16px;font-weight:700;color:${t.accent};text-decoration:none;">לרכישה</a></div>
+      <div style="margin-top:6px;font-size:15px;">${priceHtml(p, t, 15)}&nbsp;&nbsp;<a href="${escapeHtml(productHref(p))}" style="display:inline-block;padding:10px 18px;border:1px solid ${t.accent};border-radius:999px;font-family:${BODY_FONT};font-size:14px;line-height:16px;font-weight:700;color:${t.accent};text-decoration:none;">לרכישה</a></div>
     </td>
   </tr></table>
 </td></tr>`;
@@ -401,7 +401,10 @@ ${heroImage ? `<tr><td class="px" style="padding:28px 40px 0;">
       let rows = "";
       for (let i = 0; i < gridItems.length; i += 2) {
         const b = gridItems[i + 1];
-        rows += `<tr>${card(gridItems[i])}${b ? card(b) : `<td class="stack-card spacer" width="50%" style="padding:8px;">&nbsp;</td>`}</tr>`;
+        // An odd last card sits centred at half width, not beside an empty cell.
+        rows += b
+          ? `<tr>${card(gridItems[i])}${card(b)}</tr>`
+          : `<tr><td colspan="2" align="center" style="padding:0;"><table role="presentation" width="50%" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;table-layout:fixed;"><tr>${card(gridItems[i], "100%")}</tr></table></td></tr>`;
       }
       inner = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" dir="rtl" style="table-layout:fixed;">${rows}</table>`;
     }
@@ -476,7 +479,7 @@ ${heroImage ? `<tr><td class="px" style="padding:28px 40px 0;">
           מינוטו קפה בע״מ · אחד העם 22, רחובות 7626101 · <a href="${SITE_URL}" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
         </td></tr>
         <tr><td align="center" style="padding:4px 32px 28px;font-family:${BODY_FONT};font-size:12px;line-height:1.8;color:#666666;direction:rtl;">
-          ${legalDeadline ? `<p style="margin:0 0 8px;font-weight:700;color:#555555;">המבצע עד ה־${escapeHtml(legalDeadline)} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח</p>` : ""}
+          ${legalDeadline ? `<p style="margin:0 0 8px;font-weight:700;color:#555555;">המבצע עד ה־${escapeHtml(legalDeadline)} או עד גמר המלאי, הראשון מביניהם | ט.ל.ח</p>` : ""}
           <p style="margin:0 0 6px;">הפניה אליך נעשית בדיוור ישיר בעקבות הרשמתך לקפה מינוטו.</p>
           <p style="margin:0 0 6px;">הודעת דואר זו נשלחה מכתובת דואר אלקטרוני שאינה נבדקת. אין באפשרותנו להגיב על תשובות שנשלחות לכתובת דואר אלקטרוני זאת. אנו מכבדים את פרטיותך, כנדרש עפ&quot;י דין.</p>
           <p style="margin:0 0 6px;">להסרה מרשימת הדיוור <a href="${escapeHtml(params.unsubscribeUrl)}" style="color:#666666;">לחץ/י כאן</a>.</p>

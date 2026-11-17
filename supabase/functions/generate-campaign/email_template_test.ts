@@ -97,3 +97,15 @@ Deno.test("the scene brief is stored in the design but never shown", () => {
   // An older draft without one decodes to undefined, not an error.
   assertEquals(decodeDesign(buildCampaignHtml({ ...legacy, products: [] })).sceneBrief, undefined);
 });
+
+Deno.test("an odd last product is centred, not left beside an empty cell", () => {
+  const html = buildCampaignHtml({ ...legacy, products: [bag(1, "א"), bag(2, "ב"), bag(3, "ג")] });
+  assertEquals(html.includes("spacer"), false);
+  assertStringIncludes(html, 'colspan="2" align="center"');
+  assertEquals(html.split("utm_content=product_3__").length - 1, 3);   // image, name, buy button
+});
+
+Deno.test("the legal deadline line is spelled correctly", () => {
+  const html = buildCampaignHtml({ ...legacy, promoDeadline: "2026-11-28" });
+  assertStringIncludes(html, "הראשון מביניהם");
+});
