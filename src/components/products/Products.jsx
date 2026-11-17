@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { Plus, Pencil, Copy, Trash2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { reservedBagsByProduct, storeStock, webOwed } from '../../lib/reservedStock';
+import { PageHeader } from '../shared/ui';
+import './products.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -33,17 +36,19 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
     onChange(recipe.filter((_, i) => i !== index));
 
   return (
-    <div className="form-group">
-      <label>מתכון (סה"כ חייב להיות 100%) *</label>
+    <div className="form-group prod-recipe-form">
+      <span className="field-label">מתכון *</span>
+      <span className="field-help">סך האחוזים צריך להיות 100%</span>
       {recipe.map((ing, index) => (
-        <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
+        <div key={index} className="prod-recipe-row">
           <select
+            aria-label={`מקור לרכיב ${index + 1}`}
             value={toSelectValue(ing)}
             onChange={e => updateIngredient(index, fromSelectValue(e.target.value))}
           >
-            <option value="">בחר מקור...</option>
+            <option value="">בחירת מקור...</option>
             {roastProfiles.length > 0 && (
-              <optgroup label="🔥 פרופילי קלייה">
+              <optgroup label="פרופילי קלייה">
                 {roastProfiles.map(p => (
                   <option key={`profile:${p.id}`} value={`profile:${p.id}`}>
                     {p.name}{p.roast_level && p.roast_level !== 'none' ? ` (${p.roast_level})` : ''}
@@ -51,7 +56,7 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
                 ))}
               </optgroup>
             )}
-            <optgroup label="🌱 זנים">
+            <optgroup label="זנים">
               {origins.map(o => (
                 <option key={`origin:${o.id}`} value={`origin:${o.id}`}>{o.name}</option>
               ))}
@@ -59,21 +64,26 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
           </select>
           <input
             type="number" placeholder="%" min="0" max="100" step="0.1"
+            aria-label={`אחוז לרכיב ${index + 1}`}
             value={ing.percentage}
             onChange={e => updateIngredient(index, { percentage: parseFloat(e.target.value) || 0 })}
           />
-          {recipe.length > 1 && (
+          {recipe.length > 1 ? (
             <button
+              type="button"
               onClick={() => removeIngredient(index)}
-              className="btn-small"
-              style={{ background: '#FEE2E2', color: '#991B1B' }}
-            >🗑️</button>
-          )}
+              className="btn-icon danger"
+              aria-label={`הסרת רכיב ${index + 1}`}
+              title="הסרת רכיב"
+            ><Trash2 aria-hidden="true" /></button>
+          ) : <span className="prod-recipe-spacer" aria-hidden="true" />}
         </div>
       ))}
-      <button onClick={addIngredient} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
-      <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
-        סה"כ: {total}%
+      <div className="prod-recipe-foot">
+        <button type="button" onClick={addIngredient} className="btn sm"><Plus aria-hidden="true" />הוספת רכיב</button>
+        <span className={`prod-recipe-total num ${total === 100 ? 'ok' : 'off'}`}>
+          סה״כ {total}%
+        </span>
       </div>
     </div>
   );
@@ -108,15 +118,15 @@ export default function Products() {
   // ── Validation ──────────────────────────────────────────────────────────────
 
   const validateProduct = (product) => {
-    if (!product.name.trim()) { showToast('⚠️ נא למלא שם מוצר', 'warning'); return false; }
-    if (!product.size || product.size <= 0) { showToast('⚠️ נא למלא גודל מוצר', 'warning'); return false; }
-    if (!product.recipe || product.recipe.length === 0) { showToast('⚠️ נא להוסיף לפחות רכיב אחד', 'warning'); return false; }
+    if (!product.name.trim()) { showToast('נא למלא שם מוצר', 'warning'); return false; }
+    if (!product.size || product.size <= 0) { showToast('נא למלא גודל מוצר', 'warning'); return false; }
+    if (!product.recipe || product.recipe.length === 0) { showToast('נא להוסיף לפחות רכיב אחד', 'warning'); return false; }
     for (const ing of product.recipe) {
-      if (!ing.sourceId && !ing.originId) { showToast('⚠️ נא לבחור מקור לכל רכיב', 'warning'); return false; }
+      if (!ing.sourceId && !ing.originId) { showToast('נא לבחור מקור לכל רכיב', 'warning'); return false; }
     }
     const total = product.recipe.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
     if (Math.abs(total - 100) > 0.1) {
-      showToast(`⚠️ סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
+      showToast(`סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
       return false;
     }
     return true;
@@ -136,10 +146,10 @@ export default function Products() {
       await productsDb.refresh();
       setAddingProduct(false);
       setNewProduct({ name: '', size: 330, type: 'single', description: '', min_packed_stock: 0, recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }] });
-      showToast('✅ מוצר נוסף בהצלחה!');
+      showToast('מוצר נוסף בהצלחה!');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה בהוספת מוצר', 'error');
+      showToast('שגיאה בהוספת מוצר', 'error');
     }
   };
 
@@ -160,86 +170,90 @@ export default function Products() {
         recipe: editingProduct.recipe, updated_at: new Date().toISOString()
       });
       setEditingProduct(null);
-      showToast('✅ מוצר עודכן בהצלחה!');
+      showToast('מוצר עודכן בהצלחה!');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה בעדכון מוצר', 'error');
+      showToast('שגיאה בעדכון מוצר', 'error');
     }
   };
 
   const deleteProduct = async (product) => {
-    if (!window.confirm(`⚠️ האם למחוק את המוצר "${product.name} ${product.size}g"?`)) return;
+    if (!window.confirm(`האם למחוק את המוצר "${product.name} ${product.size}g"?`)) return;
     try {
       await productsDb.remove(product.id);
-      showToast('✅ מוצר נמחק!');
+      showToast('מוצר נמחק!');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה במחיקת מוצר', 'error');
+      showToast('שגיאה במחיקת מוצר', 'error');
     }
   };
 
   const savePackedStock = async (product) => {
     const val = parseInt(adjustValue);
-    if (isNaN(val) || val < 0) { showToast('⚠️ כמות לא תקינה', 'warning'); return; }
+    if (isNaN(val) || val < 0) { showToast('כמות לא תקינה', 'warning'); return; }
     try {
       await productsDb.update(product.id, { packed_stock: val });
       setAdjustingStockId(null);
-      showToast('✅ מלאי עודכן!');
+      showToast('מלאי עודכן!');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה בעדכון מלאי', 'error');
+      showToast('שגיאה בעדכון מלאי', 'error');
     }
   };
 
   const duplicateProduct = async (product) => {
     try {
       await productsDb.insert({ name: product.name + ' (עותק)', size: product.size, type: product.type, description: product.description, recipe: product.recipe });
-      showToast('✅ מוצר שוכפל!');
+      showToast('מוצר שוכפל!');
     } catch (err) {
       console.error(err);
-      showToast('❌ שגיאה בשכפול מוצר', 'error');
+      showToast('שגיאה בשכפול מוצר', 'error');
     }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>📦 מוצרים ({data.products.length})</h1>
-        {!addingProduct && !editingProduct && (
-          <button onClick={() => setAddingProduct(true)} className="btn-primary">➕ הוסף מוצר</button>
+    <div className="page products-page">
+      <PageHeader
+        title="מוצרים"
+        subtitle={`${data.products.length} מוצרים בקטלוג`}
+        actions={!addingProduct && !editingProduct && (
+          <button type="button" onClick={() => setAddingProduct(true)} className="btn primary">
+            <Plus aria-hidden="true" />מוצר חדש
+          </button>
         )}
-      </div>
+      />
 
       {/* Add form */}
       {addingProduct && (
-        <div className="form-card" style={{ marginBottom: '20px', background: '#F0F9FF', border: '2px solid #3B82F6' }}>
-          <h3>➕ הוסף מוצר חדש</h3>
+        <section className="card prod-form">
+          <h2>מוצר חדש</h2>
           <div className="form-group">
-            <label>שם המוצר *</label>
-            <input type="text" placeholder="למשל: Kenya Light 250g" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+            <label htmlFor="prod-new-name">שם המוצר *</label>
+            <input id="prod-new-name" type="text" placeholder="למשל: Kenya Light 330g" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="prod-form-row">
             <div className="form-group">
-              <label>גודל (גרם) *</label>
-              <input type="number" placeholder="330" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: e.target.value})} />
+              <label htmlFor="prod-new-size">גודל (גרם) *</label>
+              <input id="prod-new-size" type="number" placeholder="330" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: e.target.value})} />
             </div>
             <div className="form-group">
-              <label>סוג</label>
-              <select value={newProduct.type} onChange={e => setNewProduct({...newProduct, type: e.target.value})}>
+              <label htmlFor="prod-new-type">סוג</label>
+              <select id="prod-new-type" value={newProduct.type} onChange={e => setNewProduct({...newProduct, type: e.target.value})}>
                 <option value="single">חד-זני</option>
                 <option value="blend">תערובת</option>
               </select>
             </div>
           </div>
           <div className="form-group">
-            <label>תיאור (אופציונלי)</label>
-            <input type="text" placeholder="למשל: פירותי ומרענן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
+            <label htmlFor="prod-new-desc">תיאור (אופציונלי)</label>
+            <input id="prod-new-desc" type="text" placeholder="למשל: פירותי ומרענן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
           </div>
           <div className="form-group">
-            <label>מינימום שקיות ארוזות (התראת מלאי)</label>
-            <input type="number" min="0" placeholder="0" value={newProduct.min_packed_stock} onChange={e => setNewProduct({...newProduct, min_packed_stock: e.target.value})} />
+            <label htmlFor="prod-new-min">מינימום שקיות ארוזות</label>
+            <input id="prod-new-min" type="number" min="0" placeholder="0" value={newProduct.min_packed_stock} onChange={e => setNewProduct({...newProduct, min_packed_stock: e.target.value})} />
+            <span className="field-help">מתחת לכמות הזו תופיע התראת מלאי</span>
           </div>
           <RecipeForm
             recipe={newProduct.recipe}
@@ -247,41 +261,42 @@ export default function Products() {
             origins={data.origins}
             roastProfiles={data.roastProfiles}
           />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <button onClick={saveNewProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור מוצר</button>
-            <button onClick={() => setAddingProduct(false)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
+          <div className="prod-form-actions">
+            <button type="button" onClick={saveNewProduct} className="btn primary">שמירת מוצר</button>
+            <button type="button" onClick={() => setAddingProduct(false)} className="btn">ביטול</button>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Edit form */}
       {editingProduct && (
-        <div className="form-card" style={{ marginBottom: '20px', background: '#FFF9F0', border: '2px solid #FF6B35' }}>
-          <h3>✏️ עריכת מוצר: {editingProduct.name}</h3>
+        <section className="card prod-form">
+          <h2>עריכת מוצר: {editingProduct.name}</h2>
           <div className="form-group">
-            <label>שם המוצר *</label>
-            <input type="text" value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} />
+            <label htmlFor="prod-edit-name">שם המוצר *</label>
+            <input id="prod-edit-name" type="text" value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="prod-form-row">
             <div className="form-group">
-              <label>גודל (גרם) *</label>
-              <input type="number" value={editingProduct.size} onChange={e => setEditingProduct({...editingProduct, size: e.target.value})} />
+              <label htmlFor="prod-edit-size">גודל (גרם) *</label>
+              <input id="prod-edit-size" type="number" value={editingProduct.size} onChange={e => setEditingProduct({...editingProduct, size: e.target.value})} />
             </div>
             <div className="form-group">
-              <label>סוג</label>
-              <select value={editingProduct.type} onChange={e => setEditingProduct({...editingProduct, type: e.target.value})}>
+              <label htmlFor="prod-edit-type">סוג</label>
+              <select id="prod-edit-type" value={editingProduct.type} onChange={e => setEditingProduct({...editingProduct, type: e.target.value})}>
                 <option value="single">חד-זני</option>
                 <option value="blend">תערובת</option>
               </select>
             </div>
           </div>
           <div className="form-group">
-            <label>תיאור</label>
-            <input type="text" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} />
+            <label htmlFor="prod-edit-desc">תיאור</label>
+            <input id="prod-edit-desc" type="text" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} />
           </div>
           <div className="form-group">
-            <label>מינימום שקיות ארוזות (התראת מלאי)</label>
-            <input type="number" min="0" value={editingProduct.min_packed_stock ?? 0} onChange={e => setEditingProduct({...editingProduct, min_packed_stock: e.target.value})} />
+            <label htmlFor="prod-edit-min">מינימום שקיות ארוזות</label>
+            <input id="prod-edit-min" type="number" min="0" value={editingProduct.min_packed_stock ?? 0} onChange={e => setEditingProduct({...editingProduct, min_packed_stock: e.target.value})} />
+            <span className="field-help">מתחת לכמות הזו תופיע התראת מלאי</span>
           </div>
           <RecipeForm
             recipe={editingProduct.recipe}
@@ -289,122 +304,129 @@ export default function Products() {
             origins={data.origins}
             roastProfiles={data.roastProfiles}
           />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <button onClick={saveEditProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
-            <button onClick={() => setEditingProduct(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
+          <div className="prod-form-actions">
+            <button type="button" onClick={saveEditProduct} className="btn primary">שמירת שינויים</button>
+            <button type="button" onClick={() => setEditingProduct(null)} className="btn">ביטול</button>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Products grid */}
       {!addingProduct && !editingProduct && (
-        <div className="products-grid">
+        <div className="prod-grid">
           {data.products.map(product => {
             const cost      = calculateProductCost(product);
             const breakdown = calculateProductCost(product, true);
             const isOpen    = showBreakdownId === product.id;
+            const stockTone = storeStock(product, reserved) === 0 ? 'danger'
+                            : (product.min_packed_stock > 0 && storeStock(product, reserved) <= product.min_packed_stock) ? 'warn'
+                            : 'ok';
 
             return (
-              <div key={product.id} className="product-card">
-                <div className="product-header">
-                  <h3>{product.name}</h3>
-                  <span className="badge">{product.size}g</span>
+              <article key={product.id} className="card flush prod-card">
+                <header className="prod-head">
+                  <div className="prod-title">
+                    <h3>{product.name}</h3>
+                    {product.description && <p className="prod-desc">{product.description}</p>}
+                  </div>
+                  <span className="tag num">{product.size}g</span>
+                </header>
+
+                <div className="prod-recipe-block">
+                  <div className="prod-label">מתכון</div>
+                  <ul className="prod-recipe">
+                    {(product.recipe || []).map((ing, i) => (
+                      <li key={i}>
+                        <span className="prod-recipe-name">{getIngredientLabel(ing)}</span>
+                        <span className="prod-recipe-pct num">{ing.percentage}%</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {product.description && (
-                  <div style={{ padding: '0.5rem 0', fontSize: '0.875rem', color: '#6F4E37', fontStyle: 'italic', borderBottom: '1px solid #F4E8D8', marginBottom: '0.5rem' }}>
-                    {product.description}
+                <div className="prod-stats">
+                  {adjustingStockId === product.id ? (
+                    <div className="prod-stat prod-stat-editing">
+                      <label className="prod-label" htmlFor={`prod-stock-${product.id}`}>שקיות ארוזות</label>
+                      <div className="prod-stock-edit">
+                        <input
+                          id={`prod-stock-${product.id}`}
+                          type="number" min="0"
+                          value={adjustValue}
+                          onChange={e => setAdjustValue(e.target.value)}
+                          autoFocus
+                        />
+                        <button type="button" onClick={() => savePackedStock(product)} className="btn-icon" aria-label="שמירת כמות" title="שמירה"><Check aria-hidden="true" /></button>
+                        <button type="button" onClick={() => setAdjustingStockId(null)} className="btn-icon" aria-label="ביטול עדכון" title="ביטול"><X aria-hidden="true" /></button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="prod-stat">
+                      <span className="prod-label">שקיות ארוזות</span>
+                      <div className="prod-stat-value">
+                        <span className={`dot ${stockTone}`} aria-hidden="true" />
+                        <span className="num">{Math.max(0, product.packed_stock ?? 0)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn ghost sm prod-stat-link"
+                        onClick={() => { setAdjustingStockId(product.id); setAdjustValue(String(product.packed_stock ?? 0)); }}
+                      >עדכון כמות</button>
+                    </div>
+                  )}
+
+                  <div className="prod-stat">
+                    <span className="prod-label">עלות ייצור</span>
+                    <div className="prod-stat-value"><span className="num">₪{cost}</span></div>
+                    <button
+                      type="button"
+                      className="btn ghost sm prod-stat-link"
+                      aria-expanded={isOpen}
+                      onClick={() => setShowBreakdownId(isOpen ? null : product.id)}
+                    >
+                      {isOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                      {isOpen ? 'הסתרת פירוט' : 'פירוט עלות'}
+                    </button>
+                  </div>
+                </div>
+
+                {(webOwed(product) > 0 || (reserved[product.id] || 0) > 0) && (
+                  <div className="prod-stock-notes">
+                    {webOwed(product) > 0 && (
+                      <span className="tag warn num" title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
+                        {webOwed(product)} חסרות להזמנות אתר
+                      </span>
+                    )}
+                    {(reserved[product.id] || 0) > 0 && (
+                      <span className="tag num">{reserved[product.id]} מוקצות ללקוחות עסקיים</span>
+                    )}
                   </div>
                 )}
 
-                <div className="product-recipe">
-                  <strong>מתכון:</strong>
-                  {(product.recipe || []).map((ing, i) => (
-                    <div key={i} className="recipe-item">• {ing.percentage}% {getIngredientLabel(ing)}</div>
-                  ))}
-                </div>
+                {isOpen && (
+                  <dl className="prod-breakdown">
+                    <div><dt>פולים קלויים</dt><dd className="num">₪{breakdown.beansCost}</dd></div>
+                    <div><dt>גז</dt><dd className="num">₪{breakdown.gasCost}</dd></div>
+                    <div><dt>עבודה (קלייה)</dt><dd className="num">₪{breakdown.roastingLabor}</dd></div>
+                    <div><dt>אריזה</dt><dd className="num">₪{breakdown.packagingCost}</dd></div>
+                    <div><dt>עבודה (אריזה)</dt><dd className="num">₪{breakdown.packagingLabor}</dd></div>
+                    <div className="prod-breakdown-total"><dt>סה״כ</dt><dd className="num">₪{breakdown.totalCost}</dd></div>
+                  </dl>
+                )}
 
-                <div style={{ padding: '0.5rem 0', borderBottom: '1px solid #F4E8D8', marginBottom: '0.5rem' }}>
-                  {adjustingStockId === product.id ? (
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', color: '#6F4E37' }}>שקיות ארוזות:</span>
-                      <input
-                        type="number" min="0"
-                        value={adjustValue}
-                        onChange={e => setAdjustValue(e.target.value)}
-                        style={{ width: '70px', padding: '2px 6px', border: '1px solid #D4A574', borderRadius: '4px', fontSize: '13px' }}
-                        autoFocus
-                      />
-                      <button onClick={() => savePackedStock(product)} className="btn-small" style={{ background: '#D1FAE5', color: '#065F46', padding: '2px 8px' }}>✓</button>
-                      <button onClick={() => setAdjustingStockId(null)} className="btn-small" style={{ padding: '2px 8px' }}>✕</button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', color: '#6F4E37' }}>שקיות ארוזות:</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{
-                          fontWeight: 'bold', fontSize: '14px',
-                          color: storeStock(product, reserved) === 0 ? '#DC2626'
-                               : (product.min_packed_stock > 0 && storeStock(product, reserved) <= product.min_packed_stock) ? '#D97706'
-                               : '#059669'
-                        }}>
-                          {Math.max(0, product.packed_stock ?? 0)}
-                        </span>
-                        {webOwed(product) > 0 && (
-                          <span style={{ fontSize: '11px', color: '#B45309' }} title="הזמנות אתר שנמכרו לפני שנארזו. האריזה הבאה מכסה אותן קודם.">
-                            (🌐 {webOwed(product)} חסרות להזמנות אתר)
-                          </span>
-                        )}
-                        {(reserved[product.id] || 0) > 0 && (
-                          <span style={{ fontSize: '11px', color: '#6B3A1F' }}>({reserved[product.id]} מוקצות)</span>
-                        )}
-                        <button
-                          onClick={() => { setAdjustingStockId(product.id); setAdjustValue(String(product.packed_stock ?? 0)); }}
-                          style={{ fontSize: '11px', padding: '1px 6px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}
-                        >עדכן</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="product-cost">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>עלות ייצור:</span>
-                    <strong>₪{cost}</strong>
-                  </div>
-                  <button
-                    onClick={() => setShowBreakdownId(isOpen ? null : product.id)}
-                    style={{ fontSize: '11px', padding: '2px 8px', marginTop: '5px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}
-                  >
-                    {isOpen ? '🔼 הסתר פירוט' : '🔽 פירוט מלא'}
-                  </button>
-                  {isOpen && (
-                    <div style={{ marginTop: '10px', padding: '10px', background: '#FFFBF5', borderRadius: '6px', fontSize: '12px', border: '1px solid #F4E8D8' }}>
-                      <div style={{ marginBottom: '5px' }}>☕ פולים קלויים: ₪{breakdown.beansCost}</div>
-                      <div style={{ marginBottom: '5px' }}>🔥 גז: ₪{breakdown.gasCost}</div>
-                      <div style={{ marginBottom: '5px' }}>👨‍🍳 עבודה (קלייה): ₪{breakdown.roastingLabor}</div>
-                      <div style={{ marginBottom: '5px' }}>📦 אריזה: ₪{breakdown.packagingCost}</div>
-                      <div style={{ marginBottom: '5px' }}>👷 עבודה (אריזה): ₪{breakdown.packagingLabor}</div>
-                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #D4A574', fontWeight: 'bold', color: '#6F4E37' }}>
-                        💰 סה"כ: ₪{breakdown.totalCost}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="product-actions">
-                  <button onClick={() => startEditProduct(product)} className="btn-small">✏️</button>
-                  <button onClick={() => duplicateProduct(product)} className="btn-small" style={{ background: '#D1FAE5', color: '#065F46' }}>📋</button>
-                  <button onClick={() => deleteProduct(product)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
-                </div>
-              </div>
+                <footer className="prod-actions action-buttons">
+                  <button type="button" onClick={() => startEditProduct(product)} className="btn-icon" aria-label={`עריכת ${product.name}`} title="עריכה"><Pencil aria-hidden="true" /></button>
+                  <button type="button" onClick={() => duplicateProduct(product)} className="btn-icon" aria-label={`שכפול ${product.name}`} title="שכפול"><Copy aria-hidden="true" /></button>
+                  <button type="button" onClick={() => deleteProduct(product)} className="btn-icon danger" aria-label={`מחיקת ${product.name}`} title="מחיקה"><Trash2 aria-hidden="true" /></button>
+                </footer>
+              </article>
             );
           })}
         </div>
       )}
 
       {data.products.length === 0 && (
-        <div className="empty-state">אין מוצרים עדיין. הוסף מוצר ראשון!</div>
+        <div className="card empty-state">אין מוצרים עדיין. אפשר להתחיל ב״מוצר חדש״.</div>
       )}
     </div>
   );
