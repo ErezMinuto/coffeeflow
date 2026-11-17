@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Plus, Check, ChevronDown, Save } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
@@ -28,9 +29,9 @@ export default function B2BAllocations() {
   for (const a of open) (byCustomer[a.customer_id] = byCustomer[a.customer_id] || []).push(a);
 
   const allocate = async () => {
-    if (!customerId)  { showToast('⚠️ נא לבחור לקוח', 'warning'); return; }
-    if (!product)     { showToast('⚠️ נא לבחור מוצר', 'warning'); return; }
-    if (count <= 0)   { showToast('⚠️ נא להזין כמות שקיות', 'warning'); return; }
+    if (!customerId)  { showToast('נא לבחור לקוח', 'warning'); return; }
+    if (!product)     { showToast('נא לבחור מוצר', 'warning'); return; }
+    if (count <= 0)   { showToast('נא להזין כמות שקיות', 'warning'); return; }
     if (count > free) {
       if (!window.confirm(`במלאי החנות רשומות ${free} שקיות בלבד. להקצות ${count} בכל זאת?`)) return;
     }
@@ -42,10 +43,10 @@ export default function B2BAllocations() {
         bags:        count,
         notes:       notes.trim() || null,
       });
-      showToast(`✅ ${count} שקיות הוקצו ל${customerById[parseInt(customerId)]?.name}`);
+      showToast(`${count} שקיות הוקצו ל${customerById[parseInt(customerId)]?.name}`);
       setProductId(''); setBags(''); setNotes('');
     } catch {
-      showToast('❌ שגיאה בהקצאה', 'error');
+      showToast('שגיאה בהקצאה', 'error');
     } finally {
       setSaving(false);
     }
@@ -55,9 +56,9 @@ export default function B2BAllocations() {
     setBusyId(a.id);
     try {
       await bagAllocationsDb.update(a.id, { status: 'delivered', delivered_at: new Date().toISOString() });
-      showToast('✅ סומן כנמסר');
+      showToast('סומן כנמסר');
     } catch {
-      showToast('❌ שגיאה בעדכון', 'error');
+      showToast('שגיאה בעדכון', 'error');
     } finally {
       setBusyId(null);
     }
@@ -70,51 +71,79 @@ export default function B2BAllocations() {
       await bagAllocationsDb.remove(a.id);
       showToast('ההקצאה בוטלה');
     } catch {
-      showToast('❌ שגיאה בביטול', 'error');
+      showToast('שגיאה בביטול', 'error');
     } finally {
       setBusyId(null);
     }
   };
 
   return (
-    <div style={card}>
-      <h3 style={{ margin: '0 0 0.5rem' }}>🏷️ הקצאת שקיות ללקוחות B2B</h3>
-      <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '0.9rem' }}>
-        שקיות שהוקצו לא נספרות במלאי החנות. סימון <b>נמסר</b> משחרר אותן (MFlow מוריד מהמלאי עם החשבונית).
+    <section className="card flush">
+      <div className="card-head">
+        <h2>הקצאת שקיות ללקוחות B2B</h2>
+        {open.length > 0 && (
+          <span className="meta num">{open.reduce((s, a) => s + a.bags, 0)} שקיות מוקצות</span>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem', marginBottom: '0.6rem' }}>
-        <select style={input} value={customerId} onChange={e => setCustomerId(e.target.value)}>
-          <option value="">{activeCustomers.length ? 'בחר לקוח' : 'אין לקוחות. הוסיפו למטה'}</option>
-          {activeCustomers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select style={input} value={productId} onChange={e => setProductId(e.target.value)}>
-          <option value="">בחר מוצר</option>
-          {data.products.map(p => (
-            <option key={p.id} value={p.id}>{p.name} {p.size}g ({storeStock(p, reserved)} בחנות)</option>
-          ))}
-        </select>
-        <input style={input} type="number" min="1" placeholder="כמות שקיות" value={bags} onChange={e => setBags(e.target.value)} />
-        <input style={input} placeholder="הערה (אופציונלי)" value={notes} onChange={e => setNotes(e.target.value)} />
+      <div className="card-body">
+        <p className="field-help pack-help">
+          שקיות שהוקצו לא נספרות במלאי החנות. סימון <b>נמסר</b> משחרר אותן (MFlow מוריד מהמלאי עם החשבונית).
+        </p>
+
+        <div className="pack-alloc-grid">
+          <div className="form-group">
+            <label htmlFor="alloc-customer">לקוח</label>
+            <select id="alloc-customer" value={customerId} onChange={e => setCustomerId(e.target.value)}>
+              <option value="">{activeCustomers.length ? 'בחירת לקוח' : 'אין לקוחות. הוסיפו למטה'}</option>
+              {activeCustomers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="alloc-product">מוצר</label>
+            <select id="alloc-product" value={productId} onChange={e => setProductId(e.target.value)}>
+              <option value="">בחירת מוצר</option>
+              {data.products.map(p => (
+                <option key={p.id} value={p.id}>{p.name} {p.size}g ({storeStock(p, reserved)} בחנות)</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="alloc-bags">כמות שקיות</label>
+            <input id="alloc-bags" type="number" min="1" placeholder="0" value={bags} onChange={e => setBags(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="alloc-notes">הערה</label>
+            <input id="alloc-notes" placeholder="לא חובה" value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <button type="button" className="btn primary" onClick={allocate} disabled={saving}>
+          <Plus aria-hidden="true" />
+          {saving ? 'שומר...' : 'הקצאת שקיות'}
+        </button>
       </div>
-      <button onClick={allocate} disabled={saving} style={primaryBtn}>{saving ? '⏳ שומר...' : '➕ הקצה שקיות'}</button>
 
       {open.length > 0 && (
-        <div style={{ marginTop: '1.2rem' }}>
+        <div className="pack-alloc-list">
           {Object.entries(byCustomer).map(([cid, rows]) => (
-            <div key={cid} style={{ borderTop: '1px solid #F4E8D8', padding: '0.6rem 0' }}>
-              <div style={{ fontWeight: 600, color: '#1a1208', marginBottom: 4 }}>
-                {customerById[cid]?.name || 'לקוח לא ידוע'} · {rows.reduce((s, a) => s + a.bags, 0)} שקיות
+            <div className="pack-alloc-group" key={cid}>
+              <div className="pack-alloc-cust">
+                <span className="attn-what">{customerById[cid]?.name || 'לקוח לא ידוע'}</span>
+                <span className="text-muted num">{rows.reduce((s, a) => s + a.bags, 0)} שקיות</span>
               </div>
               {rows.map(a => (
-                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', padding: '2px 0' }}>
-                  <span style={{ flex: 1, minWidth: 0, color: '#6b3a1f', overflowWrap: 'anywhere' }}>
-                    {productById[a.product_id]?.name || 'מוצר'} {productById[a.product_id]?.size}g × <b>{a.bags}</b>
-                    {a.notes && <span style={{ color: '#9CA3AF' }}> · {a.notes}</span>}
-                    <span style={{ color: '#9CA3AF' }}> · {new Date(a.created_at).toLocaleDateString('he-IL')}</span>
+                <div className="pack-alloc-row" key={a.id}>
+                  <span className="pack-alloc-text">
+                    {productById[a.product_id]?.name || 'מוצר'}{' '}
+                    <span className="pack-size">{productById[a.product_id]?.size}g</span>
+                    {' × '}<b className="num">{a.bags}</b>
+                    {a.notes && <span className="text-muted"> · {a.notes}</span>}
+                    <span className="text-muted num"> · {new Date(a.created_at).toLocaleDateString('he-IL')}</span>
                   </span>
-                  <button onClick={() => deliver(a)} disabled={busyId === a.id} style={{ ...smallBtn, background: '#D1FAE5', color: '#065F46' }}>✓ נמסר</button>
-                  <button onClick={() => cancel(a)} disabled={busyId === a.id} style={smallBtn}>ביטול</button>
+                  <button type="button" className="btn sm" onClick={() => deliver(a)} disabled={busyId === a.id}>
+                    <Check aria-hidden="true" />נמסר
+                  </button>
+                  <button type="button" className="btn ghost sm" onClick={() => cancel(a)} disabled={busyId === a.id}>ביטול</button>
                 </div>
               ))}
             </div>
@@ -123,7 +152,7 @@ export default function B2BAllocations() {
       )}
 
       <CustomerList customers={data.b2bCustomers} db={b2bCustomersDb} showToast={showToast} />
-    </div>
+    </section>
   );
 }
 
@@ -141,9 +170,9 @@ function CustomerList({ customers, db, showToast }) {
 
   const save = async () => {
     const name = form.name.trim();
-    if (!name) { showToast('⚠️ נא להזין שם עסק', 'warning'); return; }
+    if (!name) { showToast('נא להזין שם עסק', 'warning'); return; }
     const dup = customers.find(c => c.id !== editingId && c.name.trim().toLowerCase() === name.toLowerCase());
-    if (dup) { showToast(`⚠️ ${dup.name} כבר ברשימה`, 'warning'); return; }
+    if (dup) { showToast(`${dup.name} כבר ברשימה`, 'warning'); return; }
 
     const row = {
       name,
@@ -156,10 +185,10 @@ function CustomerList({ customers, db, showToast }) {
     try {
       if (editingId) await db.update(editingId, row);
       else           await db.insert(row);
-      showToast(editingId ? `✅ ${name} עודכן` : `✅ ${name} נוסף`);
+      showToast(editingId ? `${name} עודכן` : `${name} נוסף`);
       setForm(EMPTY_CUSTOMER); setEditing(null);
     } catch {
-      showToast('❌ שגיאה בשמירת הלקוח', 'error');
+      showToast('שגיאה בשמירת הלקוח', 'error');
     } finally {
       setSaving(false);
     }
@@ -172,69 +201,64 @@ function CustomerList({ customers, db, showToast }) {
 
   const toggleActive = async (c) => {
     try { await db.update(c.id, { active: !c.active }); }
-    catch { showToast('❌ שגיאה בעדכון', 'error'); }
+    catch { showToast('שגיאה בעדכון', 'error'); }
   };
 
   const field = (key, label, type = 'text') => (
-    <div>
-      <label style={label_}>{label}</label>
-      <input style={input} type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} />
+    <div className="form-group">
+      <label htmlFor={`b2b-${key}`}>{label}</label>
+      <input id={`b2b-${key}`} type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} />
     </div>
   );
 
   return (
-    <div style={{ borderTop: '1px solid #E8D5B7', marginTop: '1rem' }}>
+    <div className="pack-cust">
       <button
+        type="button"
+        className="pack-cust-toggle"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
-        style={{ width: '100%', textAlign: 'right', background: 'none', border: 'none', padding: '0.8rem 0', cursor: 'pointer', fontWeight: 600, color: '#6b3a1f', fontSize: '0.9rem' }}
       >
-        {open ? '🔼' : '🔽'} לקוחות B2B ({customers.filter(c => c.active).length})
+        <span>לקוחות B2B <span className="text-muted num">({customers.filter(c => c.active).length})</span></span>
+        <ChevronDown aria-hidden="true" className={open ? 'is-open' : undefined} />
       </button>
 
       {open && (
-        <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem', marginBottom: '0.6rem' }}>
+        <div className="pack-cust-body">
+          <div className="pack-cust-grid">
             {field('name', 'שם העסק *')}
             {field('contact_name', 'איש/אשת קשר')}
             {field('phone', 'טלפון', 'tel')}
             {field('email', 'אימייל', 'email')}
           </div>
-          <div style={{ marginBottom: '0.6rem' }}>{field('notes', 'הערות')}</div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem' }}>
-            <button onClick={save} disabled={saving} style={primaryBtn}>
-              {saving ? '⏳' : editingId ? '💾 עדכן לקוח' : '➕ הוסף לקוח'}
+          {field('notes', 'הערות')}
+          <div className="pack-cust-actions">
+            <button type="button" className="btn primary" onClick={save} disabled={saving}>
+              {editingId ? <Save aria-hidden="true" /> : <Plus aria-hidden="true" />}
+              {saving ? 'שומר...' : editingId ? 'עדכון לקוח' : 'הוספת לקוח'}
             </button>
             {editingId && (
-              <button onClick={() => { setEditing(null); setForm(EMPTY_CUSTOMER); }} style={{ ...smallBtn, padding: '0.4rem 1rem' }}>ביטול</button>
+              <button type="button" className="btn ghost" onClick={() => { setEditing(null); setForm(EMPTY_CUSTOMER); }}>ביטול</button>
             )}
           </div>
 
-          {sorted.map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0', borderTop: '1px solid #F4E8D8', opacity: c.active ? 1 : 0.5 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: '#1a1208' }}>{c.name}</div>
-                <div style={{ fontSize: '12px', color: '#6B7280', overflowWrap: 'anywhere' }}>
-                  {[c.contact_name, c.phone, c.email].filter(Boolean).join(' · ') || 'אין פרטי קשר'}
+          <div className="pack-cust-list">
+            {sorted.map(c => (
+              <div className={`pack-cust-row${c.active ? '' : ' is-hidden'}`} key={c.id}>
+                <div className="pack-cust-info">
+                  <div className="attn-what">{c.name}</div>
+                  <div className="pack-cust-contact">
+                    {[c.contact_name, c.phone, c.email].filter(Boolean).join(' · ') || 'אין פרטי קשר'}
+                  </div>
                 </div>
+                {!c.active && <span className="tag">מוסתר</span>}
+                <button type="button" className="btn ghost sm" onClick={() => startEdit(c)}>עריכה</button>
+                <button type="button" className="btn ghost sm" onClick={() => toggleActive(c)}>{c.active ? 'הסתרה' : 'החזרה'}</button>
               </div>
-              <button onClick={() => startEdit(c)} style={smallBtn}>עריכה</button>
-              <button onClick={() => toggleActive(c)} style={smallBtn}>{c.active ? 'הסתר' : 'החזר'}</button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
-
-const card = { background: 'white', border: '1px solid #E8D5B7', borderRadius: 10, padding: '1rem 1.1rem', marginBottom: '1.5rem' };
-const input = {
-  width: '100%', padding: '0.45rem 0.65rem', border: '1px solid #E8D5B7', borderRadius: 8,
-  fontSize: '0.9rem', fontFamily: 'inherit', background: 'white', boxSizing: 'border-box', direction: 'rtl',
-};
-const label_ = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#6b3a1f', marginBottom: 3 };
-const primaryBtn = { background: '#6b3a1f', color: 'white', border: 'none', borderRadius: 8, padding: '0.5rem 1.2rem', cursor: 'pointer', fontWeight: 600 };
-const smallBtn = {
-  fontSize: '0.75rem', padding: '2px 8px', background: 'transparent',
-  border: '1px solid #D4A574', borderRadius: 4, cursor: 'pointer', color: '#6F4E37', flexShrink: 0,
-};
