@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { Plus, Pencil, Trash2, Save } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 
 const ROAST_LEVEL_LABELS = { none: 'ללא', light: 'לייט', medium: 'מדיום' };
-const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37' };
 
 const emptyProfile = () => ({
   name: '', roast_level: 'none', notes: '', daily_average: '', min_stock: '',
@@ -26,27 +26,35 @@ function IngredientForm({ ingredients, onChange, origins }) {
   const remove = (index) => onChange(ingredients.filter((_, i) => i !== index));
 
   return (
-    <div className="form-group">
-      <label>רכיבים (סה"כ חייב להיות 100%) *</label>
+    <div className="form-group rp-ingredients">
+      <span className="field-label">רכיבים (הסכום חייב להיות 100%) *</span>
       {ingredients.map((ing, index) => (
-        <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
-          <select value={ing.origin_id || ''} onChange={e => update(index, 'origin_id', e.target.value)}>
-            <option value="">בחר זן...</option>
+        <div key={index} className="rp-ing-row">
+          <select value={ing.origin_id || ''} onChange={e => update(index, 'origin_id', e.target.value)} aria-label={`זן ${index + 1}`}>
+            <option value="">בחירת זן</option>
             {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
-          <input
-            type="number" placeholder="%" min="0" max="100" step="0.1"
-            value={ing.percentage}
-            onChange={e => update(index, 'percentage', e.target.value)}
-          />
-          {ingredients.length > 1 && (
-            <button onClick={() => remove(index)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
-          )}
+          <div className="set-unit-field">
+            <input
+              type="number" placeholder="0" min="0" max="100" step="0.1"
+              value={ing.percentage} aria-label={`אחוז זן ${index + 1}`}
+              onChange={e => update(index, 'percentage', e.target.value)}
+            />
+            <span className="set-unit">%</span>
+          </div>
+          {ingredients.length > 1 ? (
+            <button onClick={() => remove(index)} className="btn-icon danger" title="הסרת הזן" aria-label={`הסרת זן ${index + 1}`}>
+              <Trash2 aria-hidden="true" />
+            </button>
+          ) : <span className="rp-ing-spacer" />}
         </div>
       ))}
-      <button onClick={add} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף זן</button>
-      <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
-        סה"כ: {total}%
+      <div className="rp-ing-foot">
+        <button onClick={add} className="btn sm"><Plus aria-hidden="true" />הוספת זן</button>
+        <span className={`rp-total ${total === 100 ? 'ok' : 'danger'}`}>
+          <span className={`dot ${total === 100 ? 'ok' : 'danger'}`} aria-hidden="true" />
+          סה"כ: <span className="num">{total}%</span>
+        </span>
       </div>
     </div>
   );
@@ -64,14 +72,14 @@ export default function RoastProfiles() {
   // ── Validation ──────────────────────────────────────────────────────────────
 
   const validate = (profile) => {
-    if (!profile.name.trim()) { showToast('⚠️ נא למלא שם פרופיל', 'warning'); return false; }
-    if (!profile.ingredients || profile.ingredients.length === 0) { showToast('⚠️ נא להוסיף לפחות רכיב אחד', 'warning'); return false; }
+    if (!profile.name.trim()) { showToast('נא למלא שם פרופיל', 'warning'); return false; }
+    if (!profile.ingredients || profile.ingredients.length === 0) { showToast('נא להוסיף לפחות רכיב אחד', 'warning'); return false; }
     for (const ing of profile.ingredients) {
-      if (!ing.origin_id) { showToast('⚠️ נא לבחור זן לכל רכיב', 'warning'); return false; }
+      if (!ing.origin_id) { showToast('נא לבחור זן לכל רכיב', 'warning'); return false; }
     }
     const total = profile.ingredients.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
     if (Math.abs(total - 100) > 0.1) {
-      showToast(`⚠️ סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
+      showToast(`סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
       return false;
     }
     return true;
@@ -95,10 +103,10 @@ export default function RoastProfiles() {
       await roastProfileIngredientsDb.refresh();
       setAdding(false);
       setNewProfile(emptyProfile());
-      showToast('✅ פרופיל קלייה נוסף!');
+      showToast('פרופיל קלייה נוסף!');
     } catch (err) {
       console.error('Error saving profile:', err);
-      showToast('❌ שגיאה בשמירת פרופיל', 'error');
+      showToast('שגיאה בשמירת פרופיל', 'error');
     }
   };
 
@@ -128,181 +136,187 @@ export default function RoastProfiles() {
       await roastProfilesDb.refresh();
       await roastProfileIngredientsDb.refresh();
       setEditing(null);
-      showToast('✅ פרופיל עודכן!');
+      showToast('פרופיל עודכן!');
     } catch (err) {
       console.error('Error updating profile:', err);
-      showToast('❌ שגיאה בעדכון פרופיל', 'error');
+      showToast('שגיאה בעדכון פרופיל', 'error');
     }
   };
 
   const deleteProfile = async (profile) => {
     const hasHistory = data.roasts.some(r => r.roast_profile_id === profile.id);
-    if (hasHistory) { showToast('⚠️ לא ניתן למחוק פרופיל עם היסטוריית קליות', 'warning'); return; }
+    if (hasHistory) { showToast('לא ניתן למחוק פרופיל עם היסטוריית קליות', 'warning'); return; }
     if (!window.confirm(`האם למחוק את הפרופיל "${profile.name}"?`)) return;
     try {
       await roastProfilesDb.remove(profile.id);
       await roastProfileIngredientsDb.refresh();
-      showToast('✅ פרופיל נמחק!');
+      showToast('פרופיל נמחק!');
     } catch (err) {
       console.error('Error deleting profile:', err);
-      showToast('❌ שגיאה במחיקת פרופיל', 'error');
+      showToast('שגיאה במחיקת פרופיל', 'error');
     }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="section" style={{ marginTop: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2>🔥 פרופילי קלייה ({data.roastProfiles.length})</h2>
+    <section className="set-section">
+      <div className="set-section-head set-section-head-row">
+        <div>
+          <h2>פרופילי קלייה</h2>
+          <p>מה קולים (זנים ואחוזים) ובאיזו רמת קלייה. לכל פרופיל מלאי קלוי נפרד.</p>
+        </div>
         {!adding && !editing && (
-          <button onClick={() => setAdding(true)} className="btn-primary">➕ הוסף פרופיל</button>
+          <button onClick={() => setAdding(true)} className="btn primary"><Plus aria-hidden="true" />פרופיל חדש</button>
         )}
       </div>
-      <p style={{ color: '#666', marginBottom: '1rem' }}>
-        פרופיל קלייה מגדיר מה קולים (זנים ואחוזים) ואת רמת הקלייה. כל פרופיל מנהל מלאי קלוי נפרד.
-      </p>
 
       {/* Add form */}
       {adding && (
-        <div className="form-card" style={{ marginBottom: '20px', background: '#F0F9FF', border: '2px solid #3B82F6' }}>
-          <h3>➕ פרופיל חדש</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>שם הפרופיל *</label>
-              <input type="text" placeholder="למשל: Kenya Light" value={newProfile.name} onChange={e => setNewProfile({ ...newProfile, name: e.target.value })} />
+        <div className="card flush">
+          <div className="card-head"><h2>פרופיל חדש</h2></div>
+          <div className="card-body">
+            <div className="rp-grid">
+              <div className="form-group">
+                <label htmlFor="rp-new-name">שם הפרופיל *</label>
+                <input id="rp-new-name" type="text" placeholder="למשל: Kenya Light" value={newProfile.name} onChange={e => setNewProfile({ ...newProfile, name: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-new-level">רמת קלייה</label>
+                <select id="rp-new-level" value={newProfile.roast_level} onChange={e => setNewProfile({ ...newProfile, roast_level: e.target.value })}>
+                  <option value="none">ללא</option>
+                  <option value="light">לייט</option>
+                  <option value="medium">מדיום</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-new-daily">ממוצע מכירות יומי (ק"ג)</label>
+                <input id="rp-new-daily" type="number" step="0.1" placeholder="למשל: 1.5" value={newProfile.daily_average} onChange={e => setNewProfile({ ...newProfile, daily_average: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-new-min">מלאי מינימום (ק"ג)</label>
+                <input id="rp-new-min" type="number" step="0.1" placeholder="למשל: 5" value={newProfile.min_stock} onChange={e => setNewProfile({ ...newProfile, min_stock: e.target.value })} />
+              </div>
             </div>
             <div className="form-group">
-              <label>רמת קלייה</label>
-              <select value={newProfile.roast_level} onChange={e => setNewProfile({ ...newProfile, roast_level: e.target.value })}>
-                <option value="none">ללא</option>
-                <option value="light">לייט</option>
-                <option value="medium">מדיום</option>
-              </select>
+              <label htmlFor="rp-new-notes">הערות (לא חובה)</label>
+              <input id="rp-new-notes" type="text" placeholder="מידע נוסף" value={newProfile.notes} onChange={e => setNewProfile({ ...newProfile, notes: e.target.value })} />
             </div>
+            <IngredientForm
+              ingredients={newProfile.ingredients}
+              onChange={ingredients => setNewProfile({ ...newProfile, ingredients })}
+              origins={data.origins}
+            />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>ממוצע מכירות יומי (ק"ג)</label>
-              <input type="number" step="0.1" placeholder="למשל: 1.5" value={newProfile.daily_average} onChange={e => setNewProfile({ ...newProfile, daily_average: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>מלאי מינימום (ק"ג)</label>
-              <input type="number" step="0.1" placeholder="למשל: 5" value={newProfile.min_stock} onChange={e => setNewProfile({ ...newProfile, min_stock: e.target.value })} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>הערות (אופציונלי)</label>
-            <input type="text" placeholder="מידע נוסף..." value={newProfile.notes} onChange={e => setNewProfile({ ...newProfile, notes: e.target.value })} />
-          </div>
-          <IngredientForm
-            ingredients={newProfile.ingredients}
-            onChange={ingredients => setNewProfile({ ...newProfile, ingredients })}
-            origins={data.origins}
-          />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <button onClick={saveNew} className="btn-primary" style={{ flex: 1 }}>💾 שמור פרופיל</button>
-            <button onClick={() => { setAdding(false); setNewProfile(emptyProfile()); }} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
+          <div className="set-form-foot">
+            <button onClick={saveNew} className="btn primary"><Save aria-hidden="true" />שמירת הפרופיל</button>
+            <button onClick={() => { setAdding(false); setNewProfile(emptyProfile()); }} className="btn">ביטול</button>
           </div>
         </div>
       )}
 
       {/* Edit form */}
       {editing && (
-        <div className="form-card" style={{ marginBottom: '20px', background: '#FFF9F0', border: '2px solid #FF6B35' }}>
-          <h3>✏️ עריכת פרופיל: {editing.name}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>שם הפרופיל *</label>
-              <input type="text" value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} />
+        <div className="card flush">
+          <div className="card-head"><h2>עריכת פרופיל: {editing.name}</h2></div>
+          <div className="card-body">
+            <div className="rp-grid">
+              <div className="form-group">
+                <label htmlFor="rp-edit-name">שם הפרופיל *</label>
+                <input id="rp-edit-name" type="text" value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-edit-level">רמת קלייה</label>
+                <select id="rp-edit-level" value={editing.roast_level} onChange={e => setEditing({ ...editing, roast_level: e.target.value })}>
+                  <option value="none">ללא</option>
+                  <option value="light">לייט</option>
+                  <option value="medium">מדיום</option>
+                </select>
+              </div>
+            </div>
+            <div className="rp-grid rp-grid-3">
+              <div className="form-group">
+                <label htmlFor="rp-edit-stock">מלאי קלוי נוכחי (ק"ג)</label>
+                <input id="rp-edit-stock" type="number" step="0.1" value={editing.roasted_stock ?? ''} onChange={e => setEditing({ ...editing, roasted_stock: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-edit-daily">ממוצע מכירות יומי (ק"ג)</label>
+                <input id="rp-edit-daily" type="number" step="0.1" value={editing.daily_average ?? ''} onChange={e => setEditing({ ...editing, daily_average: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="rp-edit-min">מלאי מינימום (ק"ג)</label>
+                <input id="rp-edit-min" type="number" step="0.1" value={editing.min_stock ?? ''} onChange={e => setEditing({ ...editing, min_stock: e.target.value })} />
+              </div>
             </div>
             <div className="form-group">
-              <label>רמת קלייה</label>
-              <select value={editing.roast_level} onChange={e => setEditing({ ...editing, roast_level: e.target.value })}>
-                <option value="none">ללא</option>
-                <option value="light">לייט</option>
-                <option value="medium">מדיום</option>
-              </select>
+              <label htmlFor="rp-edit-notes">הערות</label>
+              <input id="rp-edit-notes" type="text" value={editing.notes || ''} onChange={e => setEditing({ ...editing, notes: e.target.value })} />
             </div>
+            <IngredientForm
+              ingredients={editing.ingredients}
+              onChange={ingredients => setEditing({ ...editing, ingredients })}
+              origins={data.origins}
+            />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>מלאי קלוי נוכחי (ק"ג)</label>
-              <input type="number" step="0.1" value={editing.roasted_stock ?? ''} onChange={e => setEditing({ ...editing, roasted_stock: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>ממוצע מכירות יומי (ק"ג)</label>
-              <input type="number" step="0.1" value={editing.daily_average ?? ''} onChange={e => setEditing({ ...editing, daily_average: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>מלאי מינימום (ק"ג)</label>
-              <input type="number" step="0.1" value={editing.min_stock ?? ''} onChange={e => setEditing({ ...editing, min_stock: e.target.value })} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>הערות</label>
-            <input type="text" value={editing.notes || ''} onChange={e => setEditing({ ...editing, notes: e.target.value })} />
-          </div>
-          <IngredientForm
-            ingredients={editing.ingredients}
-            onChange={ingredients => setEditing({ ...editing, ingredients })}
-            origins={data.origins}
-          />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <button onClick={saveEdit} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
-            <button onClick={() => setEditing(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
+          <div className="set-form-foot">
+            <button onClick={saveEdit} className="btn primary"><Save aria-hidden="true" />שמירת השינויים</button>
+            <button onClick={() => setEditing(null)} className="btn">ביטול</button>
           </div>
         </div>
       )}
 
-      {/* Profile cards */}
+      {/* Profile list */}
       {!adding && !editing && (
-        <>
+        <div className="card flush">
+          <div className="card-head">
+            <h2>כל הפרופילים</h2>
+            <span className="meta num">{data.roastProfiles.length}</span>
+          </div>
           {data.roastProfiles.length === 0 ? (
-            <div className="empty-state">אין פרופילי קלייה. הוסף פרופיל ראשון!</div>
+            <div className="empty-state">אין עדיין פרופילי קלייה.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <ul className="set-list">
               {data.roastProfiles.map(profile => {
                 const ingredients = data.roastProfileIngredients.filter(i => i.profile_id === profile.id);
                 const roastCount  = data.roasts.filter(r => r.roast_profile_id === profile.id).length;
                 return (
-                  <div key={profile.id} style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                          <strong style={{ fontSize: '1.1rem' }}>{profile.name}</strong>
-                          {profile.roast_level !== 'none' && (
-                            <span style={{ background: ROAST_LEVEL_COLORS[profile.roast_level], color: 'white', padding: '0.15rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                              {ROAST_LEVEL_LABELS[profile.roast_level]}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
-                          {ingredients.map((ing, i) => {
-                            const origin = data.origins.find(o => o.id === ing.origin_id);
-                            return <span key={i}>{i > 0 ? ' · ' : ''}{ing.percentage}% {origin?.name || '?'}</span>;
-                          })}
-                        </div>
-                        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
-                          <span>📦 מלאי קלוי: <strong>{(profile.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
-                          {profile.daily_average > 0 && <span>📈 יומי: <strong>{profile.daily_average} ק"ג</strong></span>}
-                          {profile.min_stock > 0 && <span>⚠️ מינימום: <strong>{profile.min_stock} ק"ג</strong></span>}
-                          <span>🔥 קליות: <strong>{roastCount}</strong></span>
-                          {profile.notes && <span style={{ color: '#999' }}>📝 {profile.notes}</span>}
-                        </div>
+                  <li key={profile.id} className="rp-item">
+                    <div className="rp-main">
+                      <div className="rp-title">
+                        <span className="rp-name">{profile.name}</span>
+                        {profile.roast_level !== 'none' && (
+                          <span className="tag">{ROAST_LEVEL_LABELS[profile.roast_level]}</span>
+                        )}
                       </div>
-                      <div className="action-buttons">
-                        <button onClick={() => startEdit(profile)} className="btn-icon">✏️</button>
-                        <button onClick={() => deleteProfile(profile)} className="btn-icon">🗑️</button>
+                      <div className="rp-blend">
+                        {ingredients.map((ing, i) => {
+                          const origin = data.origins.find(o => o.id === ing.origin_id);
+                          return <span key={i}>{i > 0 ? ' · ' : ''}{ing.percentage}% {origin?.name || '?'}</span>;
+                        })}
                       </div>
+                      <dl className="rp-stats">
+                        <div><dt>מלאי קלוי</dt><dd className="num">{(profile.roasted_stock || 0).toFixed(1)} ק"ג</dd></div>
+                        {profile.daily_average > 0 && <div><dt>יומי</dt><dd className="num">{profile.daily_average} ק"ג</dd></div>}
+                        {profile.min_stock > 0 && <div><dt>מינימום</dt><dd className="num">{profile.min_stock} ק"ג</dd></div>}
+                        <div><dt>קליות</dt><dd className="num">{roastCount}</dd></div>
+                      </dl>
+                      {profile.notes && <div className="rp-notes">{profile.notes}</div>}
                     </div>
-                  </div>
+                    <div className="action-buttons">
+                      <button onClick={() => startEdit(profile)} className="btn-icon" title="עריכה" aria-label={`עריכת ${profile.name}`}>
+                        <Pencil aria-hidden="true" />
+                      </button>
+                      <button onClick={() => deleteProfile(profile)} className="btn-icon danger" title="מחיקה" aria-label={`מחיקת ${profile.name}`}>
+                        <Trash2 aria-hidden="true" />
+                      </button>
+                    </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

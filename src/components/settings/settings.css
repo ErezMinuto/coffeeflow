@@ -1,0 +1,305 @@
+/* Settings (הגדרות): page-scoped styles. Tokens and base classes live in App.css. */
+
+.settings-page .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Layout: section nav beside the content ─────────────────────────────── */
+.settings-page .set-layout {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.settings-page .set-nav {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-page .set-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease);
+}
+.settings-page .set-nav-item:active { transform: scale(0.98); }
+.settings-page .set-nav-item svg { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; transition: color 150ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .settings-page .set-nav-item:hover { background: var(--sunken); color: var(--ink); }
+}
+.settings-page .set-nav-item.active { background: var(--brand-soft); color: var(--brand); }
+.settings-page .set-nav-item.active svg { color: var(--brand); }
+.settings-page .set-nav-item:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.settings-page .set-content { min-width: 0; max-width: 820px; }
+
+/* ── Section: title + one line of context, then its cards ───────────────── */
+.settings-page .set-section-head { margin-bottom: 16px; }
+.settings-page .set-section-head h2 { margin: 0; font-size: 17px; }
+.settings-page .set-section-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.settings-page .set-section-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-page .card { margin-bottom: 16px; }
+.settings-page .card.empty-state { padding: 40px 16px; }
+.settings-page .card-head .meta { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── Generic bits ───────────────────────────────────────────────────────── */
+.settings-page .set-grow { flex: 1 1 auto; }
+.settings-page .set-min0 { min-width: 0; }
+.settings-page .set-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-page .set-strong { font-weight: 500; }
+.settings-page .set-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction: ltr; text-align: left; }
+
+.settings-page .set-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--sunken);
+  color: var(--ink);
+  direction: ltr;
+  unicode-bidi: isolate;
+  overflow-wrap: anywhere;
+}
+.settings-page .set-code-block {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.settings-page .set-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Footer strip inside a card (help text, your user ID). */
+.settings-page .set-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.settings-page .set-card-foot > svg { width: 15px; height: 15px; flex-shrink: 0; }
+.settings-page .set-card-foot-plain { padding-block: 8px; }
+
+.settings-page .set-form-foot {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* Your user ID with a copy button. */
+.settings-page .set-userid { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+.settings-page .set-userid-label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.settings-page .set-userid .set-code { flex: 1 1 auto; min-width: 0; text-align: left; }
+.settings-page .set-userid .btn-icon { margin-inline-start: auto; }
+
+/* ── Label / field rows (costs, commands) ───────────────────────────────── */
+.settings-page .set-group + .set-group { border-top: 1px solid var(--line); }
+.settings-page .set-group-title {
+  padding: 14px 18px 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.settings-page .set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 4px 18px;
+}
+.settings-page .set-group > .set-row:last-child { padding-bottom: 12px; }
+.settings-page .set-row-label { font-size: 14px; color: var(--ink); }
+.settings-page .set-row-help { color: var(--muted); font-size: 13px; text-align: left; }
+
+.settings-page .set-unit-field { position: relative; display: flex; align-items: center; width: 150px; flex-shrink: 0; }
+.settings-page .set-unit-field input { width: 100%; text-align: left; padding-inline-end: 40px; }
+/* The unit sits just after the figure, on its left, as in "0.85 ₪". */
+.settings-page .set-unit {
+  position: absolute;
+  inset-inline-end: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+/* ── Operators ──────────────────────────────────────────────────────────── */
+.settings-page .set-add-row { display: flex; gap: 8px; border-bottom: 1px solid var(--line); }
+.settings-page .set-add-row input { flex: 1 1 auto; min-width: 0; }
+.settings-page .set-table-wrap { overflow-x: auto; }
+.settings-page .set-table-wrap thead th:last-child { width: 1%; }
+.settings-page .set-table-wrap td { padding-block: 8px; height: 52px; }
+.settings-page tr.set-editing,
+.settings-page tr.set-editing:hover { background: var(--surface-2); }
+.settings-page .set-inline-edit { display: flex; gap: 8px; align-items: center; }
+.settings-page .set-inline-edit input { flex: 1 1 auto; min-width: 0; }
+
+/* ── Roles ──────────────────────────────────────────────────────────────── */
+.settings-page .set-add-role { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.settings-page .set-add-role .form-group { margin-bottom: 0; min-width: 160px; }
+.settings-page .set-add-role .set-grow { flex: 2 1 220px; }
+
+.settings-page .set-role-help {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.settings-page .set-role-help > div { display: flex; gap: 6px; min-width: 0; }
+.settings-page .set-role-help dt { font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.settings-page .set-role-help dt::after { content: ':'; }
+.settings-page .set-role-help dd { margin: 0; color: var(--muted); }
+
+.settings-page .set-list { list-style: none; margin: 0; padding: 0; }
+.settings-page .set-list > li + li { border-top: 1px solid var(--line); }
+
+.settings-page .set-user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+}
+.settings-page .set-user-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.settings-page .set-user-name { display: flex; align-items: center; gap: 8px; font-weight: 500; min-width: 0; }
+.settings-page .set-user-email { color: var(--muted); font-size: 13px; }
+.settings-page .set-user-uid {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--faint);
+  direction: ltr;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.settings-page .set-user-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.settings-page .set-user-actions select { width: 240px; }
+
+/* ── Telegram ───────────────────────────────────────────────────────────── */
+.settings-page .set-steps { margin: 0; padding-inline-start: 20px; line-height: 1.7; color: var(--ink-2); }
+.settings-page .set-steps > li + li { margin-top: 8px; }
+.settings-page .set-steps ul { margin: 4px 0 0; padding-inline-start: 18px; }
+.settings-page .set-steps ul li { margin-top: 2px; }
+
+/* ── Roast profiles ─────────────────────────────────────────────────────── */
+.settings-page .rp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.settings-page .rp-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.settings-page .rp-ingredients { margin-bottom: 0; }
+.settings-page .rp-ing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px 40px;
+  gap: 8px;
+  align-items: center;
+}
+.settings-page .rp-ing-row .set-unit-field { width: auto; }
+.settings-page .rp-ing-row .set-unit-field input { padding-inline-end: 32px; }
+.settings-page .rp-ing-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.settings-page .rp-total { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+.settings-page .rp-total.ok { color: var(--ok); }
+.settings-page .rp-total.danger { color: var(--danger); }
+
+.settings-page .rp-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+.settings-page .rp-main { min-width: 0; }
+.settings-page .rp-title { display: flex; align-items: center; gap: 8px; }
+.settings-page .rp-name { font-weight: 600; }
+.settings-page .rp-blend { margin-top: 2px; color: var(--ink-2); font-size: 13.5px; }
+.settings-page .rp-stats { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 8px 0 0; font-size: 13px; }
+.settings-page .rp-stats > div { display: flex; gap: 5px; }
+.settings-page .rp-stats dt { color: var(--muted); }
+.settings-page .rp-stats dd { margin: 0; color: var(--ink); font-weight: 500; }
+.settings-page .rp-notes { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+/* ── Phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .settings-page .set-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+
+  /* The section nav becomes a 3-column grid of chips: every section, and the active one, stay in view. */
+  .settings-page .set-nav {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .settings-page .set-nav-item {
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+  .settings-page .set-nav-item svg { display: none; }
+  .settings-page .set-nav-item.active { border-color: transparent; }
+
+  .settings-page .set-section-head-row { flex-direction: column; align-items: stretch; }
+
+  .settings-page .set-add-role .form-group,
+  .settings-page .set-add-role .set-grow { flex: 1 1 100%; min-width: 0; }
+  .settings-page .set-add-role .btn { flex: 1 1 100%; }
+  .settings-page .set-role-help { grid-template-columns: minmax(0, 1fr); }
+
+  .settings-page .set-user { flex-direction: column; align-items: stretch; gap: 10px; }
+  .settings-page .set-user-actions select { flex: 1 1 auto; width: auto; min-width: 0; }
+
+  .settings-page .set-unit-field { width: 130px; }
+
+  .settings-page .rp-grid,
+  .settings-page .rp-grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .settings-page .rp-ing-row { grid-template-columns: minmax(0, 1fr) 88px 40px; gap: 6px; }
+  .settings-page .set-form-foot .btn,
+  .settings-page .set-actions .btn { flex: 1 1 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page .set-nav-item,
+  .settings-page .set-nav-item svg { transition: none; }
+}
+.settings-page .set-row > .set-code { min-width: 0; }
+
+
+/* Delete stays quiet in a list and turns red only when pointed at. */
+.settings-page .btn-icon.danger { color: var(--muted); }
+@media (hover: hover) and (pointer: fine) {
+  .settings-page .btn-icon.danger:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+}
+
+/* The shared system has no disabled state for icon buttons (e.g. removing your own role). */
+.settings-page .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
