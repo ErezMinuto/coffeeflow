@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Send, Wrench, Loader2, Bell, Plus } from 'lucide-react'
+import { Send, Wrench, Loader2, Bell, Plus, ArrowRight, ChevronLeft, MessageSquare, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { PanelHead, Tag, Dot } from './seoUi'
 
 // Hardcoded mirror of seo-agent/briefingWriter.ts BRIEFING_SESSION_ID.
 // Kept in sync manually — both client + server need to know this.
@@ -168,12 +169,12 @@ export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession
           }
         } catch { /* fall through to generic message */ }
         console.error('[SeoChatThread] send failed:', invokeErr, '\n  server-side:', serverDetail)
-        throw new Error(serverDetail ?? invokeErr.message ?? 'Send failed')
+        throw new Error(serverDetail ?? invokeErr.message ?? 'השליחה נכשלה')
       }
       if (data?.history) setMessages(data.history as ChatRow[])
     } catch (e: any) {
       console.error('[SeoChatThread] send failed:', e)
-      setError(e?.message ?? 'Send failed')
+      setError(e?.message ?? 'השליחה נכשלה')
       setMessages(prev => prev.filter(m => m.id !== optimistic.id))
       setDraft(text)
     } finally {
@@ -188,6 +189,8 @@ export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession
     }
   }
 
+  const onBriefings = sessionId === BRIEFING_SESSION_ID
+
   return (
     // `min-h-0` on the flex column is required for the inner scrollable
     // `flex-1` div to actually shrink — otherwise its natural content
@@ -198,86 +201,90 @@ export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession
     // the section's bounds — combined with `shrink-0` on the footer,
     // this makes the textarea PERMANENTLY visible regardless of message
     // count, viewport height, or upstream sizing weirdness.
-    <section className="h-full max-h-full flex flex-col bg-surface-50 min-h-0 overflow-hidden">
-      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-white shrink-0">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-surface-800">Chat</h2>
-          {sessionId === BRIEFING_SESSION_ID && (
-            <span className="text-[10px] uppercase tracking-wide font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">briefings</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {sessionId !== BRIEFING_SESSION_ID && onSwitchSession && (
-            <button
-              onClick={() => onSwitchSession(BRIEFING_SESSION_ID)}
-              className={`text-[10px] inline-flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-                unreadBriefings > 0
-                  ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium animate-pulse'
-                  : 'text-surface-500 hover:bg-surface-100'
-              }`}
-              title={unreadBriefings > 0 ? `${unreadBriefings} new briefing(s) from the agent` : 'View agent briefings'}
-            >
-              <Bell size={11} />
-              {unreadBriefings > 0 ? `${unreadBriefings} new` : 'briefings'}
-            </button>
-          )}
-          {sessionId === BRIEFING_SESSION_ID && onSwitchSession && (
-            <button
-              onClick={() => {
-                try { localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString()) } catch { /* noop */ }
-                const stored = (() => { try { return localStorage.getItem('seo_agent_session_id') ?? '' } catch { return '' } })()
-                if (stored && stored !== BRIEFING_SESSION_ID) onSwitchSession(stored)
-              }}
-              className="text-[10px] text-surface-500 hover:text-surface-900 underline"
-            >back to chat</button>
-          )}
-          {sessionId !== BRIEFING_SESSION_ID && onNewSession && (
-            <button
-              onClick={onNewSession}
-              disabled={sending}
-              className="text-[10px] inline-flex items-center gap-1 px-2 py-1 rounded text-surface-600 hover:bg-surface-100 disabled:opacity-40"
-              title="Start a fresh chat (old history stays in the DB; learnings carry over)"
-            >
-              <Plus size={11} /> New chat
-            </button>
-          )}
-          <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
-        </div>
-      </header>
+    <section className="h-full max-h-full flex flex-col min-h-0 overflow-hidden" aria-label="שיחה עם הסוכן">
+      <PanelHead
+        title={<>{onBriefings ? 'תדריכים מהסוכן' : 'שיחה'}</>}
+        meta={<span className="font-mono text-[11.5px] text-surface-400" title="מזהה שיחה" dir="ltr">{sessionId.slice(0, 8)}</span>}
+      >
+        {!onBriefings && onSwitchSession && (
+          <button
+            type="button"
+            onClick={() => onSwitchSession(BRIEFING_SESSION_ID)}
+            className="act"
+            title={unreadBriefings > 0 ? `${unreadBriefings} תדריכים חדשים מהסוכן` : 'תדריכים מהסוכן'}
+          >
+            <Bell size={16} aria-hidden="true" />
+            <span className="hidden sm:inline">תדריכים</span>
+            {unreadBriefings > 0 && <Tag tone="warn"><span className="num">{unreadBriefings}</span></Tag>}
+          </button>
+        )}
+        {onBriefings && onSwitchSession && (
+          <button
+            type="button"
+            onClick={() => {
+              try { localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString()) } catch { /* noop */ }
+              const stored = (() => { try { return localStorage.getItem('seo_agent_session_id') ?? '' } catch { return '' } })()
+              if (stored && stored !== BRIEFING_SESSION_ID) onSwitchSession(stored)
+            }}
+            className="act"
+          ><ArrowRight size={16} aria-hidden="true" /> חזרה לשיחה</button>
+        )}
+        {!onBriefings && onNewSession && (
+          <button
+            type="button"
+            onClick={onNewSession}
+            disabled={sending}
+            className="act"
+            title="שיחה חדשה. ההיסטוריה נשמרת והלמידה של הסוכן ממשיכה"
+          >
+            <Plus size={16} aria-hidden="true" /> <span className="hidden sm:inline">שיחה חדשה</span><span className="sm:hidden">חדשה</span>
+          </button>
+        )}
+      </PanelHead>
 
-      {sessionId !== BRIEFING_SESSION_ID && unreadBriefings > 0 && (
-        <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 shrink-0 flex items-center justify-between">
-          <span>
-            <strong>While you were away,</strong> the agent left {unreadBriefings} briefing{unreadBriefings === 1 ? '' : 's'} for you.
+      {!onBriefings && unreadBriefings > 0 && (
+        <div className="shrink-0 px-4 py-1.5 border-b border-surface-200 bg-warn-soft flex items-center gap-2 text-[13px] text-surface-900">
+          <Dot tone="warn" />
+          <span className="flex-1 min-w-0">
+            בזמן שלא היית כאן הסוכן השאיר <span className="num font-medium">{unreadBriefings}</span> {unreadBriefings === 1 ? 'תדריך' : 'תדריכים'}.
           </span>
           {onSwitchSession && (
             <button
+              type="button"
               onClick={() => onSwitchSession(BRIEFING_SESSION_ID)}
-              className="font-medium underline hover:text-amber-700"
-            >View briefings →</button>
+              className="act primary"
+            >לתדריכים <ChevronLeft size={16} aria-hidden="true" /></button>
           )}
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-surface-50">
         {loading ? (
-          <div className="text-xs text-surface-500">Loading…</div>
+          <div className="space-y-4" role="status" aria-label="טוען שיחה">
+            <div className="skel lg w-2/3" />
+            <div className="skel lg w-1/2 ms-auto" />
+            <div className="skel lg w-3/5" />
+          </div>
         ) : messages.length === 0 ? (
-          <div className="text-xs text-surface-500">
-            Start typing below. Try: "what's pending?" or "queue an article about V60 brewing for beginners".
+          <div className="max-w-sm mx-auto py-10 text-center text-[13px] leading-relaxed text-surface-500">
+            <MessageSquare size={18} aria-hidden="true" className="mx-auto mb-2 text-surface-400" />
+            אפשר לכתוב לסוכן בשדה למטה. למשל: "מה ממתין?" או "להוסיף לתור מאמר על חליטת V60 למתחילים".
           </div>
         ) : (
           messages.map(m => <ChatBubble key={m.id} m={m} />)
         )}
         {sending && (
-          <div className="text-xs text-surface-500 inline-flex items-center gap-2">
-            <Loader2 size={12} className="animate-spin" /> thinking…
+          <div className="text-[13px] text-surface-500 inline-flex items-center gap-2" role="status">
+            <Loader2 size={14} aria-hidden="true" className="animate-spin" /> הסוכן חושב…
           </div>
         )}
       </div>
 
       {error && (
-        <div className="px-3 py-2 text-xs text-red-700 bg-red-50 border-t border-red-200 shrink-0">{error}</div>
+        <div className="shrink-0 px-4 py-2 border-t border-[#F1D3CE] bg-danger-soft text-[13px] text-danger flex items-start gap-2" role="alert">
+          <AlertCircle size={16} aria-hidden="true" className="shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words" dir="auto">{error}</span>
+        </div>
       )}
 
       <footer className="border-t border-surface-200 bg-white p-3 shrink-0">
@@ -286,20 +293,23 @@ export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={onKey}
-            placeholder="Message the SEO agent…"
+            placeholder="הודעה לסוכן…"
+            aria-label="הודעה לסוכן"
             rows={2}
             disabled={sending}
-            className="flex-1 resize-none rounded border border-surface-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-surface-100"
+            dir="auto"
+            className="field flex-1 resize-none"
           />
           <button
+            type="button"
             onClick={send}
             disabled={sending || draft.trim().length === 0}
-            className="inline-flex items-center gap-1 rounded bg-brand-600 px-3 py-2 text-sm text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary shrink-0"
           >
-            <Send size={14} /> Send
+            <Send size={16} aria-hidden="true" className="-scale-x-100" /> שליחה
           </button>
         </div>
-        <div className="text-[10px] text-surface-400 mt-1">Enter to send · Shift+Enter for newline</div>
+        <div className="hidden sm:block text-[12px] text-surface-400 mt-1.5">Enter לשליחה · Shift+Enter לשורה חדשה</div>
       </footer>
     </section>
   )
@@ -308,44 +318,51 @@ export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession
 function ChatBubble({ m }: { m: ChatRow }) {
   if (m.role === 'system') {
     return (
-      <div className="text-[11px] text-surface-500 italic">{m.content}</div>
+      <div className="flex items-center gap-3 text-[12px] text-surface-400">
+        <span className="h-px flex-1 bg-surface-200" aria-hidden="true" />
+        <span className="shrink-0" dir="auto">{m.content}</span>
+        <span className="h-px flex-1 bg-surface-200" aria-hidden="true" />
+      </div>
     )
   }
   if (m.role === 'tool') {
     let parsed: unknown = m.content
     try { parsed = JSON.parse(m.content) } catch { /* leave as string */ }
     return (
-      <details className="text-[11px] bg-surface-100 border border-surface-200 rounded px-2 py-1">
-        <summary className="cursor-pointer text-surface-600 inline-flex items-center gap-1">
-          <Wrench size={11} /> tool result
+      <details className="text-[12.5px] max-w-[85%]">
+        <summary className="inline-flex items-center gap-1.5 min-h-8 px-2 -mx-2 rounded-lg text-surface-500 hover:text-surface-800">
+          <ChevronLeft size={14} aria-hidden="true" className="chev" />
+          <Wrench size={14} aria-hidden="true" /> תוצאת כלי
         </summary>
-        <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] text-surface-700">
+        <pre className="code mt-1">
 {JSON.stringify(parsed, null, 2)}
         </pre>
       </details>
     )
   }
   const isUser = m.role === 'user'
+  // User and agent are told apart by side and a quiet surface step: the
+  // agent speaks on white with a hairline, the user's own lines sit on the
+  // sunken tone at the far side. No brand fill.
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
-          isUser ? 'bg-brand-600 text-white' : 'bg-white border border-surface-200 text-surface-900'
+        className={`max-w-[85%] lg:max-w-[78%] rounded-[10px] px-3.5 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
+          isUser ? 'bg-surface-100 text-surface-900' : 'bg-white border border-surface-200 text-surface-900'
         }`}
       >
-        {m.content && <div>{m.content}</div>}
+        {m.content && <div dir="auto">{m.content}</div>}
         {Array.isArray(m.tool_calls) && m.tool_calls.length > 0 && (
-          <div className={`mt-2 space-y-1 ${isUser ? '' : ''}`}>
+          <div className={`flex flex-wrap gap-1 ${m.content ? 'mt-2' : ''}`}>
             {m.tool_calls.map(tc => (
-              <div
+              <span
                 key={tc.id}
-                className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  isUser ? 'bg-brand-700/50' : 'bg-surface-100 text-surface-700'
-                }`}
+                className="tag font-mono font-medium text-[11.5px]"
                 title={JSON.stringify(tc.input)}
+                dir="ltr"
               >
-                <Wrench size={10} /> {tc.name}
-              </div>
+                <Wrench size={12} aria-hidden="true" /> {tc.name}
+              </span>
             ))}
           </div>
         )}

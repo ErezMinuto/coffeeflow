@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, RefreshCw, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, AlertTriangle, Check, ChevronLeft, ExternalLink, FlaskConical } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { PanelHead, RefreshButton, LoadingRows, Empty, Tag, Status, stamp, type Tone } from './seoUi'
 
 // Left-panel: live pending-task queue.
 //
@@ -33,11 +34,36 @@ interface Props {
   onTaskAction?: (action: 'view' | 'approve' | 'cancel', task: SeoTaskRow) => void
 }
 
-const STATUS_STYLES: Record<SeoTaskRow['status'], { bg: string; text: string; icon: typeof Clock }> = {
-  pending:    { bg: 'bg-amber-50',  text: 'text-amber-800',  icon: Clock },
-  processing: { bg: 'bg-blue-50',   text: 'text-blue-800',   icon: Loader2 },
-  completed:  { bg: 'bg-green-50',  text: 'text-green-800',  icon: CheckCircle2 },
-  failed:     { bg: 'bg-red-50',    text: 'text-red-800',    icon: AlertCircle },
+// Queue state as a dot + word. Waiting is neutral, running is olive, done
+// is green, failed is red. Attention (review / QA flagged) gets its own tag.
+const TASK_STATUS: Record<SeoTaskRow['status'], { tone: Tone; label: string }> = {
+  pending:    { tone: 'neutral', label: 'בתור' },
+  processing: { tone: 'brand',   label: 'בביצוע' },
+  completed:  { tone: 'ok',      label: 'הושלמה' },
+  failed:     { tone: 'danger',  label: 'נכשלה' },
+}
+
+// Readable names for task types; unknown types show as they are.
+const TASK_TYPE_LABEL: Record<string, string> = {
+  instagram_post:     'פוסט אינסטגרם',
+  visual_generation:  'יצירת תמונה',
+  text_generation:    'כתיבת תוכן',
+  technical_seo:      'SEO טכני',
+  deep_research:      'מחקר מעמיק',
+  dynamic_experiment: 'ניסוי',
+  mission:            'משימה מתמשכת',
+}
+const taskLabel = (type: string) => (Object.prototype.hasOwnProperty.call(TASK_TYPE_LABEL, type) ? TASK_TYPE_LABEL[type] : type)
+
+// Hebrew labels for the one-click reject reasons. The stored reason stays the
+// English value: the art director reads it back verbatim.
+const REJECT_REASON_LABEL: Record<string, string> = {
+  'Wrong room / furniture':      'חדר או ריהוט לא נכונים',
+  'Unrealistic machine':         'מכונה לא מציאותית',
+  'Bad hands':                   'ידיים לא טבעיות',
+  'Bad beans or light':          'פולים או תאורה לא טובים',
+  'Logo or text on the machine': 'לוגו או טקסט על המכונה',
+  'Looks staged or AI':          'נראה מבוים או מלאכותי',
 }
 
 export default function SeoTaskQueue({ onTaskAction }: Props) {
@@ -126,7 +152,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   }
 
   async function handleCancel(t: SeoTaskRow) {
-    const reason = window.prompt(`Cancel task "${t.task_type}"?\n\nReason:`, 'No longer needed')
+    const reason = window.prompt(`לבטל את המשימה "${taskLabel(t.task_type)}"?\n\nסיבה:`, 'No longer needed')
     if (!reason) return
     setBusy(t.id)
     try {
@@ -138,7 +164,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('cancel', t)
     } catch (e) {
       console.error('[SeoTaskQueue] cancel failed:', e)
-      toast.error('Cancel failed. See console.')
+      toast.error('הביטול נכשל. הפרטים בקונסול.')
     } finally {
       setBusy(null)
     }
@@ -146,7 +172,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
 
   async function handleApprove(t: SeoTaskRow) {
     if (t.task_type !== 'dynamic_experiment') return
-    if (!window.confirm(`Approve experiment "${t.task_subtype ?? t.task_type}"?`)) return
+    if (!window.confirm(`לאשר את הניסוי "${t.task_subtype ?? t.task_type}"?`)) return
     setBusy(t.id)
     try {
       const { error } = await supabase
@@ -162,7 +188,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('approve', t)
     } catch (e) {
       console.error('[SeoTaskQueue] approve failed:', e)
-      toast.error('Approve failed. See console.')
+      toast.error('האישור נכשל. הפרטים בקונסול.')
     } finally {
       setBusy(null)
     }
@@ -176,10 +202,10 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     const rd = (t.result_data ?? {}) as Record<string, any>
     const creationId = rd.ig_creation_id as string | undefined
     if (!creationId) {
-      toast.warning('No staged Instagram container (ig_creation_id) on this task — nothing to publish. The post may need to be re-prepared.')
+      toast.warning('אין למשימה הזו פוסט מוכן באינסטגרם (ig_creation_id), אז אין מה לפרסם. ייתכן שצריך להכין את הפוסט מחדש.')
       return
     }
-    if (!window.confirm('Publish this post LIVE to @minuto_cafe now? It goes public immediately.')) return
+    if (!window.confirm('לפרסם את הפוסט עכשיו ב-@minuto_cafe? הוא עולה לאוויר מיד.')) return
     setBusy(t.id)
     try {
       const { data, error } = await supabase.functions.invoke('meta-publish', {
@@ -200,7 +226,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('approve', t)
     } catch (e: any) {
       console.error('[SeoTaskQueue] IG publish failed:', e)
-      toast.error(`Publish failed: ${e?.message ?? e}`)
+      toast.error(`הפרסום נכשל: ${e?.message ?? e}`)
     } finally {
       setBusy(null)
     }
@@ -219,8 +245,8 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       .from('seo_tasks').select('*')
       .eq('task_type', 'instagram_post').eq('parent_task_id', t.id)
       .order('created_at', { ascending: false }).limit(1)
-    if (error) { toast.error(`Could not load the post: ${error.message}`); return }
-    if (!data?.length) { toast.warning('No Instagram post uses this image yet.'); return }
+    if (error) { toast.error(`לא ניתן לטעון את הפוסט: ${error.message}`); return }
+    if (!data?.length) { toast.warning('עדיין אין פוסט אינסטגרם שמשתמש בתמונה הזו.'); return }
     setViewing(data[0] as SeoTaskRow)
   }
 
@@ -233,9 +259,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     const brief = (t.brief_data ?? {}) as Record<string, any>
     const mediaType = (rd.media_type as string) ?? (brief.media_type as string) ?? 'feed_image'
     const type = mediaType === 'story' ? 'story' : mediaType === 'feed_image' ? 'feed' : null
-    if (!type) { toast.warning(`Choosing an image isn't supported for ${mediaType} posts.`); return }
+    if (!type) { toast.warning(`בחירת תמונה לא נתמכת בפוסטים מסוג ${mediaType}.`); return }
     const caption = (rd.caption as string) ?? (brief.caption_he as string) ?? ''
-    if (!window.confirm(`Use attempt ${attempt} for this ${type}? It is staged for your review; nothing goes live until you press Approve & Publish.`)) return
+    if (!window.confirm(`להשתמש בניסיון ${attempt} ל${type === 'story' ? 'סטורי' : 'פוסט'} הזה? הוא יוכן לבדיקה, ושום דבר לא עולה לאוויר לפני לחיצה על "אישור ופרסום".`)) return
     setBusy(t.id)
     try {
       const { data, error } = await supabase.functions.invoke('meta-publish', {
@@ -256,7 +282,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       setViewing(v => (v && v.id === t.id ? { ...v, result_data: updated } : v))
     } catch (e: any) {
       console.error('[SeoTaskQueue] choose attempt failed:', e)
-      toast.error(`Could not stage that image: ${e?.message ?? e}`)
+      toast.error(`לא ניתן להכין את התמונה: ${e?.message ?? e}`)
     } finally {
       setBusy(null)
     }
@@ -282,122 +308,121 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
       onTaskAction?.('cancel', t)
     } catch (e: any) {
       console.error('[SeoTaskQueue] IG reject failed:', e)
-      toast.error('Reject failed. See console.')
+      toast.error('הדחייה נכשלה. הפרטים בקונסול.')
     } finally {
       setBusy(null)
     }
   }
+
+  // The dialog is a hand-rolled modal: Escape closes it, focus starts on the
+  // close button, and the page behind it does not scroll.
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!viewing) return
+    closeRef.current?.focus({ focusVisible: false } as FocusOptions)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewing(null) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [viewing?.id])
 
   return (
     // `min-h-0` on the flex column + the scroll div is the standard
     // flex-overflow trap fix: without it, children's natural content
     // height pushes the column past h-full and `overflow-y-auto` never
     // kicks in (because there's nothing to overflow against).
-    <aside className="h-full flex flex-col bg-white border-r border-surface-200 min-h-0">
-      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
-        <h2 className="text-sm font-semibold text-surface-800">Task queue</h2>
-        <div className="flex items-center gap-2">
-          <span
-            className="text-xs text-surface-500"
-            title={lastRefreshedAt ? `Last refreshed ${lastRefreshedAt.toLocaleTimeString()}. Auto-refresh every 20s + realtime.` : 'Showing tasks from the last 7 days, newest first'}
-          >
-            {tasks.length} · last 7d
+    <aside className="h-full flex flex-col min-h-0" aria-label="תור משימות">
+      <PanelHead
+        title="תור משימות"
+        meta={
+          <span title={lastRefreshedAt ? `רענון אחרון ${lastRefreshedAt.toLocaleTimeString('he-IL')}. מתרענן אוטומטית כל 20 שניות ובזמן אמת.` : 'משימות מ-7 הימים האחרונים, החדשות למעלה'}>
+            {loading ? "7 ימים אחרונים" : `${tasks.length} משימות · 7 ימים`}
           </span>
-          <button
-            onClick={handleManualRefresh}
-            disabled={refreshing}
-            className="text-surface-500 hover:text-surface-900 disabled:opacity-50"
-            title="Refresh now"
-          >
-            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-          </button>
-        </div>
-      </header>
+        }
+      >
+        <RefreshButton onClick={handleManualRefresh} disabled={refreshing} spinning={refreshing} title="רענון עכשיו" />
+      </PanelHead>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-xs text-surface-500">Loading…</div>
+          <LoadingRows rows={4} />
         ) : tasks.length === 0 ? (
-          <div className="p-4 text-xs text-surface-500">No tasks yet. The orchestrator runs twice weekly.</div>
+          <Empty>אין משימות מהשבוע האחרון. הסוכן מתכנן משימות פעמיים בשבוע.</Empty>
         ) : (
-          <ul className="divide-y divide-surface-100">
+          <ul className="divide-y divide-surface-200">
             {tasks.map(t => {
-              const style = STATUS_STYLES[t.status] ?? STATUS_STYLES.pending
-              const StatusIcon = style.icon
+              const status = TASK_STATUS[t.status] ?? TASK_STATUS.pending
               // HITL flag set by seo-worker-visual when the QA loop caps
               // without passing. The image is attached best-effort but
               // a human should review and decide whether to re-queue.
               const reviewRequired = t.result_data?.review_required === true
+              const qaFlagged = t.task_type === 'instagram_post' && t.result_data?.qa_flagged === true
               return (
-                <li
-                  key={t.id}
-                  className={`p-3 text-xs hover:bg-surface-50 transition-colors ${reviewRequired ? 'bg-amber-50/40 border-l-2 border-l-amber-400' : ''}`}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${style.bg} ${style.text} font-medium shrink-0`}>
-                      <StatusIcon size={11} className={t.status === 'processing' ? 'animate-spin' : ''} />
-                      {t.status}
-                    </span>
-                    {reviewRequired && (
-                      <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-medium shrink-0"
-                        title="QA loop didn't pass after 3 attempts — review the rendered image"
-                      >
-                        <Flag size={11} /> review
-                      </span>
-                    )}
-                    {t.task_type === 'instagram_post' && t.result_data?.qa_flagged === true && (
-                      <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-900 font-medium shrink-0"
-                        title="Visual QA rejected this image — it was not emailed. Check it closely before publishing."
-                      >
-                        <AlertTriangle size={11} /> QA flagged
-                      </span>
-                    )}
+                <li key={t.id} className="px-4 pt-3 pb-2 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-surface-50 transition-colors">
+                  <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-surface-900 truncate">
-                        {t.task_type}{t.task_subtype ? `:${t.task_subtype}` : ''}
-                      </div>
-                      {t.rationale && (
-                        <div className="text-surface-600 mt-0.5 line-clamp-2">{t.rationale}</div>
-                      )}
-                      <div className="text-surface-400 mt-1 text-[10px] font-mono">
-                        {new Date(t.created_at).toISOString().slice(0, 16).replace('T', ' ')} · {t.id.slice(0, 8)}
-                      </div>
-                      {t.error_msg && (
-                        <div className="mt-1 text-red-700 line-clamp-2">{t.error_msg}</div>
-                      )}
-                      <div className="mt-2 flex items-center gap-2">
-                        <button
-                          onClick={() => setViewing(t)}
-                          className={`inline-flex items-center gap-1 ${t.task_type === 'instagram_post' && reviewRequired ? 'text-amber-700 hover:text-amber-900 font-medium' : 'text-surface-500 hover:text-surface-900'}`}
-                          title={t.task_type === 'instagram_post' ? 'Review the post + approve/publish' : 'View brief'}
-                        ><Eye size={12} /> {t.task_type === 'instagram_post' ? 'review' : 'brief'}</button>
-                        {t.task_type === 'visual_generation' && (t.brief_data as Record<string, unknown>)?.destination === 'ig_post' && (
-                          <button
-                            onClick={() => openPostFor(t)}
-                            className={`inline-flex items-center gap-1 ${reviewRequired ? 'text-amber-700 hover:text-amber-900 font-medium' : 'text-surface-500 hover:text-surface-900'}`}
-                            title="Open the Instagram post that uses this image, to approve & publish or reject it"
-                          ><ThumbsUp size={12} /> open post</button>
-                        )}
-                        {t.task_type === 'dynamic_experiment' && t.status === 'pending' && (
-                          <button
-                            onClick={() => handleApprove(t)}
-                            disabled={busy === t.id}
-                            className="inline-flex items-center gap-1 text-green-700 hover:text-green-900 disabled:opacity-50"
-                            title="Approve experiment"
-                          ><ThumbsUp size={12} /> approve</button>
-                        )}
-                        {(t.status === 'pending' || t.status === 'processing') && (
-                          <button
-                            onClick={() => handleCancel(t)}
-                            disabled={busy === t.id}
-                            className="inline-flex items-center gap-1 text-red-700 hover:text-red-900 disabled:opacity-50"
-                            title="Cancel task"
-                          ><X size={12} /> cancel</button>
-                        )}
+                      <div className="text-[14px] font-medium text-surface-900 truncate">
+                        {taskLabel(t.task_type)}
+                        {t.task_subtype && <span className="mr-1.5 font-mono text-[11.5px] font-normal text-surface-500" dir="ltr">{t.task_subtype}</span>}
                       </div>
                     </div>
+                    <Status tone={status.tone} label={status.label} />
+                  </div>
+                  {(reviewRequired || qaFlagged) && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {reviewRequired && (
+                        <Tag tone="warn" title="בקרת האיכות לא עברה אחרי 3 ניסיונות. צריך לבדוק את התמונה">
+                          <Flag size={12} aria-hidden="true" /> לבדיקה
+                        </Tag>
+                      )}
+                      {qaFlagged && (
+                        <Tag tone="danger" title="בקרת האיכות פסלה את התמונה והיא לא נשלחה במייל. כדאי לבדוק היטב לפני פרסום">
+                          <AlertTriangle size={12} aria-hidden="true" /> נפסלה בבקרה
+                        </Tag>
+                      )}
+                    </div>
+                  )}
+                  {t.rationale && (
+                    <div className="text-[13px] leading-relaxed text-surface-500 mt-1 line-clamp-2" dir="auto">{t.rationale}</div>
+                  )}
+                  {t.error_msg && (
+                    <div className="text-[13px] leading-relaxed text-danger mt-1 line-clamp-2" dir="auto">{t.error_msg}</div>
+                  )}
+                  <div className="text-[12px] text-surface-400 mt-1 num flex items-center gap-1.5" dir="ltr">
+                    <span>{stamp(t.created_at)}</span><span aria-hidden="true">·</span><span className="font-mono">{t.id.slice(0, 8)}</span>
+                  </div>
+                  <div className="mt-1 -ms-2.5 flex flex-wrap items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(t)}
+                      className={`act ${t.task_type === 'instagram_post' && reviewRequired ? 'primary' : ''}`}
+                      title={t.task_type === 'instagram_post' ? 'בדיקת הפוסט, אישור ופרסום' : 'צפייה בתדריך'}
+                    ><Eye size={16} aria-hidden="true" /> {t.task_type === 'instagram_post' ? 'בדיקה' : 'תדריך'}</button>
+                    {t.task_type === 'visual_generation' && (t.brief_data as Record<string, unknown>)?.destination === 'ig_post' && (
+                      <button
+                        type="button"
+                        onClick={() => openPostFor(t)}
+                        className={`act ${reviewRequired ? 'primary' : ''}`}
+                        title="פתיחת פוסט האינסטגרם שמשתמש בתמונה הזו, לאישור ופרסום או לדחייה"
+                      ><ThumbsUp size={16} aria-hidden="true" /> לפוסט</button>
+                    )}
+                    {t.task_type === 'dynamic_experiment' && t.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => handleApprove(t)}
+                        disabled={busy === t.id}
+                        className="act primary"
+                        title="אישור הניסוי"
+                      ><Check size={16} aria-hidden="true" /> אישור</button>
+                    )}
+                    {(t.status === 'pending' || t.status === 'processing') && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(t)}
+                        disabled={busy === t.id}
+                        className="act danger"
+                        title="ביטול המשימה"
+                      ><X size={16} aria-hidden="true" /> ביטול</button>
+                    )}
                   </div>
                 </li>
               )
@@ -408,27 +433,31 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
 
       {viewing && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6"
+          className="scrim fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-6"
           onClick={() => setViewing(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="seo-task-dialog-title"
+            className="dialog bg-white rounded-[10px] border border-surface-200 max-w-2xl w-full max-h-[85dvh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <header className="px-4 py-3 border-b border-surface-200 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold">
-                  {viewing.task_type}{viewing.task_subtype ? `:${viewing.task_subtype}` : ''}
+            <header className="min-h-[56px] ps-5 pe-2 py-2 border-b border-surface-200 flex items-center gap-3 shrink-0">
+              <div className="flex-1 min-w-0">
+                <div id="seo-task-dialog-title" className="text-[15px] font-semibold text-surface-900 truncate">
+                  {taskLabel(viewing.task_type)}
+                  {viewing.task_subtype && <span className="mr-1.5 font-mono text-[12px] font-normal text-surface-500" dir="ltr">{viewing.task_subtype}</span>}
                 </div>
-                <div className="text-[10px] text-surface-500 font-mono">{viewing.id}</div>
+                <div className="text-[11.5px] text-surface-400 font-mono truncate" dir="ltr">{viewing.id}</div>
               </div>
-              <button onClick={() => setViewing(null)} className="text-surface-500 hover:text-surface-900"><X size={18} /></button>
+              <button ref={closeRef} type="button" onClick={() => setViewing(null)} className="icon-btn" aria-label="סגירה"><X size={18} aria-hidden="true" /></button>
             </header>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5 text-[13px]">
               {viewing.rationale && (
                 <div>
-                  <div className="font-semibold text-surface-700 mb-1">Rationale</div>
-                  <div className="text-surface-800">{viewing.rationale}</div>
+                  <div className="text-[13px] font-semibold text-surface-700 mb-1">למה הסוכן יצר את המשימה</div>
+                  <div className="text-[14px] leading-relaxed text-surface-900" dir="auto">{viewing.rationale}</div>
                 </div>
               )}
 
@@ -465,35 +494,37 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                 const armsLive = armSiblings.filter(t => Boolean((t.result_data as Record<string, any> | null)?.ig_permalink)).length
                 return (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="font-semibold text-surface-700">Instagram preview</div>
-                      <span className="px-1.5 py-0.5 rounded bg-surface-100 text-surface-700 text-[10px] font-medium">{mediaType}{carousel.length > 0 ? ` · ${carousel.length} slides` : ''}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="text-[13px] font-semibold text-surface-700 me-1">תצוגה מקדימה לאינסטגרם</div>
+                      <Tag mono>{mediaType}{carousel.length > 0 ? ` · ${carousel.length} slides` : ''}</Tag>
                       {published ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-900 text-[10px] font-medium"><CheckCircle2 size={10} /> published</span>
+                        <Tag tone="ok"><CheckCircle2 size={12} aria-hidden="true" /> פורסם</Tag>
                       ) : rejected ? (
-                        <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-900 text-[10px] font-medium">rejected</span>
+                        <Tag tone="danger">נדחה</Tag>
                       ) : rd.review_required === true ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
+                        <Tag tone="warn"><Flag size={12} aria-hidden="true" /> ממתין לבדיקה</Tag>
                       ) : null}
                       {rd.qa_flagged === true && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-900 text-[10px] font-medium" title="Visual QA rejected this image after 3 attempts; it was not emailed"><AlertTriangle size={10} /> QA flagged</span>
+                        <Tag tone="danger" title="בקרת האיכות פסלה את התמונה אחרי 3 ניסיונות, והיא לא נשלחה במייל"><AlertTriangle size={12} aria-hidden="true" /> נפסלה בבקרה</Tag>
                       )}
                       {isArm && (
-                        <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-medium">
-                          🧪 A/B arm{viewing.variation_label ? `: ${viewing.variation_label}` : ''}
-                        </span>
+                        <Tag>
+                          <FlaskConical size={12} aria-hidden="true" /> ניסוי A/B{viewing.variation_label ? <>: <bdi>{viewing.variation_label}</bdi></> : ''}
+                        </Tag>
                       )}
                     </div>
 
                     {isArm && !published && !rejected && (
-                      <div className="rounded border border-blue-200 bg-blue-50 p-2.5 text-[12px] leading-relaxed text-blue-900">
-                        <div className="font-semibold">This post is 1 of {armSiblings.length} arms in an A/B test.</div>
-                        <div className="mt-0.5">
-                          Publishing only some arms voids the experiment — the agent can't compare a variation
-                          against nothing, so no learning gets recorded. {armsLive === 0
-                            ? 'No arm is live yet.'
-                            : `${armsLive} of ${armSiblings.length} arms already live.`}{' '}
-                          Publish <em>every</em> arm, or reject them all.
+                      <div className="notice notice-warn">
+                        <FlaskConical size={16} aria-hidden="true" className="notice-icon" />
+                        <div>
+                          <div className="font-semibold">הפוסט הזה הוא גרסה אחת מתוך {armSiblings.length} בניסוי A/B.</div>
+                          <div className="mt-0.5 text-surface-700">
+                            פרסום של חלק מהגרסאות בלבד מבטל את הניסוי: הסוכן לא יכול להשוות גרסה מול כלום, ולכן לא נרשמת למידה. {armsLive === 0
+                              ? 'אף גרסה עוד לא באוויר.'
+                              : `${armsLive} מתוך ${armSiblings.length} גרסאות כבר באוויר.`}{' '}
+                            צריך לפרסם את <b>כל</b> הגרסאות, או לדחות את כולן.
+                          </div>
                         </div>
                       </div>
                     )}
@@ -501,11 +532,14 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                     {(() => {
                       const shown = attemptChoices.find(c => c.image_url === single)
                       return shown && shown.issues.length > 0 ? (
-                        <div className="rounded border border-red-300 bg-red-50 p-2.5 text-[12px] leading-relaxed text-red-900">
-                          <div className="font-semibold flex items-center gap-1"><AlertTriangle size={12} /> Structural problem in this image</div>
-                          <ul className="list-disc pl-4 mt-1">
-                            {shown.issues.map((x, i) => <li key={i}>{x.split(' → no: ').pop()}</li>)}
-                          </ul>
+                        <div className="notice notice-danger">
+                          <AlertTriangle size={16} aria-hidden="true" className="notice-icon" />
+                          <div className="min-w-0">
+                            <div className="font-semibold">בעיה מבנית בתמונה הזו</div>
+                            <ul className="list-disc ps-4 mt-1 text-surface-700" dir="auto">
+                              {shown.issues.map((x, i) => <li key={i}>{x.split(' → no: ').pop()}</li>)}
+                            </ul>
+                          </div>
                         </div>
                       ) : null
                     })()}
@@ -513,46 +547,47 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                     {images.length > 0 ? (
                       <div className={carousel.length > 0 ? 'flex gap-2 overflow-x-auto pb-1' : ''}>
                         {images.map((src, i) => (
-                          <a key={i} href={src} target="_blank" rel="noreferrer" className="shrink-0">
+                          <a key={i} href={src} target="_blank" rel="noreferrer" className="shrink-0 block">
                             <img
                               src={src}
-                              alt={`IG ${carousel.length > 0 ? `slide ${i + 1}` : 'image'}`}
-                              className="max-h-80 rounded border border-surface-200 object-contain bg-surface-50"
+                              alt={carousel.length > 0 ? `שקופית ${i + 1}` : 'תמונת הפוסט'}
+                              className="max-h-80 rounded-lg border border-surface-200 object-contain bg-surface-50"
                               loading="lazy"
                             />
                           </a>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-surface-500">No image yet — the visual task hasn't rendered.</div>
+                      <div className="text-surface-500">עדיין אין תמונה. משימת הוויזואל עוד לא רונדרה.</div>
                     )}
 
                     {canPublish && carousel.length === 0 && attemptChoices.length > 1 && (
-                      <div className="space-y-1">
-                        <div className="text-surface-600 text-[11px]">All attempts: choose the one to publish</div>
+                      <div className="space-y-1.5">
+                        <div className="text-[12.5px] text-surface-500">כל הניסיונות. אפשר לבחור את התמונה שתפורסם:</div>
                         <div className="flex gap-2 overflow-x-auto pb-1">
                           {attemptChoices.map(c => {
                             const current = c.image_url === single
                             return (
-                              <div key={c.image_url} className={`shrink-0 rounded border p-1 ${current ? 'border-green-500 bg-green-50' : 'border-surface-200'}`}>
-                                <a href={c.image_url} target="_blank" rel="noreferrer">
-                                  <img src={c.image_url} alt={`Attempt ${c.attempt}`} className="h-40 rounded object-contain bg-surface-50" loading="lazy" />
+                              <div key={c.image_url} className={`shrink-0 rounded-[10px] border p-1.5 ${current ? 'border-brand-600 bg-brand-50' : 'border-surface-200 bg-white'}`}>
+                                <a href={c.image_url} target="_blank" rel="noreferrer" className="block">
+                                  <img src={c.image_url} alt={`ניסיון ${c.attempt}`} className="h-40 rounded-md object-contain bg-surface-50" loading="lazy" />
                                 </a>
                                 {c.issues.length > 0 && (
-                                  <div className="mt-1 max-w-[9rem] text-[10px] leading-snug text-red-800" title={c.issues.join('\n')}>
-                                    <AlertTriangle size={10} className="inline mr-0.5" />{c.issues[0].split(' → no: ').pop()}
+                                  <div className="mt-1 max-w-[9rem] text-[12px] leading-snug text-danger flex items-start gap-1" title={c.issues.join('\n')} dir="auto">
+                                    <AlertTriangle size={12} aria-hidden="true" className="shrink-0 mt-0.5" /><span className="line-clamp-3">{c.issues[0].split(' → no: ').pop()}</span>
                                   </div>
                                 )}
-                                <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
-                                  <span>Attempt {c.attempt}</span>
+                                <div className="mt-1 flex items-center justify-between gap-2 text-[12.5px]">
+                                  <span className="text-surface-700 num">ניסיון {c.attempt}</span>
                                   {current ? (
-                                    <span className="text-green-800 font-medium">in this post</span>
+                                    <Tag tone="brand">בפוסט</Tag>
                                   ) : (
                                     <button
+                                      type="button"
                                       onClick={() => handleUseAttempt(viewing, c.image_url, c.attempt)}
                                       disabled={busy === viewing.id}
-                                      className="text-amber-700 hover:text-amber-900 font-medium disabled:opacity-50"
-                                    >Use this image</button>
+                                      className="act primary -me-1.5"
+                                    >בחירה</button>
                                   )}
                                 </div>
                               </div>
@@ -563,139 +598,133 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                     )}
 
                     {caption && (
-                      <div dir="rtl" className="bg-surface-50 border border-surface-200 rounded p-3 text-[13px] leading-relaxed text-surface-900 whitespace-pre-wrap break-words">
+                      <div dir="rtl" className="bg-surface-50 border border-surface-200 rounded-lg p-3 text-[14px] leading-relaxed text-surface-900 whitespace-pre-wrap break-words">
                         {caption}
                       </div>
                     )}
 
                     {canPublish && (
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         <button
+                          type="button"
                           onClick={() => handlePublishIg(viewing)}
                           disabled={busy === viewing.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50"
-                          title="Publish this post live to @minuto_cafe"
+                          className="btn-primary"
+                          title="פרסום הפוסט עכשיו ב-@minuto_cafe"
                         >
-                          {busy === viewing.id ? <Loader2 size={13} className="animate-spin" /> : <ThumbsUp size={13} />} Approve &amp; Publish
+                          {busy === viewing.id ? <Loader2 size={16} aria-hidden="true" className="animate-spin" /> : <ThumbsUp size={16} aria-hidden="true" />} אישור ופרסום
                         </button>
                         <button
+                          type="button"
                           onClick={() => setRejecting(r => !r)}
                           disabled={busy === viewing.id}
                           aria-expanded={rejecting}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-300 text-red-700 font-medium hover:bg-red-50 disabled:opacity-50"
-                          title="Reject — do not publish"
+                          className="btn-danger"
+                          title="דחייה, בלי פרסום"
                         >
-                          <X size={13} /> Reject
+                          <X size={16} aria-hidden="true" /> דחייה
                         </button>
                       </div>
                     )}
                     {canPublish && rejecting && (
-                      <div className="rounded border border-red-200 bg-red-50 p-2.5 space-y-2">
-                        <div className="text-[11px] text-red-900 font-medium">Why? One click rejects (the post will not be published):</div>
+                      <div className="rounded-[10px] border border-surface-200 bg-surface-50 p-3 space-y-2.5">
+                        <div className="text-[13px] font-medium text-surface-900">מה הסיבה? לחיצה אחת דוחה, והפוסט לא יפורסם:</div>
                         <div className="flex flex-wrap gap-1.5">
                           {REJECT_REASONS.map(r => (
                             <button
                               key={r}
+                              type="button"
                               onClick={() => handleRejectIg(viewing, rejectNote.trim() ? `${r}: ${rejectNote.trim()}` : r)}
                               disabled={busy === viewing.id}
-                              className="px-2 py-1 rounded border border-red-300 bg-white text-red-800 text-[11px] hover:bg-red-100 disabled:opacity-50"
-                            >{r}</button>
+                              className="chip"
+                            >{REJECT_REASON_LABEL[r] ?? r}</button>
                           ))}
                         </div>
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-2">
                           <input
                             id="ig-reject-note"
                             value={rejectNote}
                             onChange={e => setRejectNote(e.target.value)}
-                            placeholder="Optional detail, or your own reason"
-                            className="flex-1 min-w-0 px-2 py-1 rounded border border-red-200 text-[12px]"
+                            placeholder="פירוט (לא חובה), או סיבה אחרת"
+                            aria-label="פירוט סיבת הדחייה"
+                            dir="auto"
+                            className="field flex-1 h-[38px] py-0"
                           />
                           <button
+                            type="button"
                             onClick={() => handleRejectIg(viewing, rejectNote)}
                             disabled={busy === viewing.id || !rejectNote.trim()}
-                            className="px-2 py-1 rounded bg-red-600 text-white text-[11px] font-medium disabled:opacity-50"
-                          >Reject with this</button>
+                            className="btn-danger shrink-0"
+                          >דחייה עם הסיבה</button>
                         </div>
                       </div>
                     )}
                     {published && rd.ig_permalink && (
-                      <a href={rd.ig_permalink as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-700 hover:text-green-900 font-medium">
-                        View on Instagram →
+                      <a href={rd.ig_permalink as string} target="_blank" rel="noreferrer" className="act primary -ms-2.5">
+                        <ExternalLink size={16} aria-hidden="true" /> צפייה באינסטגרם
                       </a>
                     )}
                     {rejected && rd.reject_reason && (
-                      <div className="text-red-700 text-[11px]">Rejected: {rd.reject_reason as string}</div>
+                      <div className="text-[13px] text-danger">נדחה: <span dir="auto">{rd.reject_reason as string}</span></div>
                     )}
                   </div>
                 )
               })()}
 
               <div>
-                <div className="font-semibold text-surface-700 mb-1">Brief</div>
-                <pre className="bg-surface-50 p-3 rounded text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
+                <div className="text-[13px] font-semibold text-surface-700 mb-1.5">תדריך</div>
+                <pre className="code overflow-x-auto">
 {JSON.stringify(viewing.brief_data, null, 2)}
                 </pre>
               </div>
               {viewing.result_data && Array.isArray((viewing.result_data as any).qa_attempts) && (viewing.result_data as any).qa_attempts.length > 0 && (
                 <div>
-                  <div className="font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                    QA attempts ({(viewing.result_data as any).qa_attempts.length})
+                  <div className="text-[13px] font-semibold text-surface-700 mb-2 flex items-center gap-1.5 flex-wrap">
+                    <span>ניסיונות בקרת איכות <span className="num font-normal text-surface-500">({(viewing.result_data as any).qa_attempts.length})</span></span>
                     {(viewing.result_data as any).review_required && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium">
-                        <Flag size={10} /> needs human review
-                      </span>
+                      <Tag tone="warn"><Flag size={12} aria-hidden="true" /> צריך בדיקה אנושית</Tag>
                     )}
                     {(viewing.result_data as any).qa_passed && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-900 text-[10px] font-medium">
-                        <CheckCircle2 size={10} /> passed
-                      </span>
+                      <Tag tone="ok"><CheckCircle2 size={12} aria-hidden="true" /> עבר</Tag>
                     )}
                   </div>
-                  <div className="space-y-3">
+                  <div className="rounded-[10px] border border-surface-200 divide-y divide-surface-200 overflow-hidden">
                     {((viewing.result_data as any).qa_attempts as Array<{
                       attempt: number
                       image_url: string
                       critique: { passes: boolean; missing: string[]; issues: string[]; suggested_adjustment: string }
                     }>).map(a => (
-                      <div key={a.attempt} className="border border-surface-200 rounded overflow-hidden">
-                        <div className="flex">
-                          <a href={a.image_url} target="_blank" rel="noreferrer" className="shrink-0">
-                            <img
-                              src={a.image_url}
-                              alt={`QA attempt ${a.attempt}`}
-                              className="w-32 h-32 object-cover bg-surface-100"
-                              loading="lazy"
-                            />
-                          </a>
-                          <div className="flex-1 p-2 text-[11px] min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-surface-700">Attempt {a.attempt}</span>
-                              {a.critique.passes ? (
-                                <span className="text-green-700 inline-flex items-center gap-0.5">
-                                  <CheckCircle2 size={11} /> passed
-                                </span>
-                              ) : (
-                                <span className="text-red-700 inline-flex items-center gap-0.5">
-                                  <AlertCircle size={11} /> failed
-                                </span>
-                              )}
-                            </div>
-                            {a.critique.missing?.length > 0 && (
-                              <div className="text-red-800 mb-1">
-                                <span className="font-medium">Missing:</span> {a.critique.missing.join(', ')}
-                              </div>
-                            )}
-                            {a.critique.issues?.length > 0 && (
-                              <div className="text-amber-800 mb-1">
-                                <span className="font-medium">Issues:</span> {a.critique.issues.join(' · ')}
-                              </div>
-                            )}
-                            {a.critique.suggested_adjustment && (
-                              <div className="text-surface-600 italic">
-                                Next: {a.critique.suggested_adjustment}
-                              </div>
-                            )}
+                      <div key={a.attempt} className="flex gap-3 p-2">
+                        <a href={a.image_url} target="_blank" rel="noreferrer" className="shrink-0 block">
+                          <img
+                            src={a.image_url}
+                            alt={`ניסיון ${a.attempt}`}
+                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-md object-cover bg-surface-100"
+                            loading="lazy"
+                          />
+                        </a>
+                        <div className="flex-1 min-w-0 text-[12.5px] leading-relaxed py-0.5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-surface-900 num">ניסיון {a.attempt}</span>
+                            {a.critique.passes
+                              ? <Status tone="ok" label="עבר" />
+                              : <Status tone="danger" label="נכשל" />}
                           </div>
+                          {a.critique.missing?.length > 0 && (
+                            <div className="text-surface-700 mb-0.5" dir="auto">
+                              <span className="font-medium text-danger">חסר: </span>{a.critique.missing.join(', ')}
+                            </div>
+                          )}
+                          {a.critique.issues?.length > 0 && (
+                            <div className="text-surface-700 mb-0.5" dir="auto">
+                              <span className="font-medium text-warn">בעיות: </span>{a.critique.issues.join(' · ')}
+                            </div>
+                          )}
+                          {a.critique.suggested_adjustment && (
+                            <div className="text-surface-500" dir="auto">
+                              <span className="font-medium">בניסיון הבא: </span>{a.critique.suggested_adjustment}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -704,8 +733,10 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
               )}
               {viewing.result_data && (
                 <details>
-                  <summary className="cursor-pointer text-[11px] text-surface-500 hover:text-surface-700">Raw result_data</summary>
-                  <pre className="bg-surface-50 p-3 rounded text-[11px] overflow-x-auto whitespace-pre-wrap break-all mt-1">
+                  <summary className="inline-flex items-center gap-1.5 min-h-9 text-[13px] text-surface-500 hover:text-surface-800">
+                    <ChevronLeft size={14} aria-hidden="true" className="chev" /> נתוני תוצאה גולמיים (result_data)
+                  </summary>
+                  <pre className="code overflow-x-auto mt-1">
 {JSON.stringify(viewing.result_data, null, 2)}
                   </pre>
                 </details>

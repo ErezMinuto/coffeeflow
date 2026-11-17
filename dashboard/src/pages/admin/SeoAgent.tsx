@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LayoutGrid, Compass, Inbox } from 'lucide-react'
+import { LayoutGrid, Compass, Inbox, MessageSquare, ListChecks, BarChart3 } from 'lucide-react'
 import SeoAgentLayout from './SeoAgentLayout'
 import SeoTaskQueue from './SeoTaskQueue'
 import SeoChatThread from './SeoChatThread'
@@ -112,79 +112,87 @@ export default function SeoAgent() {
   if (!sessionId) {
     return (
       <SeoAgentLayout>
-        <div className="h-full flex items-center justify-center text-sm text-surface-500">Initializing…</div>
+        <div className="h-full flex items-center justify-center text-[13px] text-surface-500" role="status">טוען את השיחה…</div>
       </SeoAgentLayout>
     )
   }
 
-  const tabs: Array<{ key: MobilePanel; label: string }> = [
-    { key: 'chat',    label: 'Chat' },
-    { key: 'tasks',   label: 'Tasks' },
-    { key: 'metrics', label: 'Metrics' },
+  const tabs: Array<{ key: MobilePanel; label: string; icon: typeof LayoutGrid }> = [
+    { key: 'chat',    label: 'שיחה',   icon: MessageSquare },
+    { key: 'tasks',   label: 'משימות', icon: ListChecks },
+    { key: 'metrics', label: 'מדדים',  icon: BarChart3 },
   ]
 
   const views: Array<{ key: View; label: string; icon: typeof LayoutGrid }> = [
-    { key: 'inbox',     label: 'Approvals',      icon: Inbox },
-    { key: 'workspace', label: 'Workspace',      icon: LayoutGrid },
-    { key: 'brief',     label: 'State of Minuto', icon: Compass },
+    { key: 'inbox',     label: 'אישורים',      icon: Inbox },
+    { key: 'workspace', label: 'סביבת עבודה', icon: LayoutGrid },
+    { key: 'brief',     label: 'מצב מינוטו',  icon: Compass },
   ]
+
+  // Each panel is a white hairline card on the paper ground.
+  const panel = 'h-full min-h-0 overflow-hidden bg-white border border-surface-200 rounded-[10px]'
 
   return (
     <SeoAgentLayout>
       <div className="h-full flex flex-col min-h-0">
-        {/* Top-level view switcher (always visible): the content workspace vs
-            the full-width strategist brief. */}
-        <div className="flex shrink-0 border-b border-surface-200 bg-white">
-          {views.map(v => {
-            const Icon = v.icon
-            return (
-              <button
-                key={v.key}
-                onClick={() => setView(v.key)}
-                className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
-                  view === v.key
-                    ? 'text-brand-700 border-b-2 border-brand-600 bg-brand-50/40'
-                    : 'text-surface-500 hover:text-surface-800'
-                }`}
-              ><Icon size={13} /> {v.label}</button>
-            )
-          })}
+        {/* Top-level view switcher (always visible): approvals, the content
+            workspace, or the full-width strategist brief. */}
+        <div className="shrink-0 px-3 pt-3 lg:px-4 lg:pt-4">
+          <div className="flex w-full sm:w-auto sm:inline-flex gap-1 p-1 bg-white border border-surface-200 rounded-[10px] overflow-x-auto" role="group" aria-label="תצוגה">
+            {views.map(v => {
+              const Icon = v.icon
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => setView(v.key)}
+                  aria-pressed={view === v.key}
+                  className="seg-btn flex-1 sm:flex-none"
+                ><Icon size={16} aria-hidden="true" /> {v.label}</button>
+              )
+            })}
+          </div>
         </div>
 
         {view === 'inbox' ? (
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_420px] grid-rows-1">
-            <div className="h-full min-h-0 overflow-hidden border-r border-surface-200">
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_420px] grid-rows-1 gap-4 p-3 lg:p-4">
+            <div className={panel}>
               <ApprovalInbox onGuide={text => {
                 setChatPrefill({ text, nonce: Date.now() })
                 // Below lg the chat is not beside the inbox: jump to the workspace chat.
                 if (window.innerWidth < 1024) { setView('workspace'); setMobilePanel('chat') }
               }} />
             </div>
-            <div className="hidden lg:block h-full min-h-0 overflow-hidden">
+            <div className={`hidden lg:block ${panel}`}>
               <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} prefill={chatPrefill} />
             </div>
           </div>
         ) : view === 'brief' ? (
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <StrategicBriefPanel />
+          <div className="flex-1 min-h-0 p-3 lg:p-4">
+            <div className={panel}>
+              <StrategicBriefPanel />
+            </div>
           </div>
         ) : (
         <div className="flex-1 min-h-0 flex flex-col">
         {/* Mobile-only tab switcher. Hidden at lg+ where all three panels
             show side by side. Lets the page work on a phone instead of
             overflowing the fixed 280/1fr/300 desktop grid. */}
-        <div className="lg:hidden flex shrink-0 border-b border-surface-200 bg-white">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setMobilePanel(t.key)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
-                mobilePanel === t.key
-                  ? 'text-brand-700 border-b-2 border-brand-600 bg-brand-50/40'
-                  : 'text-surface-500 hover:text-surface-800'
-              }`}
-            >{t.label}</button>
-          ))}
+        <div className="lg:hidden shrink-0 px-3 pt-2">
+          <div className="flex gap-1 p-1 bg-white border border-surface-200 rounded-[10px]" role="group" aria-label="חלונית">
+            {tabs.map(t => {
+              const Icon = t.icon
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setMobilePanel(t.key)}
+                  aria-pressed={mobilePanel === t.key}
+                  className="seg-btn flex-1"
+                ><Icon size={16} aria-hidden="true" /> {t.label}</button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Mobile: single column, only the active panel is shown (others
@@ -196,14 +204,14 @@ export default function SeoAgent() {
             content-sized, `h-full` on children resolves to natural height,
             and the chat footer drops below the viewport. `grid-rows-1` =
             `minmax(0,1fr)`: fillable AND shrinkable. */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_300px] grid-rows-1 gap-0">
-          <div className={`${mobilePanel === 'tasks' ? 'block' : 'hidden'} lg:block h-full min-h-0 overflow-hidden`}>
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[300px_1fr_280px] grid-rows-1 gap-4 p-3 lg:p-4">
+          <div className={`${mobilePanel === 'tasks' ? 'block' : 'hidden'} lg:block ${panel}`}>
             <SeoTaskQueue />
           </div>
-          <div className={`${mobilePanel === 'chat' ? 'block' : 'hidden'} lg:block h-full min-h-0 overflow-hidden`}>
+          <div className={`${mobilePanel === 'chat' ? 'block' : 'hidden'} lg:block ${panel}`}>
             <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} prefill={chatPrefill} />
           </div>
-          <div className={`${mobilePanel === 'metrics' ? 'flex' : 'hidden'} lg:flex flex-col h-full min-h-0 overflow-hidden`}>
+          <div className={`${mobilePanel === 'metrics' ? 'flex' : 'hidden'} lg:flex flex-col ${panel}`}>
             <SeoMetricsPanel />
           </div>
         </div>

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  Compass, RefreshCw, Lightbulb, AlertTriangle, Wrench, ThumbsUp, X,
-  FlaskConical, ChevronRight, GitPullRequest,
+  Compass, Lightbulb, AlertTriangle, Wrench, X, Check,
+  FlaskConical, ChevronLeft, GitPullRequest,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { PanelHead, RefreshButton, Tag, Dot, Status, stamp, type Tone } from './seoUi'
 
 // Strategist Brain panel — the "State of Minuto" reading surface.
 //
@@ -48,27 +49,34 @@ interface StrategistRec {
 
 // Content + email all draft (never send/publish); 'none' is pure advice.
 const REC_DRAFTABLE: RecActionType[] = ['content_blog', 'content_ig', 'email_campaign', 'ad_meta', 'ad_google']
-const REC_STATUS_STYLE: Record<RecStatus, string> = {
-  proposed:  'bg-surface-100 text-surface-700',
-  approved:  'bg-blue-100 text-blue-900',
-  drafted:   'bg-green-100 text-green-900',
-  dismissed: 'bg-surface-200 text-surface-500',
-  failed:    'bg-red-100 text-red-900',
-  drafting:          'bg-blue-50 text-blue-800',
-  awaiting_critique: 'bg-amber-50 text-amber-800',
-  revising:          'bg-amber-50 text-amber-800',
-  exporting:         'bg-blue-50 text-blue-800',
-  ready_for_review:  'bg-green-100 text-green-900',
-  needs_human:       'bg-red-50 text-red-800',
+// Recommendation state as a dot + word. In-flight states are neutral; the ones
+// that need Erez are amber; failures red.
+const REC_STATUS: Record<RecStatus, { tone: Tone; label: string }> = {
+  proposed:          { tone: 'neutral', label: 'הוצעה' },
+  approved:          { tone: 'brand',   label: 'אושרה' },
+  drafted:           { tone: 'ok',      label: 'נוצרה טיוטה' },
+  dismissed:         { tone: 'neutral', label: 'הוסרה' },
+  failed:            { tone: 'danger',  label: 'נכשלה' },
+  drafting:          { tone: 'neutral', label: 'בכתיבה' },
+  awaiting_critique: { tone: 'neutral', label: 'ממתינה לביקורת' },
+  revising:          { tone: 'neutral', label: 'בתיקון' },
+  exporting:         { tone: 'neutral', label: 'בייצוא' },
+  ready_for_review:  { tone: 'ok',      label: 'מוכנה לבדיקה' },
+  needs_human:       { tone: 'warn',    label: 'דורשת החלטה' },
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  email_campaign: 'קמפיין מייל', content_blog: 'פוסט בבלוג', content_ig: 'אינסטגרם',
+  ad_meta: 'מודעת Meta', ad_google: 'מודעת Google',
 }
 
 // Where each exported draft waits for you.
 function draftHome(ref: string | null): string {
-  if (ref?.startsWith('campaign:')) return 'review in Marketing → Campaigns (draft), then send there'
-  if (ref?.startsWith('wp:'))        return 'review the WordPress draft (WP admin → Posts → Drafts), then publish there'
-  if (ref?.startsWith('meta_ad:'))  return 'review in Meta Ads Manager (PAUSED); only you can activate it'
-  if (ref?.startsWith('google_ad:')) return 'review in Google Ads (PAUSED); only you can activate it'
-  return 'review in Workspace → Tasks, then publish there'
+  if (ref?.startsWith('campaign:')) return 'לבדיקה במחולל המיילים (טיוטה), והשליחה משם'
+  if (ref?.startsWith('wp:'))        return 'לבדיקה כטיוטה ב-WordPress (פוסטים, טיוטות), והפרסום משם'
+  if (ref?.startsWith('meta_ad:'))  return 'לבדיקה במנהל המודעות של Meta (מושהית). ההפעלה רק בידיים שלך'
+  if (ref?.startsWith('google_ad:')) return 'לבדיקה ב-Google Ads (מושהית). ההפעלה רק בידיים שלך'
+  return 'לבדיקה בסביבת העבודה, בתור המשימות, והפרסום משם'
 }
 
 interface StrategicBrief {
@@ -99,19 +107,19 @@ interface StrategistSignal {
   created_at:       string
 }
 
-const KIND_META: Record<SignalKind, { label: string; icon: typeof Wrench; bg: string; text: string }> = {
-  capability_request: { label: 'Capability request', icon: Wrench,         bg: 'bg-indigo-50', text: 'text-indigo-800' },
-  bug_report:         { label: 'Bug report',          icon: AlertTriangle, bg: 'bg-red-50',    text: 'text-red-800' },
-  feature_idea:       { label: 'Feature idea',        icon: Lightbulb,     bg: 'bg-amber-50',  text: 'text-amber-800' },
+const KIND_META: Record<SignalKind, { label: string; icon: typeof Wrench; tone: Tone }> = {
+  capability_request: { label: 'בקשת יכולת',   icon: Wrench,        tone: 'neutral' },
+  bug_report:         { label: 'דיווח על תקלה', icon: AlertTriangle, tone: 'danger' },
+  feature_idea:       { label: 'רעיון לפיצ׳ר',  icon: Lightbulb,     tone: 'neutral' },
 }
 
-const SIGNAL_STATUS_STYLE: Record<StrategistSignal['status'], string> = {
-  open:        'bg-surface-100 text-surface-700',
-  approved:    'bg-green-100 text-green-900',
-  building:    'bg-blue-100 text-blue-900',
-  shipped:     'bg-green-100 text-green-900',
-  declined:    'bg-surface-200 text-surface-500',
-  needs_human: 'bg-amber-100 text-amber-900',
+const SIGNAL_STATUS: Record<StrategistSignal['status'], { tone: Tone; label: string }> = {
+  open:        { tone: 'warn',    label: 'פתוח' },
+  approved:    { tone: 'ok',      label: 'אושר' },
+  building:    { tone: 'brand',   label: 'בבנייה' },
+  shipped:     { tone: 'ok',      label: 'עלה לאוויר' },
+  declined:    { tone: 'neutral', label: 'נדחה' },
+  needs_human: { tone: 'warn',    label: 'דורש החלטה' },
 }
 
 type ThesisStatus = 'active' | 'validated' | 'refuted' | 'superseded'
@@ -124,11 +132,11 @@ interface StrategistThesis {
   status:         ThesisStatus
   outcome:        string | null
 }
-const THESIS_STATUS_STYLE: Record<ThesisStatus, string> = {
-  active:     'bg-blue-100 text-blue-900',
-  validated:  'bg-green-100 text-green-900',
-  refuted:    'bg-red-100 text-red-900',
-  superseded: 'bg-surface-200 text-surface-500',
+const THESIS_STATUS: Record<ThesisStatus, { tone: Tone; label: string }> = {
+  active:     { tone: 'brand',   label: 'פעילה' },
+  validated:  { tone: 'ok',      label: 'אוששה' },
+  refuted:    { tone: 'danger',  label: 'הופרכה' },
+  superseded: { tone: 'neutral', label: 'הוחלפה' },
 }
 
 export default function StrategicBriefPanel() {
@@ -212,14 +220,14 @@ export default function StrategicBriefPanel() {
       setSignals(prev => prev.map(x => (x.id === s.id ? { ...x, status, decline_reason: declineReason ?? x.decline_reason } : x)))
     } catch (e) {
       console.error('[StrategicBriefPanel] signal update failed:', e)
-      toast.error('Update failed. See console.')
+      toast.error('העדכון נכשל. הפרטים בקונסול.')
     } finally {
       setBusy(null)
     }
   }
 
   function handleDecline(s: StrategistSignal) {
-    const reason = window.prompt(`Decline "${s.title}"?\n\nReason (the agent reads this and won't re-ask):`, '')
+    const reason = window.prompt(`לדחות את "${s.title}"?\n\nסיבה (הסוכן קורא אותה ולא ישאל שוב):`, '')
     if (reason == null) return
     setSignalStatus(s, 'declined', reason)
   }
@@ -237,7 +245,7 @@ export default function StrategicBriefPanel() {
       setRecs(prev => prev.map(x => (x.id === r.id ? { ...x, status } : x)))
     } catch (e) {
       console.error('[StrategicBriefPanel] recommendation update failed:', e)
-      toast.error('Update failed. See console.')
+      toast.error('העדכון נכשל. הפרטים בקונסול.')
     } finally {
       setBusy(null)
     }
@@ -247,57 +255,48 @@ export default function StrategicBriefPanel() {
   const resolvedSignals = signals.filter(s => s.status !== 'open')
 
   return (
-    <section className="h-full flex flex-col bg-white min-h-0">
-      <header className="h-10 px-4 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
-        <h2 className="text-sm font-semibold text-surface-800 flex items-center gap-2">
-          <Compass size={15} className="text-brand-600" /> State of Minuto
-        </h2>
-        <div className="flex items-center gap-2">
-          {brief && (
-            <span className="text-xs text-surface-500">week of {brief.week_start}</span>
-          )}
-          <button
-            onClick={handleManualRefresh}
-            disabled={refreshing}
-            className="text-surface-500 hover:text-surface-900 disabled:opacity-50"
-            title="Refresh now"
-          ><RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} /></button>
-        </div>
-      </header>
+    <section className="h-full flex flex-col min-h-0" aria-label="מצב מינוטו">
+      <PanelHead
+        title={<><Compass size={18} aria-hidden="true" className="text-surface-500" /> מצב מינוטו</>}
+        meta={brief ? <>שבוע של <span dir="ltr">{brief.week_start}</span></> : undefined}
+      >
+        <RefreshButton onClick={handleManualRefresh} disabled={refreshing} spinning={refreshing} title="רענון עכשיו" />
+      </PanelHead>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-5 space-y-6">
+        <div className="max-w-3xl mx-auto px-4 py-5 lg:px-8 lg:py-8 space-y-8">
           {loading ? (
-            <div className="text-xs text-surface-500">Loading…</div>
+            <div className="space-y-3" role="status" aria-label="טוען את התדריך">
+              <div className="skel lg w-11/12" />
+              <div className="skel lg w-4/5" />
+              <div className="skel lg w-2/3" />
+            </div>
           ) : (
             <>
               {/* ── The brief ───────────────────────────────────────────── */}
               {!brief ? (
-                <div className="text-sm text-surface-500 border border-dashed border-surface-300 rounded-lg p-6 text-center">
-                  No strategic brief yet. The strategist runs weekly (Monday). It thinks only — nothing it writes is published or spent without your approval.
+                <div className="rounded-[10px] border border-surface-200 bg-surface-50 px-6 py-8 text-center text-[13px] leading-relaxed text-surface-500">
+                  עדיין אין תדריך אסטרטגי. האסטרטג רץ פעם בשבוע (ביום שני). הוא רק חושב: שום דבר שהוא כותב לא מתפרסם ולא מוציא כסף בלי אישור שלך.
                 </div>
               ) : (
-                <article className="space-y-5">
-                  <p className="text-[15px] leading-relaxed text-surface-900">{brief.summary}</p>
+                <article className="space-y-8">
+                  <p className="text-[16px] leading-[1.7] text-surface-900" dir="auto">{brief.summary}</p>
 
                   {brief.top_thesis && (
-                    <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-4 py-3">
-                      <Compass size={16} className="text-brand-600 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">Top bet this cycle</div>
-                        <div className="text-sm text-surface-900 mt-0.5">{brief.top_thesis}</div>
-                      </div>
+                    <div className="rounded-[10px] border border-surface-200 bg-surface-50 px-4 py-3.5">
+                      <div className="text-[12.5px] font-medium text-surface-500">ההימור המרכזי במחזור הזה</div>
+                      <div className="text-[15px] font-medium leading-relaxed text-surface-900 mt-1" dir="auto">{brief.top_thesis}</div>
                     </div>
                   )}
 
                   {brief.diagnosis?.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">What the numbers say</h3>
-                      <ul className="space-y-2">
+                      <h3 className="text-[15px] font-semibold text-surface-900 mb-3">מה המספרים אומרים</h3>
+                      <ul className="space-y-3">
                         {brief.diagnosis.map((d, i) => (
-                          <li key={i} className="text-sm text-surface-900">
+                          <li key={i} className="text-[14px] leading-relaxed text-surface-900" dir="auto">
                             <div>{d.claim}</div>
-                            <div className="text-[12px] text-surface-500 mt-0.5">{d.evidence}</div>
+                            <div className="text-[13px] text-surface-500 mt-0.5">{d.evidence}</div>
                           </li>
                         ))}
                       </ul>
@@ -306,51 +305,57 @@ export default function StrategicBriefPanel() {
 
                   {recs.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">Recommended — approve to draft (never sends)</h3>
-                      <ul className="space-y-2">
+                      <h3 className="text-[15px] font-semibold text-surface-900">המלצות</h3>
+                      <p className="text-[13px] text-surface-500 mt-0.5 mb-3">אישור יוצר טיוטה. שום דבר לא נשלח.</p>
+                      <ul className="rounded-[10px] border border-surface-200 divide-y divide-surface-200">
                         {recs.map(r => {
                           const draftable = REC_DRAFTABLE.includes(r.action_type)
+                          const st = REC_STATUS[r.status] ?? { tone: 'neutral' as Tone, label: r.status }
                           return (
-                            <li key={r.id} className="rounded-lg border border-surface-200 p-3 text-sm">
-                              <div className="flex items-start gap-2">
-                                <ChevronRight size={14} className="text-brand-500 mt-1 shrink-0" />
+                            <li key={r.id} className={`px-4 pt-3 pb-2 ${r.status === 'dismissed' ? 'opacity-60' : ''}`}>
+                              <div className="flex items-start gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <span className="font-medium text-surface-900">{r.title}</span>
-                                  {r.action_type !== 'none' && (
-                                    <span className="ml-1.5 text-[10px] font-medium text-brand-700">[{r.action_type}]</span>
-                                  )}
-                                  {r.rationale && <span className="text-surface-700"> — {r.rationale}</span>}
+                                  <div className="flex items-start gap-2 flex-wrap">
+                                    <span className="text-[14px] font-medium leading-snug text-surface-900" dir="auto">{r.title}</span>
+                                    {r.action_type !== 'none' && <Tag>{ACTION_LABEL[r.action_type] ?? r.action_type}</Tag>}
+                                  </div>
+                                  {r.rationale && <div className="text-[13px] leading-relaxed text-surface-500 mt-1" dir="auto">{r.rationale}</div>}
                                   {r.success_metric?.metric && (
-                                    <div className="text-[12px] text-surface-500 mt-0.5">Measure: {r.success_metric.metric}{r.success_metric.check_date ? ` (by ${r.success_metric.check_date})` : ''}</div>
+                                    <div className="text-[12.5px] text-surface-500 mt-1">מדד: <span dir="auto">{r.success_metric.metric}</span>{r.success_metric.check_date ? <> (עד <span dir="ltr" className="num">{r.success_metric.check_date}</span>)</> : ''}</div>
                                   )}
                                   {(r.status === 'drafted' || r.status === 'ready_for_review') && (
-                                    <div className="text-[12px] text-green-700 mt-1">
-                                      {r.status === 'ready_for_review' ? 'Passed review' : 'Drafted'} — {draftHome(r.draft_ref)}
-                                      {r.draft_ref ? ` (${r.draft_ref})` : ''}. Nothing was sent, published or activated.
+                                    <div className="text-[12.5px] leading-relaxed text-surface-700 mt-1.5">
+                                      <span className="font-medium text-ok">{r.status === 'ready_for_review' ? 'עבר בדיקה' : 'נוצרה טיוטה'}:</span> {draftHome(r.draft_ref)}
+                                      {r.draft_ref ? <span className="font-mono text-[11.5px] text-surface-500" dir="ltr"> ({r.draft_ref})</span> : ''}. שום דבר לא נשלח, פורסם או הופעל.
                                     </div>
                                   )}
                                   {(r.status === 'awaiting_critique' || r.status === 'revising' || r.status === 'exporting' || r.status === 'drafting') && (
-                                    <div className="text-[12px] text-amber-700 mt-1">
-                                      In the review loop{r.revision_count ? ` (revision ${r.revision_count} of 2)` : ''}. It reaches you once it passes, or after 2 revisions.
+                                    <div className="text-[12.5px] leading-relaxed text-surface-700 mt-1.5">
+                                      בלולאת הבדיקה{r.revision_count ? ` (תיקון ${r.revision_count} מתוך 2)` : ''}. ההמלצה תגיע לכאן כשתעבור, או אחרי 2 תיקונים.
                                     </div>
                                   )}
                                   {r.status === 'needs_human' && (
-                                    <div className="text-[12px] text-red-700 mt-1">
-                                      Did not pass review{r.draft_error ? `: ${r.draft_error}` : ''}. Nothing was exported.
+                                    <div className="text-[12.5px] leading-relaxed text-surface-700 mt-1.5">
+                                      <span className="font-medium text-warn">לא עברה בדיקה</span>{r.draft_error ? <>: <span dir="auto">{r.draft_error}</span></> : ''}. לא יוצאה טיוטה.
                                     </div>
                                   )}
-                                  {r.auto_approved && <div className="text-[11px] text-surface-500 mt-0.5">Auto-approved by the strategist loop.</div>}
+                                  {r.auto_approved && <div className="text-[12px] text-surface-500 mt-1">אושרה אוטומטית בלולאת האסטרטג.</div>}
                                   {Array.isArray(r.critique_log) && r.critique_log.length > 0 && (
-                                    <details className="mt-1 text-[12px] text-surface-600">
-                                      <summary className="cursor-pointer">Review history ({r.critique_log.length})</summary>
-                                      <ul className="mt-1 space-y-1">
+                                    <details className="mt-1 text-[12.5px] text-surface-700">
+                                      <summary className="inline-flex items-center gap-1 min-h-8 text-surface-500 hover:text-surface-800">
+                                        <ChevronLeft size={14} aria-hidden="true" className="chev" /> היסטוריית בדיקות <span className="num">({r.critique_log.length})</span>
+                                      </summary>
+                                      <ul className="mt-1 mb-1 space-y-1.5 rounded-lg border border-surface-200 bg-surface-50 p-3">
                                         {r.critique_log.map((c, i) => (
                                           <li key={i}>
-                                            <span className={c.pass ? 'text-green-700' : 'text-red-700'}>{c.pass ? 'pass' : 'reject'}</span>
-                                            {` · draft ${c.revision + 1}`}
+                                            <span className="inline-flex items-center gap-1.5">
+                                              <Dot tone={c.pass ? 'ok' : 'danger'} />
+                                              <span className="font-medium">{c.pass ? 'עבר' : 'נדחה'}</span>
+                                              <span className="text-surface-500 num">· טיוטה {c.revision + 1}</span>
+                                            </span>
                                             {c.issues?.length ? (
-                                              <ul className="pl-3 list-disc">
-                                                {c.issues.map((x, j) => <li key={j}><b>{x.severity}</b> {x.rule}: {x.detail}</li>)}
+                                              <ul className="ps-4 list-disc mt-0.5" dir="auto">
+                                                {c.issues.map((x, j) => <li key={j}><b className="font-medium">{x.severity}</b> {x.rule}: {x.detail}</li>)}
                                               </ul>
                                             ) : null}
                                           </li>
@@ -359,52 +364,57 @@ export default function StrategicBriefPanel() {
                                     </details>
                                   )}
                                   {r.status === 'failed' && r.draft_error && (
-                                    <div className="text-[12px] text-red-700 mt-1">Draft failed: {r.draft_error}</div>
+                                    <div className="text-[12.5px] text-danger mt-1.5">הטיוטה נכשלה: <span dir="auto">{r.draft_error}</span></div>
                                   )}
                                   {r.status === 'approved' && !draftable && (
-                                    <div className="text-[12px] text-surface-500 mt-1">Approved — advice with no draftable artifact.</div>
+                                    <div className="text-[12.5px] text-surface-500 mt-1.5">אושרה. זו עצה בלי תוצר לטיוטה.</div>
                                   )}
                                 </div>
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${REC_STATUS_STYLE[r.status]}`}>{r.status}</span>
+                                <Status tone={st.tone} label={st.label} />
                               </div>
                               {r.status === 'ready_for_review' && (
-                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                <div className="flex items-center gap-0.5 mt-1 -ms-2.5">
                                   <button
+                                    type="button"
                                     onClick={() => setRecStatus(r, 'drafted')}
                                     disabled={busy === r.id}
-                                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
-                                    title="You have handled the draft (published, sent, activated or discarded it)"
-                                  ><ThumbsUp size={12} /> done</button>
+                                    className="act primary"
+                                    title="הטיוטה טופלה (פורסמה, נשלחה, הופעלה או נזנחה)"
+                                  ><Check size={16} aria-hidden="true" /> טופל</button>
                                 </div>
                               )}
                               {r.status === 'needs_human' && (
-                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                <div className="flex items-center gap-0.5 mt-1 -ms-2.5">
                                   <button
+                                    type="button"
                                     onClick={() => setRecStatus(r, 'exporting')}
                                     disabled={busy === r.id}
-                                    className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                                    title="Create the draft anyway (WP draft / campaign draft / PAUSED ad). Nothing is published, sent or activated."
-                                  ><ThumbsUp size={12} /> draft it anyway</button>
+                                    className="act primary"
+                                    title="יצירת הטיוטה בכל זאת (טיוטת WordPress, טיוטת קמפיין או מודעה מושהית). שום דבר לא מתפרסם, נשלח או מופעל."
+                                  ><Check size={16} aria-hidden="true" /> ליצור טיוטה בכל זאת</button>
                                   <button
+                                    type="button"
                                     onClick={() => setRecStatus(r, 'dismissed')}
                                     disabled={busy === r.id}
-                                    className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
-                                  ><X size={12} /> dismiss</button>
+                                    className="act danger"
+                                  ><X size={16} aria-hidden="true" /> הסרה</button>
                                 </div>
                               )}
                               {r.status === 'proposed' && (
-                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                <div className="flex items-center gap-0.5 mt-1 -ms-2.5">
                                   <button
+                                    type="button"
                                     onClick={() => setRecStatus(r, 'approved')}
                                     disabled={busy === r.id}
-                                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
-                                    title={draftable ? 'Approve — drafts a blog post for your review' : 'Approve — execution arrives in Phase 2b'}
-                                  ><ThumbsUp size={12} /> approve</button>
+                                    className="act primary"
+                                    title={draftable ? 'אישור יוצר טיוטה לבדיקה' : 'אישור. הביצוע יגיע בשלב 2b'}
+                                  ><Check size={16} aria-hidden="true" /> אישור</button>
                                   <button
+                                    type="button"
                                     onClick={() => setRecStatus(r, 'dismissed')}
                                     disabled={busy === r.id}
-                                    className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
-                                  ><X size={12} /> dismiss</button>
+                                    className="act danger"
+                                  ><X size={16} aria-hidden="true" /> הסרה</button>
                                 </div>
                               )}
                             </li>
@@ -416,14 +426,15 @@ export default function StrategicBriefPanel() {
 
                   {brief.out_of_hands?.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">For you to weigh (outside the agent's hands)</h3>
-                      <ul className="space-y-2">
+                      <h3 className="text-[15px] font-semibold text-surface-900">לשיקולך</h3>
+                      <p className="text-[13px] text-surface-500 mt-0.5 mb-3">דברים שמחוץ לידיים של הסוכן.</p>
+                      <ul className="space-y-3">
                         {brief.out_of_hands.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <ChevronRight size={14} className="text-surface-400 mt-1 shrink-0" />
-                            <div>
-                              <span className="font-medium text-surface-900">{r.title}</span>
-                              <span className="text-surface-700"> — {r.rationale}</span>
+                          <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed">
+                            <ChevronLeft size={16} aria-hidden="true" className="text-surface-400 mt-1 shrink-0" />
+                            <div dir="auto">
+                              <div className="font-medium text-surface-900">{r.title}</div>
+                              <div className="text-[13px] text-surface-500">{r.rationale}</div>
                             </div>
                           </li>
                         ))}
@@ -431,100 +442,107 @@ export default function StrategicBriefPanel() {
                     </div>
                   )}
 
-                  <div className="text-[10px] text-surface-400 font-mono pt-1">
-                    brief {brief.id.slice(0, 8)} · {new Date(brief.created_at).toISOString().slice(0, 16).replace('T', ' ')} · {brief.status}
+                  <div className="text-[11.5px] text-surface-400 font-mono" dir="ltr">
+                    brief {brief.id.slice(0, 8)} · {stamp(brief.created_at)} · {brief.status}
                   </div>
                 </article>
               )}
 
               {/* ── Theses — the revenue-graded memory ──────────────────── */}
               {theses.length > 0 && (
-                <div className="border-t border-surface-200 pt-5">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-3">Theses — bets scored against revenue</h3>
-                  <ul className="space-y-2">
-                    {theses.map(t => (
-                      <li key={t.id} className={`rounded-lg border border-surface-200 p-3 text-sm ${t.status === 'superseded' ? 'opacity-60' : ''}`}>
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-surface-900">{t.thesis}</div>
-                            <div className="text-[12px] text-surface-500 mt-0.5">
-                              <span className="font-medium">{t.lever}</span> · metric: {t.success_metric}{t.check_date ? ` · check ${t.check_date}` : ''}
+                <div className="border-t border-surface-200 pt-8">
+                  <h3 className="text-[15px] font-semibold text-surface-900">תזות</h3>
+                  <p className="text-[13px] text-surface-500 mt-0.5 mb-3">הימורים שנמדדים מול הכנסות.</p>
+                  <ul className="rounded-[10px] border border-surface-200 divide-y divide-surface-200">
+                    {theses.map(t => {
+                      const st = THESIS_STATUS[t.status] ?? { tone: 'neutral' as Tone, label: t.status }
+                      return (
+                        <li key={t.id} className={`px-4 py-3 ${t.status === 'superseded' ? 'opacity-60' : ''}`}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[14px] leading-relaxed text-surface-900" dir="auto">{t.thesis}</div>
+                              <div className="text-[12.5px] text-surface-500 mt-0.5">
+                                <span className="font-medium text-surface-700" dir="auto">{t.lever}</span> · מדד: <span dir="auto">{t.success_metric}</span>{t.check_date ? <> · בדיקה <span dir="ltr" className="num">{t.check_date}</span></> : ''}
+                              </div>
+                              {t.outcome && (
+                                <div className={`text-[12.5px] mt-1 ${t.status === 'validated' ? 'text-ok' : t.status === 'refuted' ? 'text-danger' : 'text-surface-500'}`} dir="auto">{t.outcome}</div>
+                              )}
                             </div>
-                            {t.outcome && (
-                              <div className={`text-[12px] mt-1 ${t.status === 'validated' ? 'text-green-700' : t.status === 'refuted' ? 'text-red-700' : 'text-surface-500'}`}>{t.outcome}</div>
-                            )}
+                            <Status tone={st.tone} label={st.label} />
                           </div>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${THESIS_STATUS_STYLE[t.status]}`}>{t.status}</span>
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               )}
 
               {/* ── Signals (agent → team) ──────────────────────────────── */}
-              <div className="border-t border-surface-200 pt-5">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-3 flex items-center gap-2">
-                  <FlaskConical size={13} /> Signals from the agent
+              <div className="border-t border-surface-200 pt-8">
+                <h3 className="text-[15px] font-semibold text-surface-900 mb-3 flex items-center gap-2">
+                  <FlaskConical size={16} aria-hidden="true" className="text-surface-500" /> אותות מהסוכן
                   {openSignals.length > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-800 text-[10px] font-semibold">{openSignals.length} open</span>
+                    <Tag tone="warn"><span className="num">{openSignals.length}</span> פתוחים</Tag>
                   )}
                 </h3>
 
                 {signals.length === 0 ? (
-                  <div className="text-xs text-surface-500">No signals yet. The agent raises one only when a decision is blocked or it confirms an anomaly.</div>
+                  <div className="text-[13px] text-surface-500">עדיין אין אותות. הסוכן מעלה אות רק כשהחלטה חסומה או כשהוא מאשר חריגה.</div>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="rounded-[10px] border border-surface-200 divide-y divide-surface-200">
                     {[...openSignals, ...resolvedSignals].map(s => {
-                      const meta = KIND_META[s.kind]
+                      const meta = KIND_META[s.kind] ?? { label: String(s.kind), icon: Wrench, tone: 'neutral' as Tone }
                       const Icon = meta.icon
                       const isOpen = s.status === 'open'
+                      const st = SIGNAL_STATUS[s.status] ?? { tone: 'neutral' as Tone, label: s.status }
                       return (
-                        <li key={s.id} className={`rounded-lg border border-surface-200 p-3 ${s.status === 'declined' ? 'opacity-60' : ''}`}>
-                          <div className="flex items-start gap-2">
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${meta.bg} ${meta.text} text-[10px] font-medium shrink-0`}>
-                              <Icon size={11} /> {meta.label}
-                            </span>
+                        <li key={s.id} className={`px-4 pt-3 ${isOpen ? 'pb-2' : 'pb-3'} ${s.status === 'declined' ? 'opacity-60' : ''}`}>
+                          <div className="flex items-start gap-3">
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-surface-900">{s.title}</div>
-                              {s.detail && <div className="text-[12px] text-surface-600 mt-0.5">{s.detail}</div>}
+                              <div className="flex items-start gap-2 flex-wrap">
+                                <Tag tone={meta.tone}><Icon size={12} aria-hidden="true" /> {meta.label}</Tag>
+                                <span className="text-[14px] font-medium leading-snug text-surface-900" dir="auto">{s.title}</span>
+                              </div>
+                              {s.detail && <div className="text-[13px] leading-relaxed text-surface-500 mt-1" dir="auto">{s.detail}</div>}
                               {s.blocked_decision && (
-                                <div className="text-[12px] text-surface-500 mt-1"><span className="font-medium">Blocks:</span> {s.blocked_decision}</div>
+                                <div className="text-[12.5px] text-surface-500 mt-1"><span className="font-medium text-surface-700">חוסם: </span><span dir="auto">{s.blocked_decision}</span></div>
                               )}
                               {s.leverage && (
-                                <div className="text-[12px] text-surface-500 mt-0.5"><span className="font-medium">Leverage:</span> {s.leverage}</div>
+                                <div className="text-[12.5px] text-surface-500 mt-0.5"><span className="font-medium text-surface-700">תועלת: </span><span dir="auto">{s.leverage}</span></div>
                               )}
                               {s.decline_reason && (
-                                <div className="text-[12px] text-surface-500 mt-1 italic">Declined: {s.decline_reason}</div>
+                                <div className="text-[12.5px] text-surface-500 mt-1"><span className="font-medium text-surface-700">נדחה: </span><span dir="auto">{s.decline_reason}</span></div>
                               )}
                               {s.fixer_note && (
-                                <div className="text-[12px] text-amber-700 mt-1"><span className="font-medium">Fixer:</span> {s.fixer_note}</div>
+                                <div className="text-[12.5px] text-surface-700 mt-1"><span className="font-medium text-warn">הסוכן המתקן: </span><span dir="auto">{s.fixer_note}</span></div>
                               )}
                               {s.pr_url && (
                                 <a
                                   href={s.pr_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-900 mt-1"
-                                ><GitPullRequest size={12} /> View PR →</a>
+                                  className="act primary -ms-2.5 mt-0.5"
+                                ><GitPullRequest size={16} aria-hidden="true" /> לצפייה ב-PR</a>
                               )}
                             </div>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${SIGNAL_STATUS_STYLE[s.status]}`}>{s.status}</span>
+                            <Status tone={st.tone} label={st.label} />
                           </div>
                           {isOpen && (
-                            <div className="flex items-center gap-2 mt-2 pl-1">
+                            <div className="flex items-center gap-0.5 mt-1 -ms-2.5">
                               <button
+                                type="button"
                                 onClick={() => setSignalStatus(s, 'approved')}
                                 disabled={busy === s.id}
-                                className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
-                                title="Approve — mark this for action"
-                              ><ThumbsUp size={12} /> approve</button>
+                                className="act primary"
+                                title="אישור, מסמן לטיפול"
+                              ><Check size={16} aria-hidden="true" /> אישור</button>
                               <button
+                                type="button"
                                 onClick={() => handleDecline(s)}
                                 disabled={busy === s.id}
-                                className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
-                                title="Decline — the agent reads the reason and won't re-ask"
-                              ><X size={12} /> decline</button>
+                                className="act danger"
+                                title="דחייה. הסוכן קורא את הסיבה ולא ישאל שוב"
+                              ><X size={16} aria-hidden="true" /> דחייה</button>
                             </div>
                           )}
                         </li>
