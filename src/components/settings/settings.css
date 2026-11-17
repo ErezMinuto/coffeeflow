@@ -37,8 +37,9 @@
   font-size: 14px;
   font-weight: 500;
   text-align: right;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease);
 }
+.settings-page .set-nav-item:active { transform: scale(0.98); }
 .settings-page .set-nav-item svg { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; transition: color 150ms ease; }
 @media (hover: hover) and (pointer: fine) {
   .settings-page .set-nav-item:hover { background: var(--sunken); color: var(--ink); }
