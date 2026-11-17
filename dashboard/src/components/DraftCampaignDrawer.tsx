@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatCurrency } from '../lib/utils'
 import {
-  X, Loader2, ExternalLink, CheckCircle2, AlertTriangle,
-  Users, Megaphone, Image as ImageIcon,
+  X, Loader2, ExternalLink, CheckCircle2, AlertTriangle, AlertCircle,
+  Users, ShieldCheck, Image as ImageIcon,
 } from 'lucide-react'
+import { Notice } from './shared/cockpit'
 
 // A theme that came out of the unified_marketing_plan action.
 interface Theme {
@@ -114,142 +115,192 @@ export function DraftCampaignDrawer({ theme, onClose }: { theme: Theme; onClose:
   const c = spec?.creative ?? {}
   const a = spec?.audience ?? {}
 
+  // Drawer basics: focus the close button on open, Escape closes, focus
+  // returns to whatever opened it, and the page underneath does not scroll.
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+      opener?.focus?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const LABEL = 'text-[12.5px] text-surface-500'
+  const SECTION = 'card-flush p-4'
+
   return (
     <div className="fixed inset-0 z-50 flex" dir="rtl">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
-      <aside className="relative ml-auto w-full max-w-md bg-surface-50 h-full overflow-y-auto shadow-xl">
+      <div className="cockpit-scrim fixed inset-0 bg-[rgba(28,33,26,0.32)]" onClick={onClose} aria-hidden="true" />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="draft-drawer-title"
+        className="cockpit-drawer relative ml-auto w-full max-w-md bg-[var(--bg)] h-full overflow-y-auto overscroll-contain shadow-[0_8px_24px_rgba(28,33,26,0.10)]"
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-surface-200 px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Megaphone size={18} className="text-brand-600" />
-            <h2 className="font-display text-lg font-semibold text-surface-900">בניית טיוטת קמפיין</h2>
+        <div className="sticky top-0 z-10 bg-white border-b border-surface-200 ps-5 pe-2 py-2 flex items-center justify-between gap-3 min-h-14">
+          <div className="min-w-0">
+            <h2 id="draft-drawer-title" className="text-[17px] font-semibold text-surface-900">בניית טיוטת קמפיין</h2>
+            <p className="text-[13px] text-surface-500 truncate">{theme.name}</p>
           </div>
-          <button onClick={onClose} aria-label="סגור" className="p-2 -m-2 text-surface-400 hover:text-surface-700 cursor-pointer"><X size={20} /></button>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="סגירה"
+            className="btn-ghost shrink-0 w-10 h-10 px-0 text-surface-600"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="p-5 space-y-4">
-          <p className="text-sm text-surface-500">{theme.name}</p>
-
+        <div className="p-5 space-y-3">
           {step === 'building' && (
-            <div className="text-center py-12">
-              <Loader2 size={24} className="text-brand-500 mx-auto mb-3 animate-spin" />
-              <p className="text-sm text-surface-600">בונה מפרט קמפיין מהתובנה…</p>
+            <div className="text-center py-14" role="status">
+              <Loader2 size={20} aria-hidden="true" className="text-surface-400 mx-auto mb-3 animate-spin" />
+              <p className="text-sm text-surface-700">מפרט הקמפיין נבנה מהתובנה…</p>
             </div>
           )}
 
           {step === 'error' && (
-            <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 text-sm">{error}</div>
+            <Notice tone="danger" icon={<AlertCircle />} title="בניית המפרט נכשלה">{error}</Notice>
           )}
 
           {(step === 'review' || step === 'creating') && spec && (
             <>
               {/* Spec review — what will be created, all PAUSED */}
-              <div className="bg-white border border-surface-200 rounded-2xl p-4 space-y-3">
+              <section className={`${SECTION} space-y-3`} aria-label="מפרט הקמפיין">
                 <div>
-                  <p className="text-xs text-surface-400 mb-0.5">שם קמפיין</p>
-                  <p className="text-sm font-medium text-surface-900">{spec.campaign_name}</p>
+                  <p className={LABEL}>שם הקמפיין</p>
+                  <p className="text-sm font-medium text-surface-900 break-words">{spec.campaign_name}</p>
                 </div>
-                <div className="flex gap-4">
-                  <div>
-                    <p className="text-xs text-surface-400 mb-0.5">מטרה</p>
-                    <p className="text-sm text-surface-700">{spec.objective}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="min-w-0">
+                    <p className={LABEL}>מטרה</p>
+                    <p className="text-sm text-surface-700 break-words" dir="auto">{spec.objective}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-surface-400 mb-0.5">תקציב יומי</p>
-                    <p className="text-sm text-surface-700">{formatCurrency(spec.daily_budget_ils ?? 0)}</p>
+                    <p className={LABEL}>תקציב יומי</p>
+                    <p className="text-sm text-surface-900 font-medium num">{formatCurrency(spec.daily_budget_ils ?? 0)}</p>
                   </div>
                 </div>
                 {a.age_range && (
-                  <div className="flex items-start gap-1.5 text-sm text-surface-600">
-                    <Users size={14} className="mt-0.5 text-surface-400 shrink-0" />
-                    <span>{a.age_range} · {a.geo ?? 'ישראל'}{Array.isArray(a.interests_or_behaviors) && a.interests_or_behaviors.length ? ` · ${a.interests_or_behaviors.slice(0, 3).join(', ')}` : ''}</span>
+                  <div>
+                    <p className={`${LABEL} flex items-center gap-1.5`}><Users size={14} aria-hidden="true" /> קהל</p>
+                    <p className="text-sm text-surface-700 num">{a.age_range} · {a.geo ?? 'ישראל'}{Array.isArray(a.interests_or_behaviors) && a.interests_or_behaviors.length ? ` · ${a.interests_or_behaviors.slice(0, 3).join(', ')}` : ''}</p>
                   </div>
                 )}
-                <div className="flex items-start gap-1.5 text-xs pt-1 border-t border-surface-100">
-                  <span className="text-surface-400 shrink-0">יעד:</span>
-                  <span className="text-surface-600 break-all" dir="ltr">
+                <div className="pt-3 border-t border-surface-200">
+                  <p className={LABEL}>דף הנחיתה</p>
+                  <p className="text-[13px] text-surface-700 break-all text-right" dir="ltr">
                     {landingUrl || String(spec.landing_page_url || '').match(/https?:\/\/[^\s]+/)?.[0] || 'דף הבית'}
-                  </span>
+                  </p>
                 </div>
-              </div>
+              </section>
 
               {/* Creative copy (Hebrew, brand-guarded by the generator) */}
-              <div className="bg-white border border-surface-200 rounded-2xl p-4 space-y-2">
-                <p className="text-xs text-surface-400">קריאייטיב</p>
+              <section className={`${SECTION} space-y-1.5`} aria-label="קריאייטיב">
+                <p className={LABEL}>קריאייטיב</p>
                 {c.headline && <p className="text-sm font-semibold text-surface-900">{c.headline}</p>}
                 {c.primary_text && <p className="text-sm text-surface-700 leading-relaxed">{c.primary_text}</p>}
-                {c.cta_button && <span className="inline-block badge bg-brand-50 text-brand-700">{c.cta_button}</span>}
-              </div>
+                {c.cta_button && <span className="inline-block mt-1 tag" dir="ltr">{c.cta_button}</span>}
+              </section>
 
               {/* Image — pick a REAL matched asset (product image or IG post), or paste a URL */}
-              <div className="bg-white border border-surface-200 rounded-2xl p-4">
-                <p className="text-xs text-surface-400 mb-2 flex items-center gap-1.5"><ImageIcon size={13} /> תמונת המודעה — נכסים אמיתיים (המתאימים למוצר מופיעים ראשונים)</p>
+              <section className={SECTION} aria-labelledby="draft-image-label">
+                <p id="draft-image-label" className="text-sm font-medium text-surface-900 flex items-center gap-1.5">
+                  <ImageIcon size={16} aria-hidden="true" className="text-surface-500" /> תמונת המודעה
+                </p>
+                <p className="text-[12.5px] text-surface-500 mt-0.5 mb-3">נכסים אמיתיים. המתאימים למוצר מופיעים ראשונים.</p>
                 {assets.length > 0 ? (
-                  <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
-                    {assets.slice(0, 18).map((a) => (
-                      <button
-                        key={a.url}
-                        onClick={() => setImageUrl(a.url)}
-                        title={`${a.source === 'ig' ? 'אינסטגרם' : 'מוצר'} · ${a.label}`}
-                        className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${imageUrl === a.url ? 'border-brand-500' : 'border-surface-200 hover:border-surface-400'}`}
-                      >
-                        <img src={a.url} alt={a.label} className="w-full h-full object-cover" />
-                        <span className={`absolute bottom-0 inset-x-0 text-[9px] leading-tight text-white text-center ${a.source === 'ig' ? 'bg-pink-600/85' : 'bg-brand-700/85'}`}>
-                          {a.source === 'ig' ? 'IG' : 'מוצר'}
-                        </span>
-                      </button>
-                    ))}
+                  <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1 pt-1">
+                    {assets.slice(0, 18).map((a) => {
+                      const on = imageUrl === a.url
+                      return (
+                        <button
+                          key={a.url}
+                          type="button"
+                          onClick={() => setImageUrl(a.url)}
+                          aria-pressed={on}
+                          aria-label={`${a.source === 'ig' ? 'אינסטגרם' : 'מוצר'}: ${a.label}`}
+                          title={`${a.source === 'ig' ? 'אינסטגרם' : 'מוצר'} · ${a.label}`}
+                          className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer transition-[box-shadow,transform] duration-150 active:scale-[0.97] ${on ? 'ring-2 ring-brand-600 ring-offset-2 ring-offset-white' : 'ring-1 ring-surface-200 [@media(hover:hover)]:hover:ring-surface-400'}`}
+                        >
+                          <img src={a.url} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-1 right-1 px-1 rounded-[4px] bg-white/90 text-[10px] font-medium leading-4 text-surface-700">
+                            {a.source === 'ig' ? 'IG' : 'מוצר'}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : (
-                  <p className="text-xs text-surface-400 mb-2">טוען נכסים…</p>
+                  <p className="text-[13px] text-surface-500 mb-2">טוען נכסים…</p>
                 )}
+                <label htmlFor="draft-image-url" className="sr-only">כתובת תמונה</label>
                 <input
+                  id="draft-image-url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="או הדביקו URL…"
                   dir="ltr"
-                  className="w-full text-xs border border-surface-200 rounded-lg px-2 py-1.5 text-surface-700 focus:border-brand-400 focus:outline-none"
+                  className="field text-[13px]"
                 />
-                {!imageUrl && <p className="text-xs text-amber-600 mt-1.5">בחרו תמונה כדי להמשיך</p>}
-              </div>
+                {!imageUrl && (
+                  <p className="text-[12.5px] text-warn mt-1.5 flex items-center gap-1.5">
+                    <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-warn-dot" />
+                    בחרו תמונה כדי להמשיך
+                  </p>
+                )}
+              </section>
 
-              {error && <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-sm">{error}</div>}
+              {error && <Notice tone="danger" icon={<AlertCircle />}>{error}</Notice>}
 
               {/* The gate: everything created is PAUSED, under the budget cap. */}
-              <div className="bg-brand-50/60 border border-brand-100 rounded-xl p-3 text-xs text-surface-600 flex items-start gap-1.5">
-                <AlertTriangle size={13} className="mt-0.5 text-brand-600 shrink-0" />
-                נוצר במצב מושהה (PAUSED) בלבד. שום דבר לא מתפרסם או מוציא כסף עד שתפעילו ידנית ב-Ads Manager. כפוף לתקרת התקציב.
-              </div>
+              <Notice icon={<ShieldCheck className="text-brand-600" />}>
+                נוצר במצב מושהה (PAUSED) בלבד. שום דבר לא מתפרסם ולא מוציא כסף עד שמפעילים ידנית ב-Ads Manager. כפוף לתקרת התקציב.
+              </Notice>
 
               <button
+                type="button"
                 onClick={createDraft}
                 disabled={step === 'creating'}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-60 cursor-pointer"
+                className="btn-primary w-full h-11"
               >
-                {step === 'creating' ? <><Loader2 size={16} className="animate-spin" /> יוצר טיוטה מושהית…</> : 'אשר וצור טיוטה מושהית'}
+                {step === 'creating' ? <><Loader2 size={16} aria-hidden="true" className="animate-spin" /> הטיוטה נוצרת…</> : 'אישור ויצירת טיוטה מושהית'}
               </button>
             </>
           )}
 
           {step === 'done' && result && (
-            <div className="text-center py-8 space-y-4">
-              <CheckCircle2 size={40} className="text-emerald-600 mx-auto" />
+            <div className="text-center py-8 space-y-4" role="status">
+              <CheckCircle2 size={32} aria-hidden="true" className="text-ok mx-auto" />
               <div>
-                <p className="font-display text-lg font-semibold text-surface-900">{result.existed ? 'הטיוטה כבר קיימת' : 'נוצרה טיוטה מושהית'}</p>
-                <p className="text-sm text-surface-500 mt-1">קמפיין {result.campaign_id} · מצב PAUSED</p>
+                <p className="text-[17px] font-semibold text-surface-900">{result.existed ? 'הטיוטה כבר קיימת' : 'נוצרה טיוטה מושהית'}</p>
+                <p className="text-[13px] text-surface-500 mt-1 num">קמפיין <span dir="ltr">{result.campaign_id}</span> · מצב PAUSED</p>
               </div>
               {result.warnings?.length > 0 && (
-                <div className="bg-amber-50 border border-amber-100 text-amber-700 rounded-xl p-3 text-xs text-right">
-                  {result.warnings.map((w, i) => <p key={i}>⚠ {w}</p>)}
+                <div className="text-right">
+                  <Notice tone="warn" icon={<AlertTriangle />}>
+                    <ul className="space-y-1">{result.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                  </Notice>
                 </div>
               )}
               <a
                 href={result.edit_url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-900 text-white text-sm font-medium hover:bg-surface-800 transition-colors"
+                className="btn-primary"
               >
-                פתח ב-Ads Manager לבדיקה והפעלה <ExternalLink size={15} />
+                פתיחה ב-Ads Manager לבדיקה והפעלה <ExternalLink size={16} aria-hidden="true" />
               </a>
-              <button onClick={onClose} className="block mx-auto text-sm text-surface-500 hover:text-surface-800 cursor-pointer">סגור</button>
+              <button type="button" onClick={onClose} className="block mx-auto h-9 px-3 rounded-lg text-sm text-surface-600 transition-colors duration-150 [@media(hover:hover)]:hover:bg-surface-100 [@media(hover:hover)]:hover:text-surface-900 cursor-pointer">סגירה</button>
             </div>
           )}
         </div>
