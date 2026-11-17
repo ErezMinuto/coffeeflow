@@ -1,29 +1,18 @@
 import React, { useState, useMemo, useRef, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  Package, PackageMinus, Plus, Minus, Search, Download, Pencil, Copy, Trash2,
+  EllipsisVertical, ShoppingCart, TriangleAlert, X,
+} from 'lucide-react';
 import { useApp } from '../../lib/context';
+import { Kpi } from '../shared/ui';
 
-// ── Inline SVG icons (Lucide-style) — no emoji as icons ───────────────────────
-const Icon = ({ d, size = 16, sw = 2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {d}
-  </svg>
-);
+// Line icons from lucide-react; stroke weight comes from the shared svg.lucide rule.
+const Icon = ({ d: Glyph, size = 16 }) => <Glyph size={size} aria-hidden="true" />;
 const I = {
-  leaf:  <><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6" /></>,
-  box:   <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>,
-  out:   <><path d="M12 3v12" /><path d="m8 7 4-4 4 4" /><path d="M8 21H4a2 2 0 0 1-2-2v-2" /><path d="M22 17v2a2 2 0 0 1-2 2h-4" /></>,
-  plus:  <><path d="M5 12h14" /><path d="M12 5v14" /></>,
-  minus: <path d="M5 12h14" />,
-  search:<><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
-  download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>,
-  edit:  <><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
-  dup:   <><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
-  trash: <><path d="M3 6h18" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></>,
-  dots:  <><circle cx="12" cy="5" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="12" cy="19" r="1.4" /></>,
-  cart:  <><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.58l1.65-7.42H5.12" /></>,
-  alert: <><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></>,
-  x:     <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  box: Package, out: PackageMinus, plus: Plus, minus: Minus, search: Search,
+  download: Download, edit: Pencil, dup: Copy, trash: Trash2, dots: EllipsisVertical,
+  cart: ShoppingCart, alert: TriangleAlert, x: X,
 };
 
 const EMPTY_ORIGIN = { name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, dailyAverage: 0, notes: '' };
@@ -40,7 +29,7 @@ function derive(o) {
 }
 
 export default function Origins() {
-  const { data, originsDb, getOriginById, showToast } = useApp();
+  const { data, originsDb, getOriginById, showToast, dataLoading } = useApp();
 
   const [searchTerm, setSearchTerm]   = useState('');
   const [sortBy, setSortBy]           = useState('name');
@@ -112,7 +101,7 @@ export default function Origins() {
 
   // ── CRUD ─────────────────────────────────────────────────────────────────────
   const addOrigin = async () => {
-    if (!newOrigin.name || !newOrigin.costPerKg) { showToast('⚠️ נא למלא שם ועלות', 'warning'); return; }
+    if (!newOrigin.name || !newOrigin.costPerKg) { showToast('נא למלא שם ועלות', 'warning'); return; }
     try {
       await originsDb.insert({
         name: newOrigin.name,
@@ -127,10 +116,10 @@ export default function Origins() {
       await originsDb.refresh();
       setNewOrigin(EMPTY_ORIGIN);
       closeDrawer();
-      showToast('✅ זן נוסף בהצלחה!');
+      showToast('זן נוסף בהצלחה!');
     } catch (error) {
       console.error('Error adding origin:', error);
-      showToast('❌ שגיאה בהוספת זן', 'error');
+      showToast('שגיאה בהוספת זן', 'error');
     }
   };
 
@@ -145,7 +134,7 @@ export default function Origins() {
   };
 
   const saveEdit = async () => {
-    if (!editingOrigin.name || !editingOrigin.costPerKg) { showToast('⚠️ נא למלא שם ועלות', 'warning'); return; }
+    if (!editingOrigin.name || !editingOrigin.costPerKg) { showToast('נא למלא שם ועלות', 'warning'); return; }
     try {
       await originsDb.update(editingOrigin.id, {
         name: editingOrigin.name,
@@ -161,10 +150,10 @@ export default function Origins() {
       await originsDb.refresh();
       setEditingOrigin(null);
       closeDrawer();
-      showToast('✅ זן עודכן בהצלחה!');
+      showToast('זן עודכן בהצלחה!');
     } catch (error) {
       console.error('Error updating origin:', error);
-      showToast('❌ שגיאה בעדכון זן', 'error');
+      showToast('שגיאה בעדכון זן', 'error');
     }
   };
 
@@ -172,14 +161,14 @@ export default function Origins() {
     closeMenu();
     const roastsCount = data.roasts.filter(r => r.origin_id === origin.id).length;
     if (roastsCount > 0) {
-      if (!window.confirm(`⚠️ לזן זה יש ${roastsCount} קליות. האם למחוק בכל זאת?`)) return;
+      if (!window.confirm(`לזן זה יש ${roastsCount} קליות. האם למחוק בכל זאת?`)) return;
     } else if (!window.confirm(`האם למחוק את "${origin.name}"?`)) return;
     try {
       await originsDb.remove(origin.id);
-      showToast('✅ זן נמחק!');
+      showToast('זן נמחק!');
     } catch (error) {
       console.error('Error deleting origin:', error);
-      showToast('❌ שגיאה במחיקת זן', 'error');
+      showToast('שגיאה במחיקת זן', 'error');
     }
   };
 
@@ -191,10 +180,10 @@ export default function Origins() {
         stock: 0, roasted_stock: 0, notes: origin.notes,
       });
       await originsDb.refresh();
-      showToast('✅ זן שוכפל בהצלחה!');
+      showToast('זן שוכפל בהצלחה!');
     } catch (error) {
       console.error('Error duplicating origin:', error);
-      showToast('❌ שגיאה בשכפול זן', 'error');
+      showToast('שגיאה בשכפול זן', 'error');
     }
   };
 
@@ -218,33 +207,33 @@ export default function Origins() {
   };
 
   const addStockEntry = async () => {
-    if (!stockEntry.originId || !stockEntry.quantity) { showToast('⚠️ נא לבחור זן ולהזין כמות', 'warning'); return; }
+    if (!stockEntry.originId || !stockEntry.quantity) { showToast('נא לבחור זן ולהזין כמות', 'warning'); return; }
     const quantity = parseFloat(stockEntry.quantity);
-    if (quantity <= 0) { showToast('⚠️ כמות חייבת להיות גדולה מ-0', 'warning'); return; }
+    if (quantity <= 0) { showToast('כמות חייבת להיות גדולה מ-0', 'warning'); return; }
     const origin = getOriginById(parseInt(stockEntry.originId));
-    if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+    if (!origin) { showToast('זן לא נמצא', 'warning'); return; }
     try {
       const newStock = (origin.stock || 0) + quantity;
       await originsDb.update(origin.id, { stock: newStock });
       await originsDb.refresh();
       setStockEntry({ originId: '', quantity: '', notes: '' });
       closeDrawer();
-      showToast(`✅ הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
+      showToast(`הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
     } catch (error) {
       console.error('Error adding stock:', error);
-      showToast('❌ שגיאה בהוספת מלאי', 'error');
+      showToast('שגיאה בהוספת מלאי', 'error');
     }
   };
 
   const removeStockForPackaging = async () => {
-    if (!stockOut.originId || !stockOut.quantity) { showToast('⚠️ נא לבחור זן ולהזין כמות', 'warning'); return; }
+    if (!stockOut.originId || !stockOut.quantity) { showToast('נא לבחור זן ולהזין כמות', 'warning'); return; }
     const quantity = parseFloat(stockOut.quantity);
-    if (quantity <= 0) { showToast('⚠️ כמות חייבת להיות גדולה מ-0', 'warning'); return; }
+    if (quantity <= 0) { showToast('כמות חייבת להיות גדולה מ-0', 'warning'); return; }
     const origin = getOriginById(parseInt(stockOut.originId));
-    if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+    if (!origin) { showToast('זן לא נמצא', 'warning'); return; }
     const currentRoastedStock = origin.roasted_stock || 0;
     if (quantity > currentRoastedStock) {
-      showToast(`⚠️ אין מספיק מלאי קלוי! קיים: ${currentRoastedStock} ק"ג`, 'warning');
+      showToast(`אין מספיק מלאי קלוי! קיים: ${currentRoastedStock} ק"ג`, 'warning');
       return;
     }
     try {
@@ -253,16 +242,16 @@ export default function Origins() {
       await originsDb.refresh();
       setStockOut({ originId: '', quantity: '', notes: '' });
       closeDrawer();
-      showToast(`✅ הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
+      showToast(`הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
     } catch (error) {
       console.error('Error removing stock:', error);
-      showToast('❌ שגיאה בהוצאת מלאי', 'error');
+      showToast('שגיאה בהוצאת מלאי', 'error');
     }
   };
 
   // Reorder is a UI reminder — there is no purchasing/PO backend yet.
-  const reorder = (origin) => showToast(`📋 ${origin.name} נרשם לרשימת ההזמנות`);
-  const reorderAll = (list) => showToast(`📋 ${list.length} זנים חסרים נרשמו לרשימת ההזמנות`);
+  const reorder = (origin) => showToast(`${origin.name} נרשם לרשימת ההזמנות`);
+  const reorderAll = (list) => showToast(`${list.length} זנים חסרים נרשמו לרשימת ההזמנות`);
 
   const bumpInQty = (delta) => {
     const q = Math.max(0, (parseFloat(stockEntry.quantity || 0) + delta));
@@ -325,41 +314,41 @@ export default function Origins() {
       {/* Header */}
       <div className="origins-head">
         <div className="origins-title">
-          <h1><span className="ot-leaf"><Icon d={I.leaf} size={26} /></span>ניהול זנים</h1>
-          <p>מלאי פולי קפה ירוקים וקלויים, עלויות ותחזית התכלות — במבט אחד.</p>
+          <h1>ניהול זנים</h1>
+          <p>מלאי פולי קפה ירוקים וקלויים, עלויות ותחזית התכלות, במבט אחד.</p>
         </div>
         <div className="origins-head-actions">
-          <button className="obtn primary" onClick={() => { setNewOrigin(EMPTY_ORIGIN); setDrawer({ mode: 'add' }); }}>
+          <button className="btn" onClick={() => openStockIn()}><Icon d={I.box} /> קליטת מלאי</button>
+          <button className="btn" onClick={() => openStockOut()}><Icon d={I.out} /> הוצאה לאריזה</button>
+          <button className="btn primary" onClick={() => { setNewOrigin(EMPTY_ORIGIN); setDrawer({ mode: 'add' }); }}>
             <Icon d={I.plus} /> זן חדש
           </button>
-          <button className="obtn stock-in" onClick={() => openStockIn()}><Icon d={I.box} /> קליטת מלאי</button>
-          <button className="obtn stock-out" onClick={() => openStockOut()}><Icon d={I.out} /> הוצאה לאריזה</button>
         </div>
       </div>
 
       {/* Alert banner */}
       {bannerOpen && (stats.low > 0 || stats.out > 0) && (
-        <div className="origins-alert">
-          <div className="oa-ico"><Icon d={I.alert} size={20} /></div>
+        <div className={`notice ${stats.out > 0 ? 'danger' : 'warn'} origins-alert`} role="status">
+          <Icon d={I.alert} size={18} />
           <div className="oa-txt">
-            {stats.out > 0 && <><b>{stats.out} זנים אזלו מהמלאי</b></>}
+            {stats.out > 0 && <b>{stats.out} זנים אזלו מהמלאי</b>}
             {stats.out > 0 && stats.low > 0 && ' · '}
-            {stats.low > 0 && <span className="warn">{stats.low} זנים במלאי נמוך</span>}
-            {' — כדאי לחדש מלאי.'}
+            {stats.low > 0 && <b>{stats.low} זנים במלאי נמוך</b>}
+            {'. כדאי לחדש מלאי.'}
           </div>
-          <button className="obtn ghost" onClick={() => reorderAll(stats.shortlist)}>הזמן את החסרים</button>
-          <button className="oa-x" onClick={() => setBannerOpen(false)} aria-label="סגור התראה"><Icon d={I.x} /></button>
+          <button className="btn sm" onClick={() => reorderAll(stats.shortlist)}>הזמנת החסרים</button>
+          <button className="btn-icon" onClick={() => setBannerOpen(false)} aria-label="סגירת ההתראה"><Icon d={I.x} /></button>
         </div>
       )}
 
       {/* KPI strip */}
-      <div className="origins-kpis">
-        <div className="okpi"><div className="lbl">זנים פעילים</div><div className="val">{stats.count}</div><i className="spark" /></div>
-        <div className="okpi"><div className="lbl">מלאי ירוק</div><div className="val">{num(stats.green, 0)} <small>ק"ג</small></div><i className="spark" /></div>
-        <div className="okpi"><div className="lbl">מלאי קלוי</div><div className="val">{num(stats.roasted, 0)} <small>ק"ג</small></div><i className="spark" /></div>
-        <div className="okpi"><div className="lbl">שווי מלאי ירוק</div><div className="val">{money(Math.round(stats.value))}</div><i className="spark" /></div>
-        <div className="okpi warn"><div className="lbl">מלאי נמוך</div><div className="val">{stats.low}</div><i className="spark" /></div>
-        <div className="okpi crit"><div className="lbl">אזל מהמלאי</div><div className="val">{stats.out}</div><i className="spark" /></div>
+      <div className="kpis origins-kpis">
+        <Kpi label="זנים פעילים" value={stats.count} />
+        <Kpi label="מלאי ירוק" value={num(stats.green, 0)} unit='ק"ג' />
+        <Kpi label="מלאי קלוי" value={num(stats.roasted, 0)} unit='ק"ג' />
+        <Kpi label="שווי מלאי ירוק" value={money(Math.round(stats.value))} />
+        <Kpi label={<>{stats.low > 0 && <span className="dot warn" />}מלאי נמוך</>} value={stats.low} />
+        <Kpi label={<>{stats.out > 0 && <span className="dot danger" />}אזל מהמלאי</>} value={stats.out} />
       </div>
 
       {/* Toolbar */}
@@ -380,7 +369,7 @@ export default function Origins() {
           <option value="days">מיון: ימים למלאי</option>
           <option value="cost">מיון: עלות</option>
         </select>
-        <button className="obtn ghost" onClick={exportToCSV}><Icon d={I.download} /> ייצוא CSV</button>
+        <button className="btn" onClick={exportToCSV}><Icon d={I.download} /> ייצוא CSV</button>
       </div>
 
       {/* Table */}
@@ -432,10 +421,10 @@ export default function Origins() {
                     <td className="num">
                       <div className="oacts">
                         {(d.status === 'low' || d.status === 'out') && (
-                          <button className="qbtn reorder" onClick={() => reorder(origin)}><Icon d={I.cart} size={14} /> הזמן</button>
+                          <button className="qbtn reorder" onClick={() => reorder(origin)}><Icon d={I.cart} size={15} /> הזמנה</button>
                         )}
-                        <button className="qbtn in" title="קליטת מלאי" aria-label={`קליטת מלאי ל${origin.name}`} onClick={() => openStockIn(origin.id)}><Icon d={I.plus} size={14} /></button>
-                        <button className="qbtn out" title="הוצאה לאריזה" aria-label={`הוצאה לאריזה מ${origin.name}`} onClick={() => openStockOut(origin.id)}><Icon d={I.minus} size={14} /></button>
+                        <button className="qbtn in" title="קליטת מלאי" aria-label={`קליטת מלאי ל${origin.name}`} onClick={() => openStockIn(origin.id)}><Icon d={I.plus} size={15} /></button>
+                        <button className="qbtn out" title="הוצאה לאריזה" aria-label={`הוצאה לאריזה מ${origin.name}`} onClick={() => openStockOut(origin.id)}><Icon d={I.minus} size={15} /></button>
                         <span className="odivider" />
                         <div className="okebab">
                           <button className="oico" title="עוד פעולות" aria-label={`עוד פעולות ל${origin.name}`}
@@ -452,7 +441,9 @@ export default function Origins() {
         </div>
         {filteredOrigins.length === 0 && (
           <div className="empty-state">
-            {searchTerm || statusFilter !== 'all' ? 'לא נמצאו תוצאות' : 'אין זנים עדיין. הוסף זן ראשון!'}
+            {searchTerm || statusFilter !== 'all' ? 'לא נמצאו תוצאות'
+              : dataLoading ? 'טוען זנים…'
+              : 'אין זנים עדיין. אפשר להתחיל בהוספת זן ראשון.'}
           </div>
         )}
       </div>
@@ -466,9 +457,9 @@ export default function Origins() {
             <div className="omenu-backdrop" onClick={closeMenu} />
             <div className="omenu" role="menu" ref={menuRef}
               style={{ top: menuPos ? menuPos.top : 0, left: menuPos ? menuPos.left : 0, visibility: menuPos ? 'visible' : 'hidden' }}>
-              <button role="menuitem" onClick={() => openEdit(origin)}><Icon d={I.edit} size={15} /> עריכה</button>
-              <button role="menuitem" onClick={() => duplicateOrigin(origin)}><Icon d={I.dup} size={15} /> שכפול</button>
-              <button role="menuitem" className="del" onClick={() => deleteOrigin(origin)}><Icon d={I.trash} size={15} /> מחיקה</button>
+              <button role="menuitem" onClick={() => openEdit(origin)}><Icon d={I.edit} /> עריכה</button>
+              <button role="menuitem" onClick={() => duplicateOrigin(origin)}><Icon d={I.dup} /> שכפול</button>
+              <button role="menuitem" className="del" onClick={() => deleteOrigin(origin)}><Icon d={I.trash} /> מחיקה</button>
             </div>
           </div>,
           document.body
@@ -496,7 +487,7 @@ export default function Origins() {
       <div className="odh">
         <div className="odh-ico">{icon}</div>
         <div><h2>{title}</h2><p>{sub}</p></div>
-        <button className="oico odx" onClick={closeDrawer} aria-label="סגור"><Icon d={I.x} /></button>
+        <button className="oico odx" onClick={closeDrawer} aria-label="סגירה"><Icon d={I.x} /></button>
       </div>
     );
   }
@@ -506,21 +497,21 @@ export default function Origins() {
     const next = origin ? (origin.stock || 0) + (parseFloat(stockEntry.quantity) || 0) : null;
     return (
       <>
-        {DrawerHeader({ icon: <Icon d={I.box} size={22} />, title: 'קליטת מלאי', sub: 'הוספת פולים ירוקים למלאי הזן' })}
+        {DrawerHeader({ icon: <Icon d={I.box} size={18} />, title: 'קליטת מלאי', sub: 'הוספת פולים ירוקים למלאי הזן' })}
         <div className="odb">
           <div className="ofield">
             <label>זן</label>
             <select value={stockEntry.originId} onChange={e => setStockEntry({ ...stockEntry, originId: e.target.value })}>
-              <option value="">בחר זן…</option>
+              <option value="">בחירת זן…</option>
               {data.origins.map(o => <option key={o.id} value={o.id}>{o.name} (מלאי: {num(o.stock)} ק"ג)</option>)}
             </select>
           </div>
           <div className="ofield">
             <label>כמות להוספה (ק"ג)</label>
             <div className="ostepper">
-              <button type="button" onClick={() => bumpInQty(-1)}>−</button>
+              <button type="button" aria-label="פחות" onClick={() => bumpInQty(-1)}><Icon d={I.minus} /></button>
               <input type="number" step="0.5" placeholder="למשל: 25" value={stockEntry.quantity} onChange={e => setStockEntry({ ...stockEntry, quantity: e.target.value })} />
-              <button type="button" onClick={() => bumpInQty(1)}>+</button>
+              <button type="button" aria-label="יותר" onClick={() => bumpInQty(1)}><Icon d={I.plus} /></button>
             </div>
             <div className="ohelper">משקל הפולים הירוקים שנקלטו</div>
           </div>
@@ -531,8 +522,8 @@ export default function Origins() {
           {origin && <div className="olive">מלאי ירוק של <b>{origin.name}</b>: <b>{num(origin.stock)}</b> ← <b>{num(next)} ק"ג</b></div>}
         </div>
         <div className="odf">
-          <button className="obtn ghost" onClick={closeDrawer}>ביטול</button>
-          <button className="obtn primary" onClick={addStockEntry}>הוסף למלאי</button>
+          <button className="btn" onClick={closeDrawer}>ביטול</button>
+          <button className="btn primary" onClick={addStockEntry}>הוספה למלאי</button>
         </div>
       </>
     );
@@ -543,7 +534,7 @@ export default function Origins() {
     const next = origin ? Math.max(0, (origin.roasted_stock || 0) - (parseFloat(stockOut.quantity) || 0)) : null;
     return (
       <>
-        {DrawerHeader({ icon: <Icon d={I.out} size={22} />, title: 'הוצאה לאריזה', sub: 'הוצאת מלאי קלוי לאריזה' })}
+        {DrawerHeader({ icon: <Icon d={I.out} size={18} />, title: 'הוצאה לאריזה', sub: 'הוצאת מלאי קלוי לאריזה' })}
         <div className="odb">
           <div className="ofield">
             <label>זן</label>
@@ -553,16 +544,16 @@ export default function Origins() {
               const yieldPercent = o ? (1 - (o.weight_loss / 100)) : 1;
               setStockOut({ ...stockOut, originId, quantity: originId ? (15 * yieldPercent).toFixed(1) : '' });
             }}>
-              <option value="">בחר זן…</option>
+              <option value="">בחירת זן…</option>
               {data.origins.map(o => <option key={o.id} value={o.id}>{o.name} (מלאי קלוי: {num(o.roasted_stock)} ק"ג)</option>)}
             </select>
           </div>
           <div className="ofield">
             <label>משקל להוצאה (ק"ג)</label>
             <div className="ostepper">
-              <button type="button" onClick={() => bumpOutQty(-1)}>−</button>
+              <button type="button" aria-label="פחות" onClick={() => bumpOutQty(-1)}><Icon d={I.minus} /></button>
               <input type="number" step="0.5" placeholder="משקל דלי" value={stockOut.quantity} onChange={e => setStockOut({ ...stockOut, quantity: e.target.value })} />
-              <button type="button" onClick={() => bumpOutQty(1)}>+</button>
+              <button type="button" aria-label="יותר" onClick={() => bumpOutQty(1)}><Icon d={I.plus} /></button>
             </div>
             {stockOut.originId && <div className="ohelper">ברירת מחדל: משקל אחרי קלייה (15 ק"ג ירוק)</div>}
           </div>
@@ -573,8 +564,8 @@ export default function Origins() {
           {origin && <div className="olive">מלאי קלוי של <b>{origin.name}</b>: <b>{num(origin.roasted_stock)}</b> ← <b>{num(next)} ק"ג</b></div>}
         </div>
         <div className="odf">
-          <button className="obtn ghost" onClick={closeDrawer}>ביטול</button>
-          <button className="obtn stock-out solid" onClick={removeStockForPackaging}>הוצא מהמלאי</button>
+          <button className="btn" onClick={closeDrawer}>ביטול</button>
+          <button className="btn primary" onClick={removeStockForPackaging}>הוצאה מהמלאי</button>
         </div>
       </>
     );
@@ -583,7 +574,7 @@ export default function Origins() {
   function AddBody() {
     return (
       <>
-        {DrawerHeader({ icon: <Icon d={I.plus} size={22} />, title: 'הוספת זן חדש', sub: 'פרטי הזן ומלאי התחלתי' })}
+        {DrawerHeader({ icon: <Icon d={I.plus} size={18} />, title: 'הוספת זן חדש', sub: 'פרטי הזן ומלאי התחלתי' })}
         <div className="odb">
           <div className="ofield"><label>שם הזן</label><input type="text" placeholder="למשל: ברזיל סנטוס" value={newOrigin.name} onChange={e => setNewOrigin({ ...newOrigin, name: e.target.value })} /></div>
           <div className="ofield"><label>איבוד משקל בקלייה (%)</label><input type="number" value={newOrigin.weightLoss} onChange={e => setNewOrigin({ ...newOrigin, weightLoss: e.target.value })} /></div>
@@ -593,8 +584,8 @@ export default function Origins() {
           <div className="ofield"><label>הערות</label><textarea rows="2" placeholder="פרטים נוספים…" value={newOrigin.notes} onChange={e => setNewOrigin({ ...newOrigin, notes: e.target.value })} /></div>
         </div>
         <div className="odf">
-          <button className="obtn ghost" onClick={closeDrawer}>ביטול</button>
-          <button className="obtn primary" onClick={addOrigin}>הוסף זן</button>
+          <button className="btn" onClick={closeDrawer}>ביטול</button>
+          <button className="btn primary" onClick={addOrigin}>הוספת זן</button>
         </div>
       </>
     );
@@ -605,7 +596,7 @@ export default function Origins() {
     const set = (patch) => setEditingOrigin({ ...editingOrigin, ...patch });
     return (
       <>
-        {DrawerHeader({ icon: <Icon d={I.edit} size={20} />, title: 'עריכת זן', sub: editingOrigin.name })}
+        {DrawerHeader({ icon: <Icon d={I.edit} size={18} />, title: 'עריכת זן', sub: editingOrigin.name })}
         <div className="odb">
           <div className="ofield"><label>שם הזן</label><input type="text" value={editingOrigin.name} onChange={e => set({ name: e.target.value })} /></div>
           <div className="ofield"><label>איבוד משקל בקלייה (%)</label><input type="number" value={editingOrigin.weightLoss} onChange={e => set({ weightLoss: e.target.value })} /></div>
@@ -617,8 +608,8 @@ export default function Origins() {
           <div className="ofield"><label>הערות</label><textarea rows="2" value={editingOrigin.notes} onChange={e => set({ notes: e.target.value })} /></div>
         </div>
         <div className="odf">
-          <button className="obtn ghost" onClick={() => { setEditingOrigin(null); closeDrawer(); }}>ביטול</button>
-          <button className="obtn primary" onClick={saveEdit}>שמור שינויים</button>
+          <button className="btn" onClick={() => { setEditingOrigin(null); closeDrawer(); }}>ביטול</button>
+          <button className="btn primary" onClick={saveEdit}>שמירת שינויים</button>
         </div>
       </>
     );

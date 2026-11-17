@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeft, Check, CircleCheck, Flame, Lightbulb, Sprout } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
@@ -6,60 +7,53 @@ import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 const DEFAULT_ROAST_KG = 15;
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
-const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37' };
 
 // ── Row components — defined OUTSIDE to prevent input focus loss ──────────────
+// Styling lives in the .roasting-page section of App.css (rl-* classes).
 
 function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange, colorReading, onColorChange }) {
   const yieldPct  = 1 - (origin.weight_loss / 100);
   const roastedKg = (parseFloat(amount) * yieldPct).toFixed(1);
 
   return (
-    <div
-      style={{ background: isChecked ? '#F0FDF4' : 'white', border: isChecked ? '2px solid #10B981' : '1px solid #E5E7EB', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', transition: 'all 0.2s' }}
-      onClick={onToggle}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <input type="checkbox" checked={isChecked} onChange={onToggle} onClick={e => e.stopPropagation()} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: '1.1rem' }}>{origin.name}</strong>
-            <span style={{ background: '#FEE2E2', color: '#DC2626', padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-              חסר {origin.needed.toFixed(1)} ק"ג
-            </span>
+    <div className={`rl-row${isChecked ? ' on' : ''}`} onClick={onToggle}>
+      <div className="rl-main">
+        <input type="checkbox" checked={isChecked} onChange={onToggle} onClick={e => e.stopPropagation()} aria-label={`קלייה של ${origin.name}`} />
+        <div className="rl-body">
+          <div className="rl-top">
+            <span className="rl-name">{origin.name}</span>
+            <span className="rl-missing">חסר {origin.needed.toFixed(1)} ק"ג</span>
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap' }}>
-            <span>מלאי קלוי: <strong>{(origin.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
+          <div className="rl-stats">
+            <span>מלאי קלוי <strong>{(origin.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
             {origin.packed_kg > 0 && (
-              <span>בשקיות ארוזות: <strong>{origin.packed_kg.toFixed(1)} ק"ג</strong></span>
+              <span>בשקיות ארוזות <strong>{origin.packed_kg.toFixed(1)} ק"ג</strong></span>
             )}
-            <span>מלאי קריטי: <strong>{origin.critical_stock.toFixed(1)} ק"ג</strong></span>
-            <span>מלאי ירוק: <strong>{(origin.stock || 0).toFixed(1)} ק"ג</strong></span>
+            <span>מלאי קריטי <strong>{origin.critical_stock.toFixed(1)} ק"ג</strong></span>
+            <span>מלאי ירוק <strong>{(origin.stock || 0).toFixed(1)} ק"ג</strong></span>
           </div>
         </div>
       </div>
       {isChecked && (
-        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #D1FAE5' }} onClick={e => e.stopPropagation()}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ margin: 0 }}>
+        <div className="rl-detail" onClick={e => e.stopPropagation()}>
+          <div className="rl-fields">
+            <div className="form-group">
               <label>משקל ירוק לקלייה (ק"ג)</label>
               <input
                 type="number" step="0.5"
                 value={amount}
                 onChange={e => onAmountChange(e.target.value)}
-                style={{ width: '120px' }}
               />
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#059669', paddingBottom: '0.5rem' }}>
-              → {roastedKg} ק"ג קלוי ({origin.weight_loss}% איבוד)
+            <div className="rl-yield">
+              <ArrowLeft aria-hidden="true" /> {roastedKg} ק"ג קלוי ({origin.weight_loss}% איבוד)
             </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label>🎨 קריאת צבע</label>
+            <div className="form-group">
+              <label>קריאת צבע</label>
               <input
                 type="number" step="0.1" placeholder="למשל: 65.4"
                 value={colorReading}
                 onChange={e => onColorChange(e.target.value)}
-                style={{ width: '120px' }}
               />
             </div>
           </div>
@@ -75,72 +69,63 @@ function ProfileRow({ profile, isChecked, onToggle, amount, onAmountChange, orig
   const roastedKg  = (parseFloat(amount) * (1 - weightLoss / 100)).toFixed(1);
 
   return (
-    <div
-      style={{ background: isChecked ? '#FFF7ED' : 'white', border: isChecked ? '2px solid #F59E0B' : '1px solid #E5E7EB', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', transition: 'all 0.2s' }}
-      onClick={onToggle}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <input type="checkbox" checked={isChecked} onChange={onToggle} onClick={e => e.stopPropagation()} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <strong style={{ fontSize: '1.1rem' }}>{profile.name}</strong>
+    <div className={`rl-row${isChecked ? ' on' : ''}`} onClick={onToggle}>
+      <div className="rl-main">
+        <input type="checkbox" checked={isChecked} onChange={onToggle} onClick={e => e.stopPropagation()} aria-label={`קלייה של ${profile.name}`} />
+        <div className="rl-body">
+          <div className="rl-top">
+            <span className="rl-name">
+              {profile.name}
               {profile.roast_level && profile.roast_level !== 'none' && (
-                <span style={{ background: ROAST_LEVEL_COLORS[profile.roast_level], color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                  {ROAST_LEVEL_LABELS[profile.roast_level]}
-                </span>
+                <span className={`rlvl ${profile.roast_level}`}>{ROAST_LEVEL_LABELS[profile.roast_level]}</span>
               )}
-            </div>
-            <span style={{ background: '#FEE2E2', color: '#DC2626', padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-              חסר {profile.needed.toFixed(1)} ק"ג
             </span>
+            <span className="rl-missing">חסר {profile.needed.toFixed(1)} ק"ג</span>
           </div>
-          <div style={{ fontSize: '0.875rem', color: '#888', marginTop: '0.3rem' }}>
+          <div className="rl-recipe">
             {ings.map((ing, i) => {
               const origin = origins.find(o => o.id === ing.origin_id);
               return <span key={i}>{i > 0 ? ' · ' : ''}{ing.percentage}% {origin?.name || '?'}</span>;
             })}
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap' }}>
-            <span>מלאי קלוי: <strong>{(profile.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
+          <div className="rl-stats">
+            <span>מלאי קלוי <strong>{(profile.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
             {profile.packed_kg > 0 && (
-              <span>בשקיות ארוזות: <strong>{profile.packed_kg.toFixed(1)} ק"ג</strong></span>
+              <span>בשקיות ארוזות <strong>{profile.packed_kg.toFixed(1)} ק"ג</strong></span>
             )}
-            <span>מלאי קריטי: <strong>{profile.critical_stock.toFixed(1)} ק"ג</strong></span>
+            <span>מלאי קריטי <strong>{profile.critical_stock.toFixed(1)} ק"ג</strong></span>
           </div>
         </div>
       </div>
       {isChecked && (
-        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #FDE68A' }} onClick={e => e.stopPropagation()}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ margin: 0 }}>
+        <div className="rl-detail" onClick={e => e.stopPropagation()}>
+          <div className="rl-fields">
+            <div className="form-group">
               <label>משקל ירוק לקלייה (ק"ג)</label>
               <input
                 type="number" step="0.5"
                 value={amount}
                 onChange={e => onAmountChange(e.target.value)}
-                style={{ width: '120px' }}
               />
             </div>
-            <div style={{ fontSize: '0.875rem', color: '#059669', paddingBottom: '0.5rem' }}>
-              → {roastedKg} ק"ג קלוי
+            <div className="rl-yield">
+              <ArrowLeft aria-hidden="true" /> {roastedKg} ק"ג קלוי
             </div>
             {ings.length > 1 && (
-              <div style={{ fontSize: '0.8rem', color: '#888', paddingBottom: '0.5rem' }}>
+              <div className="rl-split">
                 {ings.map((ing, i) => {
                   const origin    = origins.find(o => o.id === ing.origin_id);
                   const greenUsed = (parseFloat(amount) * ing.percentage / 100).toFixed(2);
-                  return <span key={i} style={{ marginLeft: '0.75rem' }}>• {origin?.name}: {greenUsed} ק"ג</span>;
+                  return <span key={i}>{origin?.name}: {greenUsed} ק"ג</span>;
                 })}
               </div>
             )}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label>🎨 קריאת צבע</label>
+            <div className="form-group">
+              <label>קריאת צבע</label>
               <input
                 type="number" step="0.1" placeholder="למשל: 65.4"
                 value={colorReading}
                 onChange={e => onColorChange(e.target.value)}
-                style={{ width: '120px' }}
               />
             </div>
           </div>
@@ -263,14 +248,14 @@ export default function RoastingList({
     for (const profile of profilesNeeded.filter(p => checkedProfiles[p.id])) {
       const greenKg = parseFloat(amounts[`p_${profile.id}`] || DEFAULT_ROAST_KG);
       const ings    = (data.roastProfileIngredients || []).filter(i => i.profile_id === profile.id);
-      if (ings.length === 0) { showToast(`⚠️ לפרופיל "${profile.name}" אין רכיבים`, 'warning'); continue; }
+      if (ings.length === 0) { showToast(`לפרופיל "${profile.name}" אין רכיבים`, 'warning'); continue; }
 
       let stockOk = true;
       for (const ing of ings) {
         const origin    = data.origins.find(o => o.id === ing.origin_id);
         const greenUsed = greenKg * ing.percentage / 100;
         if (!origin || origin.stock < greenUsed) {
-          showToast(`⚠️ אין מספיק מלאי ירוק ל${origin?.name || '?'} (${profile.name})`, 'error');
+          showToast(`אין מספיק מלאי ירוק ל${origin?.name || '?'} (${profile.name})`, 'error');
           stockOk = false; break;
         }
       }
@@ -306,7 +291,7 @@ export default function RoastingList({
     setSaving(false);
     setCheckedOrigins({}); setCheckedProfiles({}); setAmounts({});
     if (success > 0) {
-      showToast(`✅ ${success} קליות נרשמו בהצלחה!`);
+      showToast(`${success} קליות נרשמו בהצלחה!`);
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${success} קליות`, showToast });
     }
   };
@@ -316,31 +301,32 @@ export default function RoastingList({
   return (
     <div>
       {anyChecked && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-          <button onClick={confirmRoasting} disabled={saving} className="btn-primary" style={{ background: '#6F4E37' }}>
-            {saving ? '⏳ שומר...' : `✅ אשר קלייה (${checkedCount})`}
+        <div className="rl-bar">
+          <button onClick={confirmRoasting} disabled={saving} className="btn primary">
+            <Check aria-hidden="true" /> {saving ? 'שומר…' : `אישור קלייה (${checkedCount})`}
           </button>
         </div>
       )}
 
       {totalNeeded === 0 ? (
-        <div className="empty-state">
-          <h3>✅ אין צורך בקלייה כרגע</h3>
+        <div className="card empty-state rl-empty">
+          <CircleCheck aria-hidden="true" />
+          <h3>אין צורך בקלייה כרגע</h3>
           <p>כל הזנים והפרופילים מעל המלאי הקריטי</p>
-          <p style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.5rem' }}>
-            הגדר <strong>ממוצע מכירות יומי</strong> לכל זן ופרופיל כדי שהמערכת תדע מתי לקלות
+          <p className="rl-hint">
+            כדי שהמערכת תדע מתי לקלות, צריך להגדיר <strong>ממוצע מכירות יומי</strong> לכל זן ופרופיל
           </p>
         </div>
       ) : (
         <>
-          <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-            {totalNeeded} פריטים צריכים קלייה. סמן את מה שתקלה היום.
+          <p className="rl-intro">
+            {totalNeeded} פריטים צריכים קלייה. אפשר לסמן כאן את מה שנקלה היום.
           </p>
 
           {profilesNeeded.length > 0 && (
             <>
-              <p style={{ fontWeight: '600', color: '#6F4E37', marginBottom: '0.75rem', fontSize: '0.9rem' }}>🔥 פרופילי קלייה</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <p className="rl-group-label"><Flame aria-hidden="true" /> פרופילי קלייה</p>
+              <div className="rl-list">
                 {profilesNeeded.map(profile => (
                   <ProfileRow
                     key={profile.id}
@@ -362,9 +348,9 @@ export default function RoastingList({
           {originsNeeded.length > 0 && (
             <>
               {profilesNeeded.length > 0 && (
-                <p style={{ fontWeight: '600', color: '#374151', marginBottom: '0.75rem', fontSize: '0.9rem' }}>🌱 זנים</p>
+                <p className="rl-group-label"><Sprout aria-hidden="true" /> זנים</p>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="rl-list">
                 {originsNeeded.map(origin => (
                   <OriginRow
                     key={origin.id}
@@ -383,10 +369,11 @@ export default function RoastingList({
         </>
       )}
 
-      <div style={{ marginTop: '2rem', padding: '1rem', background: '#FFF9F0', borderRadius: '8px', border: '1px solid #F4E8D8' }}>
-        <p style={{ fontSize: '0.875rem', color: '#666', margin: 0 }}>
-          💡 הגדר <strong>ממוצע מכירות יומי</strong> בדף הזנים (לחיצה על ✏️) ובהגדרות → פרופילי קלייה.
-        </p>
+      <div className="notice rl-tip">
+        <Lightbulb aria-hidden="true" />
+        <span>
+          את <strong>ממוצע המכירות היומי</strong> מגדירים בדף הזנים (בעריכת הזן) ובהגדרות, תחת פרופילי קלייה.
+        </span>
       </div>
     </div>
   );

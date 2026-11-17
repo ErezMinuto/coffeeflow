@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import {
+  ChevronRight, ChevronLeft, Download, Mail, Settings, X, LogOut, Pencil, Bot, TriangleAlert,
+} from 'lucide-react';
 import { useApp } from '../../lib/context';
+import { Kpi } from '../shared/ui';
 import { supabase } from '../../lib/supabase';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,25 +94,13 @@ function utcForIsraelMidnight(year, month1, day) {
   return utc;
 }
 
-// ── Inline SVG icons (Lucide-style) ───────────────────────────────────────────
-const Icon = ({ d, size = 16, sw = 2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
-);
+// Line icons from lucide-react; stroke weight comes from the shared svg.lucide rule.
+const Icon = ({ d: Glyph, size = 16 }) => <Glyph size={size} aria-hidden="true" />;
 const A = {
-  clock:   <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
-  chevR:   <path d="m9 18 6-6-6-6" />,
-  chevL:   <path d="m15 18-6-6 6-6" />,
-  download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>,
-  mail:    <><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
-  gear:    <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
-  x:       <><path d="M18 6 6 18M6 6l12 12" /></>,
-  plus:    <><path d="M5 12h14M12 5v14" /></>,
-  logout:  <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>,
+  chevR: ChevronRight, chevL: ChevronLeft, download: Download, mail: Mail, gear: Settings,
+  x: X, logout: LogOut, manual: Pencil, auto: Bot, alert: TriangleAlert,
 };
 const initials = (n) => (n || '').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('');
-const AVATAR_COLORS = ['#7C5CD6', '#556B3A', '#C77914', '#3D8B8B', '#B5546E', '#4A72B5'];
-const avatarColor = (id) => AVATAR_COLORS[Math.abs(Number(id) || 0) % AVATAR_COLORS.length];
 
 // ── Edit modal ───────────────────────────────────────────────────────────────
 
@@ -187,9 +179,9 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
     <div className="att-modal open" onClick={onClose}>
       <div className="att-modal-card" onClick={e => e.stopPropagation()}>
         <div className="am-h">
-          <div className="att-av" style={{ background: avatarColor(employee.id) }}>{initials(employee.name)}</div>
+          <div className="att-av">{initials(employee.name)}</div>
           <div><h3>{employee.name}</h3><div className="am-date">{dateStr}</div></div>
-          <button className="att-ico" style={{ marginInlineStart: 'auto' }} onClick={onClose} aria-label="סגור"><Icon d={A.x} /></button>
+          <button className="att-ico am-x" onClick={onClose} aria-label="סגירה"><Icon d={A.x} /></button>
         </div>
         <div className="am-b">
           {sorted.length === 0 && <div className="am-empty">אין רישומים ליום זה</div>}
@@ -201,28 +193,31 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
                 defaultValue={israelTimeOf(ev.event_at)}
                 onBlur={e => { if (e.target.value !== israelTimeOf(ev.event_at)) updateTime(ev, e.target.value); }}
               />
-              <span className="am-src" title={ev.source === 'manual' ? 'עריכה ידנית' : 'אוטומטי'}>{ev.source === 'manual' ? '✏️' : '🤖'}</span>
-              <button className="am-del" onClick={() => deleteEvent(ev.id)}>מחק</button>
+              <span className="am-src" title={ev.source === 'manual' ? 'עריכה ידנית' : 'אוטומטי'}>
+                <Icon d={ev.source === 'manual' ? A.manual : A.auto} size={15} />
+                <span className="am-src-lbl">{ev.source === 'manual' ? 'ידני' : 'אוטומטי'}</span>
+              </span>
+              <button className="am-del" onClick={() => deleteEvent(ev.id)}>מחיקה</button>
             </div>
           ))}
 
           <div className="am-add">
-            <div className="t">הוסף רישום</div>
+            <div className="t">רישום חדש</div>
             <div className="am-addrow">
               <select value={newType} onChange={e => setNewType(e.target.value)}>
                 <option value="in">כניסה</option>
                 <option value="out">יציאה</option>
               </select>
               <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} />
-              <button className="att-btn primary" onClick={addEvent} disabled={busy}>{busy ? '…' : 'הוסף'}</button>
+              <button className="btn primary" onClick={addEvent} disabled={busy}>{busy ? '…' : 'הוספה'}</button>
             </div>
           </div>
 
           <div className="am-sum">סה״כ שעות: <b>{summary.hours.toFixed(2)}</b>
-            {summary.warnings.length > 0 && <span className="w">⚠ {summary.warnings.join(', ')}</span>}
+            {summary.warnings.length > 0 && <span className="w"><Icon d={A.alert} size={14} /> {summary.warnings.join(', ')}</span>}
           </div>
         </div>
-        <div className="am-f"><button className="att-btn ghost" onClick={onClose}>סגור</button></div>
+        <div className="am-f"><button className="btn" onClick={onClose}>סגירה</button></div>
       </div>
     </div>
   );
@@ -268,7 +263,7 @@ function SettingsCard({ settings, onSave }) {
         <div className="att-field"><label>תזכורת יציאה (דק')</label>
           <input type="number" min="0" value={checkoutGrace} onChange={e => setCheckoutGrace(e.target.value)} /></div>
       </div>
-      <button className="att-btn primary block" onClick={save} disabled={busy}>{busy ? 'שומר…' : 'שמור הגדרות'}</button>
+      <button className="btn primary att-block" onClick={save} disabled={busy}>{busy ? 'שומר…' : 'שמירת הגדרות'}</button>
     </div>
   );
 }
@@ -314,11 +309,11 @@ function HolidaysCard({ onChange }) {
 
   return (
     <div className="att-setblock">
-      <div className="att-subhead">🗓 חגים <span>— חוקת שישי (סיום 15:00)</span></div>
+      <div className="att-subhead">חגים <span>· לפי חוקי שישי (סיום 15:00)</span></div>
       <div className="att-holiadd">
         <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} />
         <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="שם החג (אופציונלי)" />
-        <button className="att-btn forest" onClick={add} disabled={busy || !newDate}>הוסף</button>
+        <button className="btn" onClick={add} disabled={busy || !newDate}>הוספה</button>
       </div>
       {list.length === 0 ? (
         <div className="att-holi-empty">אין חגים מוגדרים.</div>
@@ -328,7 +323,7 @@ function HolidaysCard({ onChange }) {
             <div key={h.holiday_date} className="att-holi">
               <b>{h.holiday_date}</b>
               <span>{h.label || ''}</span>
-              <button className="hx" onClick={() => remove(h.holiday_date)}>מחק</button>
+              <button className="hx" onClick={() => remove(h.holiday_date)}>מחיקה</button>
             </div>
           ))}
         </div>
@@ -345,7 +340,7 @@ export default function Attendance() {
   const offBoard = useCallback(async (emp) => {
     const ok = window.confirm(
       `לסמן את ${emp.name} כעוזב/ת?\n\n` +
-      `העובד/ת יוסר/תוסר מרשימת הפעילים והקישור לבוט יתבטל. ניתן להחזיר ידנית בעמוד Schedule.`,
+      `העובד/ת יוסר/תוסר מרשימת הפעילים והקישור לבוט יתבטל. ניתן להחזיר ידנית בעמוד סידור עבודה.`,
     );
     if (!ok) return;
     const { error } = await supabase
@@ -530,25 +525,25 @@ export default function Attendance() {
   return (
     <div className="page att-page">
       <div className="att-head">
-        <h1><span className="att-cl"><Icon d={A.clock} size={26} /></span>נוכחות</h1>
+        <h1>נוכחות</h1>
         <div className="att-monthnav">
           <button onClick={goPrev} aria-label="חודש קודם"><Icon d={A.chevR} /></button>
           <span className="m">{HEBREW_MONTHS[month - 1]} {year}</span>
           <button onClick={goNext} aria-label="חודש הבא"><Icon d={A.chevL} /></button>
         </div>
         <div className="att-actions">
-          <button className="att-btn ghost" onClick={() => setShowSettings(true)}><Icon d={A.gear} /> הגדרות</button>
-          <button className="att-btn forest" onClick={downloadReport} disabled={downloadBusy}><Icon d={A.download} /> {downloadBusy ? 'מוריד…' : 'הורד דו״ח'}</button>
-          <button className="att-btn primary" onClick={exportToAccountant} disabled={exportBusy}><Icon d={A.mail} /> {exportBusy ? 'שולח…' : 'שלח לרו״ח'}</button>
+          <button className="btn" onClick={() => setShowSettings(true)}><Icon d={A.gear} /> הגדרות</button>
+          <button className="btn" onClick={downloadReport} disabled={downloadBusy}><Icon d={A.download} /> {downloadBusy ? 'מוריד…' : 'הורדת דו״ח'}</button>
+          <button className="btn primary" onClick={exportToAccountant} disabled={exportBusy}><Icon d={A.mail} /> {exportBusy ? 'שולח…' : 'שליחה לרו״ח'}</button>
         </div>
       </div>
 
       {/* KPI */}
-      <div className="att-kpis">
-        <div className="att-kpi"><div className="lbl"><Icon d={A.clock} size={14} /> סה"כ שעות בחודש</div><div className="val">{monthStats.hours.toFixed(0)} <small>ש'</small></div><i className="spark" /></div>
-        <div className="att-kpi"><div className="lbl">ימי עבודה</div><div className="val">{monthStats.wdays}</div><i className="spark" /></div>
-        <div className="att-kpi"><div className="lbl">עובדים פעילים</div><div className="val">{monthStats.emps}</div><i className="spark" /></div>
-        <div className={`att-kpi ${monthStats.warnDays ? 'warn' : ''}`}><div className="lbl">ימים עם התראה</div><div className="val">{monthStats.warnDays}</div><i className="spark" /></div>
+      <div className="kpis att-kpis">
+        <Kpi label='סה"כ שעות בחודש' value={monthStats.hours.toFixed(0)} unit="ש'" />
+        <Kpi label="ימי עבודה" value={monthStats.wdays} />
+        <Kpi label="עובדים פעילים" value={monthStats.emps} />
+        <Kpi label={<>{monthStats.warnDays > 0 && <span className="dot danger" />}ימים עם התראה</>} value={monthStats.warnDays} />
       </div>
 
       {/* Grid */}
@@ -580,7 +575,7 @@ export default function Attendance() {
                   <tr key={emp.id}>
                     <td className="emp">
                       <div className="emp-inner">
-                        <div className="att-av" style={{ background: avatarColor(emp.id) }}>{initials(emp.name)}</div>
+                        <div className="att-av">{initials(emp.name)}</div>
                         <span className="emp-nm">{emp.name}</span>
                         <button className="emp-off" title="סיום העסקה" aria-label={`סיום העסקה ${emp.name}`} onClick={() => offBoard(emp)}><Icon d={A.logout} size={15} /></button>
                       </div>
@@ -622,9 +617,9 @@ export default function Attendance() {
           <div className="att-ov open" onClick={() => setShowSettings(false)} />
           <aside className="att-drawer open" role="dialog" aria-modal="true">
             <div className="att-dh">
-              <div className="att-dh-ico"><Icon d={A.gear} size={20} /></div>
+              <div className="att-dh-ico"><Icon d={A.gear} size={18} /></div>
               <h2>הגדרות נוכחות</h2>
-              <button className="att-ico att-dx" onClick={() => setShowSettings(false)} aria-label="סגור"><Icon d={A.x} /></button>
+              <button className="att-ico att-dx" onClick={() => setShowSettings(false)} aria-label="סגירה"><Icon d={A.x} /></button>
             </div>
             <div className="att-db">
               <SettingsCard settings={settings} onSave={reload} />

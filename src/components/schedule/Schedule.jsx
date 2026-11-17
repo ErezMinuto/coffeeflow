@@ -1,7 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
-import { ProgressBar, useAnimatedProgress } from '../shared/ProgressBar';
+import {
+  Users, ChartColumn, CalendarCheck, Plus, Pencil, Trash2, Check, X, Clock, Send,
+  Sparkles, Sheet, Info, Star, ExternalLink,
+} from 'lucide-react';
+import { useAnimatedProgress } from '../shared/ProgressBar';
+import { Kpi } from '../shared/ui';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -14,6 +19,7 @@ const DAYS = [
   { code: 'fri', label: 'שישי'  },
 ];
 
+// `icon` only appears in the Telegram post (buildTelegramText), not in the UI.
 const POSITIONS = [
   { id: 'opening',  label: 'פתיחת קפה', time: '07:30', icon: '☕', always: true },
   { id: 'cafe',     label: 'בית קפה',   time: '07:45', icon: '🏠', fridayOnly: true },
@@ -25,32 +31,17 @@ const POSITIONS = [
   { id: 'store4',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
 ];
 
-const ROLE_LABELS = { barista: '☕ בריסטה', roaster: '🔥 קולה', general: '👤 כללי' };
-const ROLE_COLORS = { barista: '#7C5CD6', roaster: '#C77914', general: '#8CA870' };
+const ROLE_LABELS = { barista: 'בריסטה', roaster: 'קולה', general: 'כללי' };
 const ROLE_CLASS  = { barista: 'barista', roaster: 'roaster', general: 'general' };
 
 const initials = (n) => (n || '').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('');
 
-// ── Inline SVG icons (Lucide-style) ───────────────────────────────────────────
-const Icon = ({ d, size = 16, sw = 2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
-);
+// Line icons from lucide-react; stroke weight comes from the shared svg.lucide rule.
+const Icon = ({ d: Glyph, size = 16 }) => <Glyph size={size} aria-hidden="true" />;
 const SI = {
-  users:  <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
-  chart:  <><path d="M3 3v18h18" /><rect width="4" height="7" x="7" y="10" /><rect width="4" height="12" x="15" y="5" /></>,
-  calCheck: <><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /><path d="m9 16 2 2 4-4" /></>,
-  cal:    <><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></>,
-  plus:   <><path d="M5 12h14M12 5v14" /></>,
-  edit:   <><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
-  trash:  <><path d="M3 6h18" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></>,
-  check:  <><path d="M20 6 9 17l-5-5" /></>,
-  x:      <><path d="M18 6 6 18M6 6l12 12" /></>,
-  clock:  <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
-  send:   <><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></>,
-  spark:  <><path d="M9.94 14.34A6 6 0 1 1 18 8.34" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M2 12h2" /><path d="m14 12 8-4-3.5 8L14 12Z" /></>,
-  sheets: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h8" /></>,
-  info:   <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></>,
+  users: Users, chart: ChartColumn, calCheck: CalendarCheck, plus: Plus, edit: Pencil,
+  trash: Trash2, check: Check, x: X, clock: Clock, send: Send, spark: Sparkles,
+  sheets: Sheet, info: Info, link: ExternalLink,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -86,11 +77,11 @@ function toISO(date) {
 
 function StarPicker({ value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: '2px' }}>
+    <div className="sc-starpick" role="group" aria-label="רמה">
       {[1,2,3].map(n => (
-        <button key={n} onClick={() => onChange(n)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 1px', lineHeight: 1 }}>
-          {n <= value ? '⭐' : '☆'}
+        <button key={n} type="button" onClick={() => onChange(n)} className={n <= value ? 'on' : ''}
+          aria-label={`רמה ${n}`} aria-pressed={n <= value}>
+          <Star size={18} fill={n <= value ? 'currentColor' : 'none'} aria-hidden="true" />
         </button>
       ))}
     </div>
@@ -135,64 +126,59 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
 
   if (editing) {
     return (
-      <tr style={{ background: '#F0FDF4', borderBottom: '2px solid #10B981' }}>
-        <td colSpan={8} style={{ padding: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>שם מלא</label>
-              <input value={draft.name} onChange={e => setDraft(p => ({ ...p, name: e.target.value }))}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+      <tr className="sc-editrow">
+        <td colSpan={8}>
+          <div className="sc-editgrid">
+            <div className="sc-field">
+              <label>שם מלא</label>
+              <input value={draft.name} onChange={e => setDraft(p => ({ ...p, name: e.target.value }))} />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>טלפון</label>
+            <div className="sc-field">
+              <label>טלפון</label>
               <input value={draft.phone} onChange={e => setDraft(p => ({ ...p, phone: e.target.value }))}
-                placeholder="050-0000000"
-                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                placeholder="050-0000000" />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>תפקיד</label>
-              <select value={draft.role} onChange={e => setDraft(p => ({ ...p, role: e.target.value }))}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}>
-                <option value="general">👤 כללי</option>
-                <option value="barista">☕ בריסטה</option>
-                <option value="roaster">🔥 קולה</option>
+            <div className="sc-field">
+              <label>תפקיד</label>
+              <select value={draft.role} onChange={e => setDraft(p => ({ ...p, role: e.target.value }))}>
+                <option value="general">כללי</option>
+                <option value="barista">בריסטה</option>
+                <option value="roaster">קולה</option>
               </select>
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>מקס׳ ימים</label>
+            <div className="sc-field">
+              <label>מקס׳ ימים</label>
               <input type="number" min={1} max={6} value={draft.max_days}
-                onChange={e => setDraft(p => ({ ...p, max_days: parseInt(e.target.value) || 5 }))}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                onChange={e => setDraft(p => ({ ...p, max_days: parseInt(e.target.value) || 5 }))} />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>עובד עד שעה</label>
+            <div className="sc-field">
+              <label>שעת סיום</label>
               <input type="time" value={draft.end_time}
-                onChange={e => setDraft(p => ({ ...p, end_time: e.target.value }))}
-                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                onChange={e => setDraft(p => ({ ...p, end_time: e.target.value }))} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', background: draft.barista_skills ? '#EDE9FE' : 'white', width: '100%', boxSizing: 'border-box' }}>
+            <div className="sc-field sc-field-end">
+              <label className={`sc-checkline ${draft.barista_skills ? 'on' : ''}`}>
                 <input type="checkbox" checked={draft.barista_skills}
                   onChange={e => setDraft(p => ({ ...p, barista_skills: e.target.checked }))} />
-                <span style={{ fontSize: '0.85rem', color: draft.barista_skills ? '#7C3AED' : '#6B7280' }}>☕ כישורי בריסטה</span>
+                כישורי בריסטה
               </label>
             </div>
             {(draft.role === 'barista' || draft.barista_skills) && (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>רמת בריסטה</label>
+              <div className="sc-field">
+                <label>רמת בריסטה</label>
                 <StarPicker value={draft.barista_level} onChange={v => setDraft(p => ({ ...p, barista_level: v }))} />
               </div>
             )}
             {draft.role === 'roaster' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>רמת קלייה</label>
+              <div className="sc-field">
+                <label>רמת קלייה</label>
                 <StarPicker value={draft.roaster_level} onChange={v => setDraft(p => ({ ...p, roaster_level: v }))} />
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button onClick={() => setEditing(false)} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
-            <button onClick={saveEdit} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#10B981', color: 'white', cursor: 'pointer', fontWeight: 600 }}>✅ שמור</button>
+          <div className="sc-editacts">
+            <button className="btn sm" onClick={() => setEditing(false)}>ביטול</button>
+            <button className="btn primary sm" onClick={saveEdit}>שמירה</button>
           </div>
         </td>
       </tr>
@@ -204,17 +190,17 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
     <tr>
       <td>
         <div className="sc-person">
-          <div className="sc-avatar" style={{ background: ROLE_COLORS[emp.role] || '#8CA870' }}>{initials(emp.name)}</div>
+          <div className="sc-avatar">{initials(emp.name)}</div>
           <span className="sc-pname">{emp.name}</span>
         </div>
       </td>
       <td>
         {isPending
-          ? <span className="sc-rolepill pending"><Icon d={SI.clock} size={12} /> ממתין לאישור</span>
+          ? <span className="sc-rolepill pending"><Icon d={SI.clock} size={13} /> ממתין לאישור</span>
           : <span className={`sc-rolepill ${ROLE_CLASS[emp.role] || 'general'}`}>{ROLE_LABELS[emp.role]}</span>}
       </td>
       <td className="c">
-        {emp.barista_skills ? <span className="sc-skill-yes">☕ כן</span> : <span className="sc-skill-no">—</span>}
+        {emp.barista_skills ? <span className="sc-skill-yes">כן</span> : <span className="sc-skill-no">—</span>}
         {level > 1 && <div className="sc-stars">{'★'.repeat(level)}</div>}
       </td>
       <td className="c num">{emp.max_days}</td>
@@ -223,7 +209,7 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
       <td className="c">{emp.telegram_id ? <span className="sc-tg-yes"><Icon d={SI.check} size={13} /> מחובר</span> : <span className="sc-tg-no">לא מחובר</span>}</td>
       <td className="c">
         <div className="sc-racts">
-          {isPending && <button className="sc-btn primary sm" onClick={() => onApprove(emp.id)}>אשר</button>}
+          {isPending && <button className="btn primary sm" onClick={() => onApprove(emp.id)}>אישור</button>}
           {!isPending && <button className="sc-ico" title="עריכה" aria-label={`עריכת ${emp.name}`} onClick={startEdit}><Icon d={SI.edit} /></button>}
           <button className="sc-ico danger" title="הסרה" aria-label={`הסרת ${emp.name}`} onClick={() => onRemove(emp.id)}><Icon d={SI.trash} /></button>
         </div>
@@ -365,7 +351,7 @@ export default function Schedule() {
     try {
       const row = await employeesDb.update(id, { active: true, user_id: user.id });
       if (!row) {
-        showToast('העדכון לא החזיר שורה — ייתכן שאין לך הרשאת אדמין לעובדים', 'error');
+        showToast('העדכון לא החזיר שורה. ייתכן שאין לך הרשאת אדמין לעובדים', 'error');
         return;
       }
       showToast('עובד אושר בהצלחה');
@@ -374,7 +360,7 @@ export default function Schedule() {
       console.error('approveEmployee failed:', err);
       // Most likely cause: RLS requires is_admin(). Surface it clearly.
       if (msg.includes('row-level security') || msg.includes('policy')) {
-        showToast('אין לך הרשאת אדמין לאישור עובדים — פנה/י למנהל המערכת', 'error');
+        showToast('אין לך הרשאת אדמין לאישור עובדים. אפשר לפנות למנהל המערכת', 'error');
       } else {
         showToast(`שגיאה באישור: ${msg.slice(0, 120)}`, 'error');
       }
@@ -464,7 +450,7 @@ export default function Schedule() {
       if (error) throw error;
       console.log('Schedule from AI:', json?.schedule);
       if (!json?.schedule || Object.keys(json.schedule).length === 0) {
-        showToast('AI לא הצליח לבנות סידור — בדוק זמינות עובדים', 'error');
+        showToast('AI לא הצליח לבנות סידור. כדאי לבדוק את זמינות העובדים', 'error');
         return;
       }
       // Save to Supabase — delete old schedule for this week and create fresh
@@ -476,7 +462,7 @@ export default function Schedule() {
       if (sid) { setScheduleId(sid); await saveSchedule(json.schedule, sid); }
       setSchedule(json.schedule);
       genProgress.complete();
-      showToast('סידור עבודה נוצר ונשמר בהצלחה ✨');
+      showToast('סידור עבודה נוצר ונשמר בהצלחה');
     } catch (err) {
       console.error('Generate error:', err);
       showToast('שגיאה ביצירת הסידור', 'error');
@@ -498,7 +484,7 @@ export default function Schedule() {
       const sent   = result?.sent   ?? 0;
       const failed = result?.failed ?? 0;
       const failMsg = failed > 0 ? ` (${failed} לא פתחו צ׳אט עם הבוט)` : '';
-      showToast(`📩 תזכורת נשלחה ל-${sent} עובדים${failMsg}`);
+      showToast(`תזכורת נשלחה ל-${sent} עובדים${failMsg}`);
     } catch (err) {
       console.error('Remind error:', err);
       showToast('שגיאה בשליחת תזכורת', 'error');
@@ -554,7 +540,7 @@ export default function Schedule() {
           .update({ status: 'published', published_at: new Date().toISOString() })
           .eq('id', scheduleId);
       }
-      showToast('סידור פורסם לקבוצה! 🎉');
+      showToast('הסידור פורסם בקבוצה');
     } catch (err) {
       showToast('שגיאה בפרסום', 'error');
     } finally {
@@ -571,7 +557,7 @@ export default function Schedule() {
       });
       if (error) throw error;
       setSheetsUrl(data.url);
-      showToast('סידור יוצא ל-Google Sheets! 📊');
+      showToast('הסידור יוצא ל-Google Sheets');
       window.open(data.url, '_blank');
     } catch (err) {
       console.error('Export error:', err);
@@ -593,7 +579,7 @@ export default function Schedule() {
   return (
     <div className="page sched-page">
       <div className="sc-head">
-        <h1><span className="sc-cal"><Icon d={SI.cal} size={26} /></span>סידור עבודה</h1>
+        <h1>סידור עבודה</h1>
         <div className="sc-tabs">
           <button className={`sc-tab ${tab === 'employees' ? 'active' : ''}`} onClick={() => setTab('employees')}>
             <Icon d={SI.users} /> עובדים
@@ -607,33 +593,37 @@ export default function Schedule() {
       {/* ── EMPLOYEES TAB ───────────────────────────────────────────────── */}
       {tab === 'employees' && (
         <div>
-          <div className="sc-kpis">
-            <div className="sc-kpi"><div className="lbl">סה"כ עובדים</div><div className="val">{empStats.total}</div><i className="spark" /></div>
-            <div className="sc-kpi barista"><div className="lbl">בריסטות</div><div className="val">{empStats.baristas}</div><i className="spark" /></div>
-            <div className="sc-kpi roaster"><div className="lbl">קולים</div><div className="val">{empStats.roasters}</div><i className="spark" /></div>
-            <div className="sc-kpi pending"><div className="lbl">ממתינים לאישור</div><div className="val">{pendingEmployees.length}</div><i className="spark" /></div>
-            <div className="sc-kpi"><div className="lbl">מחוברים לטלגרם</div><div className="val">{empStats.tg}<span className="sub">/{empStats.total}</span></div><i className="spark" /></div>
+          <div className="kpis sc-kpis">
+            <Kpi label='סה"כ עובדים' value={empStats.total} />
+            <Kpi label="בריסטות" value={empStats.baristas} />
+            <Kpi label="קולים" value={empStats.roasters} />
+            <Kpi label={<>{pendingEmployees.length > 0 && <span className="dot warn" />}ממתינים לאישור</>} value={pendingEmployees.length} />
+            <Kpi label="מחוברים לטלגרם" value={empStats.tg} unit={`/ ${empStats.total}`} />
           </div>
 
           {pendingEmployees.length > 0 && (
-            <div className="sc-pending">
-              <h4><Icon d={SI.clock} size={16} /> ממתינים לאישור ({pendingEmployees.length})</h4>
+            <section className="card flush sc-pending">
+              <div className="card-head">
+                <h2>ממתינים לאישור</h2>
+                <span className="meta num">{pendingEmployees.length}</span>
+              </div>
               {pendingEmployees.map(emp => (
-                <div key={emp.id} className="sc-pending-row">
-                  <span className="pn">{emp.name === '__PENDING__' ? '(שם לא הוזן)' : emp.name}</span>
+                <div key={emp.id} className="attn-item">
+                  <span className="dot warn" />
+                  <span className="attn-what">{emp.name === '__PENDING__' ? '(שם לא הוזן)' : emp.name}</span>
                   <div className="pr-actions">
-                    <button className="sc-btn primary sm" onClick={() => approveEmployee(emp.id)}>אשר</button>
-                    <button className="sc-btn ghost sm" onClick={() => removeEmployee(emp.id)}>דחה</button>
+                    <button className="btn sm" onClick={() => removeEmployee(emp.id)}>דחייה</button>
+                    <button className="btn primary sm" onClick={() => approveEmployee(emp.id)}>אישור</button>
                   </div>
                 </div>
               ))}
-            </div>
+            </section>
           )}
 
           <div className="sc-card">
             <div className="sc-card-h">
               <h3>עובדים פעילים <span className="sc-count">{activeEmployees.length}</span></h3>
-              <button className="sc-btn primary" onClick={() => setShowAddForm(true)}><Icon d={SI.plus} /> הוסף עובד</button>
+              <button className="btn primary sm" onClick={() => setShowAddForm(true)}><Icon d={SI.plus} /> הוספת עובד</button>
             </div>
             <div className="sc-scroll">
               <table className="sc-table">
@@ -648,7 +638,7 @@ export default function Schedule() {
                     <EmployeeRow key={emp.id} emp={emp} onApprove={approveEmployee} onUpdate={updateEmployee} onRemove={removeEmployee} />
                   ))}
                   {activeEmployees.length === 0 && (
-                    <tr><td colSpan={8} className="sc-empty">אין עובדים פעילים עדיין — לחץ "הוסף עובד" כדי להתחיל</td></tr>
+                    <tr><td colSpan={8} className="sc-empty">אין עובדים פעילים עדיין. אפשר להתחיל ב"הוספת עובד".</td></tr>
                   )}
                 </tbody>
               </table>
@@ -661,9 +651,9 @@ export default function Schedule() {
               <div className="sc-ov open" onClick={() => setShowAddForm(false)} />
               <aside className="sc-drawer open" role="dialog" aria-modal="true">
                 <div className="sc-dh">
-                  <div className="sc-dh-ico"><Icon d={SI.users} size={20} /></div>
+                  <div className="sc-dh-ico"><Icon d={SI.users} size={18} /></div>
                   <div><h2>עובד חדש</h2><p>הוספת חבר צוות לסידור</p></div>
-                  <button className="sc-ico sc-dx" onClick={() => setShowAddForm(false)} aria-label="סגור"><Icon d={SI.x} /></button>
+                  <button className="sc-ico sc-dx" onClick={() => setShowAddForm(false)} aria-label="סגירה"><Icon d={SI.x} /></button>
                 </div>
                 <div className="sc-db">
                   <div className="sc-fgrid">
@@ -673,17 +663,17 @@ export default function Schedule() {
                       <input value={newEmp.phone} onChange={e => setNewEmp(p => ({ ...p, phone: e.target.value }))} placeholder="050-0000000" /></div>
                     <div className="sc-field"><label>תפקיד</label>
                       <select value={newEmp.role} onChange={e => setNewEmp(p => ({ ...p, role: e.target.value }))}>
-                        <option value="general">👤 כללי</option><option value="barista">☕ בריסטה</option><option value="roaster">🔥 קולה</option>
+                        <option value="general">כללי</option><option value="barista">בריסטה</option><option value="roaster">קולה</option>
                       </select></div>
                     <div className="sc-field"><label>מקסימום ימים בשבוע</label>
                       <input type="number" min={1} max={6} value={newEmp.max_days} onChange={e => setNewEmp(p => ({ ...p, max_days: parseInt(e.target.value) || 5 }))} /></div>
-                    <div className="sc-field"><label>עובד עד שעה (אופציונלי)</label>
+                    <div className="sc-field"><label>שעת סיום (לא חובה)</label>
                       <input type="time" value={newEmp.end_time} onChange={e => setNewEmp(p => ({ ...p, end_time: e.target.value }))} />
-                      <div className="sc-helper">השאר ריק אם עובד יום מלא</div></div>
+                      <div className="sc-helper">ריק = יום מלא</div></div>
                     <div className="sc-field full">
                       <label className={`sc-checkline ${newEmp.barista_skills ? 'on' : ''}`}>
                         <input type="checkbox" checked={newEmp.barista_skills} onChange={e => setNewEmp(p => ({ ...p, barista_skills: e.target.checked }))} />
-                        ☕ כישורי בריסטה — יכול לשמש כבריסטה במידת הצורך (עדיפות שנייה)
+                        כישורי בריסטה: אפשר לשבץ כבריסטה בעת הצורך (עדיפות שנייה)
                       </label>
                     </div>
                     {(newEmp.role === 'barista' || newEmp.barista_skills) && (
@@ -695,8 +685,8 @@ export default function Schedule() {
                   </div>
                 </div>
                 <div className="sc-df">
-                  <button className="sc-btn ghost" onClick={() => setShowAddForm(false)}>ביטול</button>
-                  <button className="sc-btn primary" onClick={addEmployee} disabled={!newEmp.name.trim()}>הוסף עובד</button>
+                  <button className="btn" onClick={() => setShowAddForm(false)}>ביטול</button>
+                  <button className="btn primary" onClick={addEmployee} disabled={!newEmp.name.trim()}>הוספת עובד</button>
                 </div>
               </aside>
             </>
@@ -708,7 +698,7 @@ export default function Schedule() {
       {tab === 'availability' && (
         <div className="sc-card">
           <div className="sc-card-h">
-            <h3><Icon d={SI.chart} size={18} /> זמינות עובדים</h3>
+            <h3>זמינות עובדים</h3>
             <div className="sc-weekpick"><label>שבוע מתחיל:</label>
               <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} /></div>
           </div>
@@ -733,19 +723,19 @@ export default function Schedule() {
                       <tr key={emp.id}>
                         <td>
                           <div className="sc-person sm">
-                            <div className="sc-avatar sm" style={{ background: ROLE_COLORS[emp.role] || '#8CA870' }}>{initials(emp.name)}</div>
+                            <div className="sc-avatar sm">{initials(emp.name)}</div>
                             <span className="sc-pname">{emp.name}</span>
                           </div>
                         </td>
                         {DAYS.map(d => (
                           <td key={d.code} className="c day">
                             {!sub ? <span className="sc-cell none">—</span>
-                              : days[d.code] === true ? <span className="sc-cell yes">✓</span>
+                              : days[d.code] === true ? <span className="sc-cell yes" title="זמין/ה"><Check size={15} aria-label="זמין/ה" /></span>
                               : days[d.code] ? <span className="sc-cell until">עד {days[d.code]}</span>
-                              : <span className="sc-cell no">✗</span>}
+                              : <span className="sc-cell no" title="לא זמין/ה"><X size={15} aria-label="לא זמין/ה" /></span>}
                           </td>
                         ))}
-                        <td className="c">{sub ? <span className={`sc-tot ${total >= 3 ? 'good' : 'low'}`}>{total}</span> : <span className="sc-tot miss">לא שלח</span>}</td>
+                        <td className="c">{sub ? <span className={`sc-tot ${total >= 3 ? 'good' : 'low'}`}>{total}</span> : <span className="sc-tot miss">לא נשלחה</span>}</td>
                       </tr>
                     );
                   })}
@@ -766,15 +756,16 @@ export default function Schedule() {
               <div className="sc-weekpick"><label>שבוע (ראשון):</label>
                 <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} /></div>
               <div className="sc-spacer" />
-              <button className="sc-btn tg" onClick={sendReminder} disabled={reminding}><Icon d={SI.send} /> {reminding ? 'שולח…' : 'שלח תזכורת'}</button>
-              <button className="sc-btn ai" onClick={generateSchedule} disabled={generating}><Icon d={SI.spark} /> {generating ? 'מייצר…' : 'צור סידור עם AI'}</button>
-              <button className="sc-btn primary" onClick={publish} disabled={publishing}><Icon d={SI.send} /> {publishing ? 'שולח…' : 'פרסם לקבוצה'}</button>
-              <button className="sc-btn sheets" onClick={exportToSheets} disabled={exporting}><Icon d={SI.sheets} /> {exporting ? 'מייצא…' : 'ייצא ל-Sheets'}</button>
-              {sheetsUrl && <a className="sc-sheetlink" href={sheetsUrl} target="_blank" rel="noreferrer">🔗 פתח Sheet</a>}
+              {sheetsUrl && <a className="sc-sheetlink" href={sheetsUrl} target="_blank" rel="noreferrer"><Icon d={SI.link} size={15} /> פתיחת ה-Sheet</a>}
+              <button className="btn" onClick={sendReminder} disabled={reminding}><Icon d={SI.send} /> {reminding ? 'שולח…' : 'שליחת תזכורת'}</button>
+              <button className="btn" onClick={exportToSheets} disabled={exporting}><Icon d={SI.sheets} /> {exporting ? 'מייצא…' : 'ייצוא ל-Sheets'}</button>
+              <button className="btn" onClick={generateSchedule} disabled={generating}><Icon d={SI.spark} /> {generating ? 'יוצר…' : 'יצירת סידור עם AI'}</button>
+              <button className="btn primary" onClick={publish} disabled={publishing}><Icon d={SI.send} /> {publishing ? 'שולח…' : 'פרסום לקבוצה'}</button>
             </div>
             {generating && (
-              <div style={{ marginTop: '1rem' }}>
-                <ProgressBar progress={genProgress.progress} label="מייצר סידור עבודה עם AI..." color="#6F4E37" />
+              <div className="sc-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(genProgress.progress)}>
+                <div className="sc-progress-top"><span>יוצרים סידור עבודה עם AI…</span><span className="num">{Math.round(genProgress.progress)}%</span></div>
+                <div className="meter"><i style={{ width: `${Math.min(100, Math.max(0, genProgress.progress))}%` }} /></div>
               </div>
             )}
           </div></div>
@@ -794,7 +785,7 @@ export default function Schedule() {
               ))}
             </div>
             <div className="sc-roastdays">
-              <span>🔥 ימי קלייה:</span>
+              <span>ימי קלייה:</span>
               {/* Friday excluded — it's always the cafe/pre-holiday day type, no roasting */}
               {['sun', 'mon', 'tue', 'wed', 'thu'].map(d => (
                 <label key={d}><input type="checkbox" checked={roastDays[d] || false} onChange={e => setRoastDays(prev => ({ ...prev, [d]: e.target.checked }))} /> {DAYS.find(day => day.code === d)?.label}</label>
@@ -803,7 +794,7 @@ export default function Schedule() {
           </div></div>
 
           {/* Schedule grid */}
-          <div className="sc-card"><div className="sc-card-b" style={{ paddingTop: '14px' }}>
+          <div className="sc-card"><div className="sc-card-b sc-grid-wrap">
             <div className="sc-grid-scroll">
               <table className="sc-gtable">
                 <thead>
@@ -815,7 +806,7 @@ export default function Schedule() {
                       return (
                         <th key={d.code} className={`dayhdr ${cls}`}>
                           <div className="dn">{d.label}</div><div className="dd">{formatDate(d.date)}</div>
-                          {type === 'holiday-eve' && <div className="dd">ערב חג — עד 14:00</div>}
+                          {type === 'holiday-eve' && <div className="dd eve">ערב חג, עד 14:00</div>}
                         </th>
                       );
                     })}
@@ -827,7 +818,7 @@ export default function Schedule() {
                     if (!appearsInAnyDay) return null;
                     return (
                       <tr key={pos.id}>
-                        <td className="poscell">{pos.icon} {pos.label}{pos.time && <span className="pt">{pos.time}</span>}</td>
+                        <td className="poscell">{pos.label}{pos.time && <span className="pt">{pos.time}</span>}</td>
                         {activeDays.map(d => {
                           const isVisible = visiblePositions(d.code).find(p => p.id === pos.id);
                           const val = schedule[cellKey(d.code, pos.id)] || '';
@@ -836,7 +827,7 @@ export default function Schedule() {
                             <td key={d.code} className={`slot ${!isVisible ? 'na' : isEmpty ? 'empty' : 'filled'}`}>
                               {isVisible ? (
                                 <select value={val} onChange={e => setCell(d.code, pos.id, e.target.value)}>
-                                  <option value="">— בחר —</option>
+                                  <option value="">בחירה…</option>
                                   {activeEmployees.map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
                                 </select>
                               ) : <span className="naval">—</span>}
