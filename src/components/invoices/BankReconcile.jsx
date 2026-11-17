@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Trash2, Upload } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import { parseBankStatement, reconcileBankLedger, reconcileBankInvoices, CATEGORIES } from '../../lib/bankStatement';
@@ -19,14 +20,6 @@ const prevMonth = (ym) => {
   const [y, m] = ym.split('-').map(Number);
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
 };
-
-const card = { background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxWidth: '1000px', margin: '1.25rem auto' };
-const btn = (bg, disabled) => ({ padding: '0.6rem 1rem', fontSize: '0.92rem', fontWeight: 700, color: 'white', background: disabled ? '#9CA3AF' : bg, border: 'none', borderRadius: '8px', cursor: disabled ? 'default' : 'pointer' });
-const chip = (bg, color) => ({ background: bg, color, borderRadius: '999px', padding: '4px 12px', fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' });
-const th = { textAlign: 'right', padding: '0.4rem 0.55rem', borderBottom: '2px solid #E5E7EB', fontSize: '0.8rem', color: '#374151', whiteSpace: 'nowrap' };
-const td = { padding: '0.4rem 0.55rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.86rem', verticalAlign: 'top' };
-const num = { ...td, textAlign: 'left', direction: 'ltr' };
-const small = { fontSize: '0.78rem', color: '#6B7280' };
 
 export default function BankReconcile({ month }) {
   const { showToast, isAdmin, user } = useApp();
@@ -98,7 +91,7 @@ export default function BankReconcile({ month }) {
       });
     } catch (e) {
       setState({ loading: false, imp: null });
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(e.message, 'error');
     }
   }
 
@@ -140,11 +133,11 @@ export default function BankReconcile({ month }) {
         if (error) throw error;
       }
       importId = null;
-      showToast(`✅ יובאו ${s.lines.length} תנועות`);
+      showToast(`יובאו ${s.lines.length} תנועות`);
       load();
     } catch (err) {
       if (importId) await supabase.from('statement_imports').delete().eq('id', importId);
-      showToast(`❌ ${err.message}`, 'error');
+      showToast(err.message, 'error');
     } finally {
       setBusy(false);
     }
@@ -153,7 +146,7 @@ export default function BankReconcile({ month }) {
   async function removeImport() {
     if (!window.confirm('למחוק את דוח הבנק של החודש הזה?')) return;
     const { error } = await supabase.from('statement_imports').delete().eq('id', state.imp.id);
-    if (error) { showToast(`❌ ${error.message}`, 'error'); return; }
+    if (error) { showToast(error.message, 'error'); return; }
     load();
   }
 
@@ -164,90 +157,98 @@ export default function BankReconcile({ month }) {
   const noInvoice = (s.payments || []).filter((p) => !s.invoicesBy?.has(p.id));
 
   return (
-    <div style={card}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>🏦 חשבון הבנק: תשלומים לספקים</h3>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button style={btn('#3D4A2E', busy)} disabled={busy} onClick={() => fileRef.current?.click()}>{busy ? 'מייבא…' : '⬆️ העלאת דוח תנועות'}</button>
-          {s.imp && isAdmin && <button style={btn('#9CA3AF', busy)} disabled={busy} onClick={removeImport}>מחיקה</button>}
+    <section className="card flush">
+      <div className="card-head inv-head">
+        <h2>חשבון הבנק: תשלומים לספקים</h2>
+        <div className="card-head-end inv-head-actions">
+          {s.imp && isAdmin && <button type="button" className="btn ghost sm" disabled={busy} onClick={removeImport}><Trash2 aria-hidden="true" />מחיקה</button>}
+          <button type="button" className="btn sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+            <Upload aria-hidden="true" />{busy ? 'בייבוא…' : 'העלאת דוח תנועות'}
+          </button>
         </div>
-        <input ref={fileRef} type="file" accept=".xls,.html,.htm" onChange={importFile} style={{ display: 'none' }} />
+        <input ref={fileRef} type="file" accept=".xls,.html,.htm" onChange={importFile} hidden />
       </div>
 
-      {s.loading && <p style={{ color: '#6B7280' }}>טוען…</p>}
+      {s.loading && <div className="empty-state">בטעינה…</div>}
 
       {!s.loading && !s.imp && (
-        <p style={{ color: '#6B7280', fontSize: '0.9rem', marginBottom: 0 }}>
-          לא הועלה דוח בנק לחודש הזה. באתר לאומי: תנועות בחשבון, מה-1 עד סוף החודש, ייצוא לאקסל.
-        </p>
+        <div className="card-body">
+          <p className="inv-empty">
+            לא הועלה דוח בנק לחודש הזה. באתר לאומי: תנועות בחשבון, מה-1 עד סוף החודש, ייצוא לאקסל.
+          </p>
+        </div>
       )}
 
       {!s.loading && s.imp && s.lines && (
         <>
-          <p style={{ ...small, margin: '0.5rem 0 0' }}>חשבון {s.imp.account_label} · {s.imp.line_count} תנועות · {s.imp.filename}</p>
+          <div className="card-body">
+            <p className="inv-meta num">חשבון {s.imp.account_label} · {s.imp.line_count} תנועות · {s.imp.filename}</p>
 
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
-            <span style={chip('#EFF6FF', '#1E40AF')}>💸 {s.payments.length} תשלומים לספקים · ₪{money(sum(s.payments))}</span>
-            {CATEGORIES.map((c) => byCat(c.key).length > 0 && (
-              <span key={c.key} style={chip('#F3F4F6', '#4B5563')}>{c.label}: {byCat(c.key).length} · ₪{money(sum(byCat(c.key)))}</span>
-            ))}
-            <span style={chip('#F3F4F6', '#4B5563')}>זיכויים: {byCat('income').length}</span>
-          </div>
-
-          {s.cards.length > 0 && (
-            <div style={{ marginTop: '0.7rem', fontSize: '0.86rem' }}>
-              {s.cards.map((c) => (
-                <div key={c.id}>
-                  {c.statement ? '✅' : '⚠️'} {c.description} {c.reference} · ₪{money(c.amount)} · {dateIL(c.txn_date)}
-                  <span style={small}> {c.statement ? `· תואם לפירוט הכרטיס שהועלה` : '· לא הועלה פירוט כרטיס בסכום הזה, ולכן העסקאות שלו לא נבדקו'}</span>
-                </div>
+            <div className="inv-tags inv-counts">
+              <span className="tag brand num">{s.payments.length} תשלומים לספקים · ₪{money(sum(s.payments))}</span>
+              {CATEGORIES.map((c) => byCat(c.key).length > 0 && (
+                <span key={c.key} className="tag num">{c.label}: {byCat(c.key).length} · ₪{money(sum(byCat(c.key)))}</span>
               ))}
+              <span className="tag num">זיכויים: {byCat('income').length}</span>
             </div>
-          )}
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.9rem' }}>
-            {s.ledgersLoaded ? (
-              <span style={chip(notBooked.length ? '#FEE2E2' : '#DCFCE7', notBooked.length ? '#991B1B' : '#166534')}>
-                📒 {notBooked.length ? `${notBooked.length} לא נמצאו בכרטסת · ₪${money(sum(notBooked))}` : 'כל התשלומים נמצאו בכרטסת'}
-              </span>
-            ) : (
-              <span style={chip('#FEF3C7', '#92400E')}>📒 לא הועלתה כרטסת, אין מול מה לבדוק</span>
+            {s.cards.length > 0 && (
+              <ul className="inv-card-checks">
+                {s.cards.map((c) => (
+                  <li key={c.id}>
+                    <span className={`dot ${c.statement ? 'ok' : 'warn'}`} aria-hidden="true" />
+                    <span className="num">{c.description} {c.reference} · ₪{money(c.amount)} · {dateIL(c.txn_date)}</span>
+                    <span className="inv-hint">{c.statement ? 'תואם לפירוט הכרטיס שהועלה' : 'לא הועלה פירוט כרטיס בסכום הזה, ולכן העסקאות שלו לא נבדקו'}</span>
+                  </li>
+                ))}
+              </ul>
             )}
-            <span style={chip(noInvoice.length ? '#FEE2E2' : '#DCFCE7', noInvoice.length ? '#991B1B' : '#166534')}>
-              🧾 {noInvoice.length ? `${noInvoice.length} בלי חשבונית במערכת · ₪${money(sum(noInvoice))}` : 'לכל התשלומים יש חשבונית'}
-            </span>
+
+            <div className="inv-tags inv-counts">
+              {s.ledgersLoaded ? (
+                <span className={`tag num ${notBooked.length ? 'danger' : 'ok'}`}>
+                  {notBooked.length ? `${notBooked.length} לא נמצאו בכרטסת · ₪${money(sum(notBooked))}` : 'כל התשלומים נמצאו בכרטסת'}
+                </span>
+              ) : (
+                <span className="tag warn">לא הועלתה כרטסת, אין מול מה לבדוק</span>
+              )}
+              <span className={`tag num ${noInvoice.length ? 'danger' : 'ok'}`}>
+                {noInvoice.length ? `${noInvoice.length} בלי חשבונית במערכת · ₪${money(sum(noInvoice))}` : 'לכל התשלומים יש חשבונית'}
+              </span>
+            </div>
+            {s.ledgersLoaded && !s.prevCovered && notBooked.length > 0 && (
+              <div className="inv-note">
+                <span className="dot warn" aria-hidden="true" />
+                <span>תשלום בתחילת החודש משלם לרוב חשבונית מהחודש הקודם. כדי שהבדיקה תהיה מלאה, העלו גם את הכרטסת של {prevMonth(month).split('-').reverse().join('/')}.</span>
+              </div>
+            )}
           </div>
-          {s.ledgersLoaded && !s.prevCovered && notBooked.length > 0 && (
-            <p style={{ fontSize: '0.82rem', color: '#92400E', margin: '0.5rem 0 0' }}>
-              תשלום בתחילת החודש משלם לרוב חשבונית מהחודש הקודם. כדי שהבדיקה תהיה מלאה, העלו גם את הכרטסת של {prevMonth(month).split('-').reverse().join('/')}.
-            </p>
-          )}
 
           {s.payments.length > 0 && (
-            <div style={{ overflowX: 'auto', marginTop: '0.8rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '720px' }}>
+            <div className="inv-table-wrap inv-table-top">
+              <table className="inv-table inv-table-bank">
                 <thead><tr>
-                  <th style={th}>תאריך</th><th style={th}>תיאור</th><th style={th}>אסמכתא</th><th style={{ ...th, textAlign: 'left' }}>סכום</th>
-                  <th style={th}>📒 בכרטסת</th><th style={th}>🧾 חשבונית במערכת</th>
+                  <th>תאריך</th><th>תיאור</th><th>אסמכתא</th><th className="end">סכום</th>
+                  <th>בכרטסת</th><th>חשבונית במערכת</th>
                 </tr></thead>
                 <tbody>
                   {s.payments.map((p) => {
                     const line = s.bookedBy.get(p.id);
                     const invs = s.invoicesBy.get(p.id);
                     return (
-                      <tr key={p.id} style={{ background: (!line && s.notBookedIds.has(p.id)) || !invs ? '#FFFBFB' : undefined }}>
-                        <td style={td}>{dateIL(p.txn_date)}</td>
-                        <td style={{ ...td, fontWeight: 600 }}>{p.description}</td>
-                        <td style={{ ...td, color: '#6B7280' }}>{p.reference}</td>
-                        <td style={num}>{money(p.amount)}</td>
-                        <td style={td}>
-                          {line ? <>✅ <span style={small}>{line.details} · {dateIL(line.doc_date)} · ₪{money(line.amount)}</span></>
-                            : s.notBookedIds.has(p.id) ? <span style={{ color: '#991B1B', fontWeight: 600 }}>❌ לא נמצא</span>
-                            : <span style={small}>לא נבדק</span>}
+                      <tr key={p.id} className={(!line && s.notBookedIds.has(p.id)) || !invs ? 'is-flagged' : undefined}>
+                        <td className="num">{dateIL(p.txn_date)}</td>
+                        <td className="inv-strong">{p.description}</td>
+                        <td className="inv-muted">{p.reference}</td>
+                        <td className="end amt">{money(p.amount)}</td>
+                        <td>
+                          {line ? <span className="inv-status"><span className="dot ok" aria-hidden="true" /><span className="inv-hint num">{line.details} · {dateIL(line.doc_date)} · ₪{money(line.amount)}</span></span>
+                            : s.notBookedIds.has(p.id) ? <span className="inv-status is-danger"><span className="dot danger" aria-hidden="true" />לא נמצא</span>
+                            : <span className="inv-status"><span className="dot" aria-hidden="true" /><span className="inv-hint">לא נבדק</span></span>}
                         </td>
-                        <td style={td}>
-                          {invs ? <>✅ <span style={small}>{invs.map((i) => `${i.supplier_name || ''} #${i.invoice_number || ''}`).join(', ')}</span></>
-                            : <span style={{ color: '#991B1B', fontWeight: 600 }}>❌ אין</span>}
+                        <td>
+                          {invs ? <span className="inv-status"><span className="dot ok" aria-hidden="true" /><span className="inv-hint">{invs.map((i) => `${i.supplier_name || ''} #${i.invoice_number || ''}`).join(', ')}</span></span>
+                            : <span className="inv-status is-danger"><span className="dot danger" aria-hidden="true" />אין</span>}
                         </td>
                       </tr>
                     );
@@ -258,6 +259,6 @@ export default function BankReconcile({ month }) {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
