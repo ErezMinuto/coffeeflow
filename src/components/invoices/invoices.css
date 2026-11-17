@@ -105,7 +105,7 @@
 .invoices-page .inv-queue-item > .inv-form { margin-top: 0; }
 .invoices-page .inv-q-line + .inv-form { margin-top: 10px; }
 
-.invoices-page .inv-spin { animation: invSpin 900ms linear infinite; }
+.invoices-page .inv-spin { animation: invSpin 700ms linear infinite; }
 @keyframes invSpin { to { transform: rotate(360deg); } }
 
 /* ── Invoice form (inline, inside the queue or under a table row) ───────── */
@@ -201,6 +201,7 @@
   transition: background-color 150ms ease;
 }
 .invoices-page .inv-section > summary::-webkit-details-marker { display: none; }
+.invoices-page .inv-section > summary:active { background: var(--sunken); }
 .invoices-page .inv-section > summary:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 @media (hover: hover) and (pointer: fine) {
   .invoices-page .inv-section > summary:hover { background: var(--surface-2); }
@@ -239,7 +240,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .invoices-page .inv-spin { animation: none; }
+  /* Keep the spinner turning (it is the only sign of progress), just slower. */
+  .invoices-page .inv-spin { animation-duration: 1.6s; }
   .invoices-page .inv-chev,
   .invoices-page .inv-progress .meter > i { transition: none; }
 }
