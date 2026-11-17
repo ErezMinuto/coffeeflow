@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 
@@ -148,14 +149,14 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
       edited_at: new Date().toISOString(),
     });
     setBusy(false);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     await refresh();
   };
 
   const deleteEvent = async (id) => {
     if (!window.confirm('למחוק את הרישום?')) return;
     const { error } = await supabase.from('attendance_events').delete().eq('id', id);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     await refresh();
   };
 
@@ -175,7 +176,7 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
         edited_at: new Date().toISOString(),
       })
       .eq('id', ev.id);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     await refresh();
   };
 
@@ -253,7 +254,7 @@ function SettingsCard({ settings, onSave }) {
       })
       .eq('id', 1);
     setBusy(false);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     onSave();
   };
 
@@ -296,7 +297,7 @@ function HolidaysCard({ onChange }) {
       .from('attendance_holidays')
       .insert({ holiday_date: newDate, label: newLabel.trim() || null });
     setBusy(false);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     setNewDate(''); setNewLabel('');
     await reload();
   };
@@ -307,7 +308,7 @@ function HolidaysCard({ onChange }) {
       .from('attendance_holidays')
       .delete()
       .eq('holiday_date', date);
-    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    if (error) { toast.error(`שגיאה: ${error.message}`); return; }
     await reload();
   };
 
@@ -471,7 +472,7 @@ export default function Attendance() {
 
   const exportToAccountant = async () => {
     if (!settings?.accountant_email) {
-      alert('הגדר קודם אימייל רו״ח בהגדרות');
+      showToast('צריך להגדיר קודם אימייל רו״ח בהגדרות', 'warning');
       return;
     }
     const ym = ymKey(year, month);
