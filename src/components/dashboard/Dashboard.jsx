@@ -12,8 +12,16 @@ const RECENT_ROWS  = 6;
 const fmtKg   = n => n.toLocaleString('he-IL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const fmtDate = d => `${d.getDate()}.${d.getMonth() + 1}`;
 
+function SkelRows({ n }) {
+  return Array.from({ length: n }, (_, i) => (
+    <div className="dash-skel-row" key={i} aria-hidden="true">
+      <span className="skel" style={{ width: `${55 - i * 8}%` }} />
+    </div>
+  ));
+}
+
 export default function Dashboard() {
-  const { data } = useApp();
+  const { data, dataLoading } = useApp();
   const navigate = useNavigate();
   const [showAllAttn, setShowAllAttn] = useState(false);
 
@@ -115,25 +123,36 @@ export default function Dashboard() {
         </>}
       />
 
-      <section className="kpis dash-kpis" aria-label="מדדים">
-        <Kpi label="מלאי ירוק" value={fmtKg(greenKg)} unit="ק״ג" note={`${originsInStock} זנים במלאי`} />
-        <Kpi label="ערך מלאי" value={`₪${Math.round(stockValue).toLocaleString('he-IL')}`} note="לפי עלות לק״ג" />
-        <Kpi label="קליות החודש" value={roastStats.thisMonth} note={`${roastStats.prevMonth} ב${roastStats.prevMonthName}`} />
-        <Kpi
-          label="איבוד משקל ממוצע"
-          value={roastStats.avgLoss == null ? '—' : roastStats.avgLoss.toFixed(1)}
-          unit={roastStats.avgLoss == null ? null : '%'}
-          note={roastStats.lossSample ? `ב־${roastStats.lossSample} הקליות האחרונות` : 'אין עדיין קליות שקולות'}
-        />
-      </section>
+      {dataLoading ? (
+        <section className="kpis dash-kpis" aria-label="מדדים" aria-busy="true">
+          {['מלאי ירוק', 'ערך מלאי', 'קליות החודש', 'איבוד משקל ממוצע'].map(label => (
+            <div className="kpi" key={label}>
+              <div className="kpi-label">{label}</div>
+              <span className="skel lg" />
+            </div>
+          ))}
+        </section>
+      ) : (
+        <section className="kpis dash-kpis" aria-label="מדדים">
+          <Kpi label="מלאי ירוק" value={fmtKg(greenKg)} unit="ק״ג" note={`${originsInStock} זנים במלאי`} />
+          <Kpi label="ערך מלאי" value={`₪${Math.round(stockValue).toLocaleString('he-IL')}`} note="לפי עלות לק״ג" />
+          <Kpi label="קליות החודש" value={roastStats.thisMonth} note={`${roastStats.prevMonth} קליות ב${roastStats.prevMonthName}`} />
+          <Kpi
+            label="איבוד משקל ממוצע"
+            value={roastStats.avgLoss == null ? '—' : roastStats.avgLoss.toFixed(1)}
+            unit={roastStats.avgLoss == null ? null : '%'}
+            note={roastStats.lossSample ? `ב־${roastStats.lossSample} הקליות האחרונות` : 'אין עדיין קליות שקולות'}
+          />
+        </section>
+      )}
 
       <div className="dash-grid">
         <section className="card flush">
           <div className="card-head">
             <h2>דורש טיפול</h2>
-            {attention.length > 0 && <span className="meta num">{attention.length} פריטים</span>}
+            {!dataLoading && attention.length > 0 && <span className="meta num">{attention.length} פריטים</span>}
           </div>
-          {attention.length === 0 ? (
+          {dataLoading ? <SkelRows n={4} /> : attention.length === 0 ? (
             <div className="dash-allgood">
               <CircleCheck size={18} aria-hidden="true" />
               <span>אין כרגע פריטים שדורשים טיפול</span>
@@ -164,7 +183,7 @@ export default function Dashboard() {
             <h2>שקיות לחנות</h2>
             <Link to="/products">כל המוצרים</Link>
           </div>
-          {storeRows.length === 0 ? (
+          {dataLoading ? <SkelRows n={4} /> : storeRows.length === 0 ? (
             <div className="empty-state">לא הוגדר מינימום שקיות לאף מוצר</div>
           ) : (
             <div className="dash-stock">
@@ -191,7 +210,7 @@ export default function Dashboard() {
           <h2>קליות אחרונות</h2>
           <Link to="/roasting">כל הקליות</Link>
         </div>
-        {roastStats.recent.length === 0 ? (
+        {dataLoading ? <SkelRows n={4} /> : roastStats.recent.length === 0 ? (
           <div className="empty-state">עדיין לא נרשמו קליות</div>
         ) : (
           <div className="dash-table-wrap">
@@ -228,7 +247,7 @@ export default function Dashboard() {
         )}
       </section>
 
-      {data.origins.length === 0 && (
+      {!dataLoading && data.origins.length === 0 && (
         <div className="empty-state">
           עדיין אין זנים במערכת. <Link className="text-link" to="/origins">הוספת זן ראשון</Link>
         </div>
