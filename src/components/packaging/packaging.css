@@ -111,6 +111,7 @@
 .pack-cust-toggle svg.is-open { transform: rotate(180deg); }
 .pack-cust-toggle:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 @media (hover: hover) and (pointer: fine) { .pack-cust-toggle:hover { background: var(--surface-2); } }
+.pack-cust-toggle:active { background: var(--sunken); }
 .pack-cust-body { padding: 4px 18px 16px; }
 .pack-cust-grid {
   display: grid;
