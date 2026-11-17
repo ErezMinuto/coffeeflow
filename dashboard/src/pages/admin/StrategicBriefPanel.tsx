@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import {
   Compass, RefreshCw, Lightbulb, AlertTriangle, Wrench, ThumbsUp, X,
   FlaskConical, ChevronRight, GitPullRequest,
@@ -211,7 +212,7 @@ export default function StrategicBriefPanel() {
       setSignals(prev => prev.map(x => (x.id === s.id ? { ...x, status, decline_reason: declineReason ?? x.decline_reason } : x)))
     } catch (e) {
       console.error('[StrategicBriefPanel] signal update failed:', e)
-      window.alert('Update failed. See console.')
+      toast.error('Update failed. See console.')
     } finally {
       setBusy(null)
     }
@@ -236,7 +237,7 @@ export default function StrategicBriefPanel() {
       setRecs(prev => prev.map(x => (x.id === r.id ? { ...x, status } : x)))
     } catch (e) {
       console.error('[StrategicBriefPanel] recommendation update failed:', e)
-      window.alert('Update failed. See console.')
+      toast.error('Update failed. See console.')
     } finally {
       setBusy(null)
     }

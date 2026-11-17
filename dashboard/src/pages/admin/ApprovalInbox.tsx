@@ -12,6 +12,7 @@
 // so anything can be restored. Publishing an Instagram post is the only action
 // that goes live, and it asks for confirmation first (same call as the task queue).
 
+import { toast } from 'sonner'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, X, MessageSquare, RefreshCw, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -332,7 +333,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
   async function run(fn: () => Promise<void>) {
     setBusy(true)
     try { await fn() }
-    catch (e: any) { window.alert(e?.message ?? String(e)) }
+    catch (e: any) { toast.error(e?.message ?? String(e)) }
     // Always reload: a bulk reject that fails half-way has still changed rows.
     finally { await refresh(); setBusy(false) }
   }

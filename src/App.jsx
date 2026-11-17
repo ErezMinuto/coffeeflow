@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Toaster } from 'sonner';
 import './App.css';
 import { SignIn, useUser } from '@clerk/clerk-react';
 import MfaGate                from './components/shared/MfaGate';
@@ -45,7 +46,7 @@ function SagieOnlyRoute({ children }) {
 }
 
 function AppContent() {
-  const { toasts, refreshAll, userRole, roleLoading } = useApp();
+  const { refreshAll, userRole, roleLoading } = useApp();
   // The outside bookkeeper sees the supplier-invoices page and nothing else.
   // RLS is what actually keeps them out of the rest; this keeps the UI honest.
   const isBookkeeper = userRole === 'bookkeeper';
@@ -102,34 +103,7 @@ function AppContent() {
         </>)}
       </Routes>
 
-      {/* Toast notifications */}
-      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {toasts.map(toast => (
-          <div
-            key={toast.id}
-            style={{
-              background: toast.type === 'success' ? '#10B981' : toast.type === 'error' ? '#DC2626' : '#F59E0B',
-              color: 'white',
-              padding: '1rem 1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              minWidth: '300px',
-              maxWidth: '500px',
-              animation: 'slideIn 0.3s ease-out',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              fontSize: '0.95rem',
-              fontWeight: '500'
-            }}
-          >
-            <span style={{ fontSize: '1.2rem' }}>
-              {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : '⚠️'}
-            </span>
-            <span>{toast.message}</span>
-          </div>
-        ))}
-      </div>
+      <Toaster dir="rtl" position="top-right" richColors closeButton duration={4000} />
     </>
   );
 }
