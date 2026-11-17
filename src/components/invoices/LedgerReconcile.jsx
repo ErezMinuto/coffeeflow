@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, ChevronDown, FileText, Trash2, Upload } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import { readXlsxRows, parseLedger, reconcile } from '../../lib/ledgerReconcile';
@@ -19,47 +20,47 @@ const monthBounds = (ym) => {
   return [`${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`];
 };
 
-const card = { background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxWidth: '1000px', margin: '1.25rem auto' };
-const btn = (bg, disabled) => ({ padding: '0.6rem 1rem', fontSize: '0.92rem', fontWeight: 700, color: 'white', background: disabled ? '#9CA3AF' : bg, border: 'none', borderRadius: '8px', cursor: disabled ? 'default' : 'pointer' });
-const chip = (bg, color) => ({ background: bg, color, borderRadius: '999px', padding: '4px 12px', fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' });
-const th = { textAlign: 'right', padding: '0.4rem 0.55rem', borderBottom: '2px solid #E5E7EB', fontSize: '0.8rem', color: '#374151', whiteSpace: 'nowrap' };
-const td = { padding: '0.4rem 0.55rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.86rem' };
-const num = { ...td, textAlign: 'left', direction: 'ltr' };
-
 async function openFile(inv, showToast) {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(inv.file_path, 300);
-  if (error) { showToast(`❌ ${error.message}`, 'error'); return; }
+  if (error) { showToast(error.message, 'error'); return; }
   window.open(data.signedUrl, '_blank', 'noopener');
 }
 
-function Section({ title, color, children, open = true }) {
+function Section({ title, count, tone, children, open = true }) {
   return (
-    <details open={open} style={{ marginTop: '1rem' }}>
-      <summary style={{ cursor: 'pointer', fontWeight: 700, color, fontSize: '0.95rem' }}>{title}</summary>
-      <div style={{ overflowX: 'auto', marginTop: '0.5rem' }}>{children}</div>
+    <details open={open} className="inv-section">
+      <summary>
+        <ChevronDown className="inv-chev" size={16} aria-hidden="true" />
+        {tone && <span className={`dot ${tone}`} aria-hidden="true" />}
+        <span>{title}</span>
+        <span className="inv-count num">{count}</span>
+      </summary>
+      <div className="inv-section-body">{children}</div>
     </details>
   );
 }
 
 function LinesTable({ lines }) {
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '620px' }}>
-      <thead><tr>
-        <th style={th}>תאריך</th><th style={th}>פרטים</th><th style={th}>אסמכתא</th><th style={th}>ח-ן נגדי</th><th style={th}>חשבון</th><th style={{ ...th, textAlign: 'left' }}>סכום</th>
-      </tr></thead>
-      <tbody>
-        {lines.map((l) => (
-          <tr key={l.id ?? l.movement_id}>
-            <td style={td}>{dateIL(l.doc_date)}</td>
-            <td style={{ ...td, fontWeight: 600 }}>{l.details}</td>
-            <td style={td}>{l.ref2 || '—'}</td>
-            <td style={{ ...td, color: '#6B7280' }}>{l.counter_account}</td>
-            <td style={{ ...td, color: '#6B7280' }}>{l.account_name}</td>
-            <td style={num}>{money(l.amount)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="inv-table-wrap">
+      <table className="inv-table">
+        <thead><tr>
+          <th>תאריך</th><th>פרטים</th><th>אסמכתא</th><th>ח-ן נגדי</th><th>חשבון</th><th className="end">סכום</th>
+        </tr></thead>
+        <tbody>
+          {lines.map((l) => (
+            <tr key={l.id ?? l.movement_id}>
+              <td className="num">{dateIL(l.doc_date)}</td>
+              <td className="inv-strong">{l.details}</td>
+              <td>{l.ref2 || '—'}</td>
+              <td className="inv-muted">{l.counter_account}</td>
+              <td className="inv-muted">{l.account_name}</td>
+              <td className="end amt">{money(l.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -96,7 +97,7 @@ export default function LedgerReconcile({ month, onBooked }) {
       onBooked?.(new Set(result.matches.map((m) => m.invoice.id)));
     } catch (e) {
       setState({ loading: false, imp: null, result: null });
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(e.message, 'error');
     }
   }
 
@@ -136,11 +137,11 @@ export default function LedgerReconcile({ month, onBooked }) {
         if (error) throw error;
       }
       importId = null;
-      showToast(`✅ יובאו ${parsed.lines.length} תנועות`);
+      showToast(`יובאו ${parsed.lines.length} תנועות`);
       load();
     } catch (err) {
       if (importId) await supabase.from('ledger_imports').delete().eq('id', importId);
-      showToast(`❌ ${err.message}`, 'error');
+      showToast(err.message, 'error');
     } finally {
       setBusy(false);
     }
@@ -149,8 +150,8 @@ export default function LedgerReconcile({ month, onBooked }) {
   async function removeImport() {
     if (!window.confirm('למחוק את הכרטסת שהועלתה?')) return;
     const { error } = await supabase.from('ledger_imports').delete().eq('id', state.imp.id);
-    if (error) { showToast(`❌ ${error.message}`, 'error'); return; }
-    showToast('🗑️ הכרטסת נמחקה');
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('הכרטסת נמחקה');
     load();
   }
 
@@ -158,114 +159,127 @@ export default function LedgerReconcile({ month, onBooked }) {
   const differs = result?.matches.filter((m) => m.amountDiffers) || [];
 
   return (
-    <div style={card}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>📒 התאמה מול הנהלת חשבונות</h3>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button style={btn('#3D4A2E', busy)} disabled={busy} onClick={() => fileRef.current?.click()}>
-            {busy ? 'מייבא…' : '⬆️ העלאת כרטסת (Excel)'}
+    <section className="card flush">
+      <div className="card-head inv-head">
+        <h2>התאמה מול הנהלת חשבונות</h2>
+        <div className="card-head-end inv-head-actions">
+          {imp && isAdmin && <button type="button" className="btn ghost sm" disabled={busy} onClick={removeImport}><Trash2 aria-hidden="true" />מחיקת כרטסת</button>}
+          <button type="button" className="btn sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+            <Upload aria-hidden="true" />{busy ? 'בייבוא…' : 'העלאת כרטסת (Excel)'}
           </button>
-          {imp && isAdmin && <button style={btn('#9CA3AF', busy)} disabled={busy} onClick={removeImport}>מחיקת כרטסת</button>}
         </div>
-        <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importFile} style={{ display: 'none' }} />
+        <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importFile} hidden />
       </div>
 
-      {loading && <p style={{ color: '#6B7280' }}>טוען…</p>}
+      {loading && <div className="empty-state">בטעינה…</div>}
 
       {!loading && !imp && (
-        <p style={{ color: '#6B7280', fontSize: '0.9rem', marginBottom: 0 }}>
-          לא הועלתה כרטסת לחודש הזה. בחשבשבת: כרטסת הנהלת חשבונות לחשבונות ההוצאות, לתקופת החודש, ייצוא ל-Excel.
-        </p>
+        <div className="card-body">
+          <p className="inv-empty">
+            לא הועלתה כרטסת לחודש הזה. בחשבשבת: כרטסת הנהלת חשבונות לחשבונות ההוצאות, לתקופת החודש, ייצוא ל-Excel.
+          </p>
+        </div>
       )}
 
       {!loading && imp && result && (
         <>
-          <p style={{ color: '#6B7280', fontSize: '0.82rem', margin: '0.5rem 0 0' }}>
-            כרטסת {dateIL(imp.period_from)} – {dateIL(imp.period_to)} · {imp.line_count} תנועות · {imp.filename}
-            {imp.imported_by_name ? ` · הועלתה ע״י ${imp.imported_by_name}` : ''} · {new Date(imp.created_at).toLocaleDateString('he-IL')}
-          </p>
+          <div className="card-body">
+            <p className="inv-meta num">
+              כרטסת {dateIL(imp.period_from)} – {dateIL(imp.period_to)} · {imp.line_count} תנועות · {imp.filename}
+              {imp.imported_by_name ? ` · הועלתה ע״י ${imp.imported_by_name}` : ''} · {new Date(imp.created_at).toLocaleDateString('he-IL')}
+            </p>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-            <span style={chip('#DCFCE7', '#166534')}>✅ {result.matches.length} הותאמו</span>
-            <span style={chip(result.notBooked.length ? '#FEE2E2' : '#F3F4F6', result.notBooked.length ? '#991B1B' : '#6B7280')}>❌ {result.notBooked.length} לא נקלטו בהנה״ח</span>
-            {differs.length > 0 && <span style={chip('#FEF3C7', '#92400E')}>⚠️ {differs.length} בסכום שונה</span>}
-            <span style={chip('#EFF6FF', '#1E40AF')}>📄 {result.noFile.length} נקלטו בלי קובץ במערכת</span>
+            <div className="inv-tags inv-counts">
+              <span className="tag ok num">{result.matches.length} הותאמו</span>
+              <span className={`tag num${result.notBooked.length ? ' danger' : ''}`}>{result.notBooked.length} לא נקלטו בהנה״ח</span>
+              {differs.length > 0 && <span className="tag warn num">{differs.length} בסכום שונה</span>}
+              <span className="tag num">{result.noFile.length} נקלטו בלי קובץ במערכת</span>
+            </div>
+
+            {result.notBooked.length > 0 && (
+              <div className="notice danger inv-notice" role="alert">
+                <AlertTriangle size={16} aria-hidden="true" />
+                <div>{result.notBooked.length} חשבוניות הועלו למערכת ולא נמצאו בכרטסת. יש לבדוק מול הנהלת החשבונות.</div>
+              </div>
+            )}
           </div>
 
           {result.notBooked.length > 0 && (
-            <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '0.7rem 0.9rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '0.9rem', fontWeight: 600 }}>
-              {result.notBooked.length} חשבוניות הועלו למערכת ולא נמצאו בכרטסת. יש לבדוק מול הנהלת החשבונות.
-            </div>
-          )}
-
-          {result.notBooked.length > 0 && (
-            <Section title={`❌ חשבוניות שלא נקלטו בהנה״ח (${result.notBooked.length})`} color="#991B1B">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '620px' }}>
-                <thead><tr>
-                  <th style={th}>תאריך</th><th style={th}>ספק</th><th style={th}>ח.פ</th><th style={th}>מס׳ חשבונית</th>
-                  <th style={{ ...th, textAlign: 'left' }}>לפני מע״מ</th><th style={{ ...th, textAlign: 'left' }}>כולל מע״מ</th><th style={th}></th>
-                </tr></thead>
-                <tbody>
-                  {result.notBooked.map((i) => (
-                    <tr key={i.id}>
-                      <td style={td}>{dateIL(i.invoice_date)}</td>
-                      <td style={{ ...td, fontWeight: 600 }}>{i.supplier_name || '—'}</td>
-                      <td style={{ ...td, color: '#6B7280' }}>{i.supplier_tax_id || '—'}</td>
-                      <td style={td}>{i.invoice_number || '—'}</td>
-                      <td style={num}>{money(i.amount_before_vat)}</td>
-                      <td style={num}>{money(i.total_incl_vat)}</td>
-                      <td style={td}><button title="צפייה בקובץ" onClick={() => openFile(i, showToast)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>📄</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <Section title="חשבוניות שלא נקלטו בהנה״ח" count={result.notBooked.length} tone="danger">
+              <div className="inv-table-wrap">
+                <table className="inv-table">
+                  <thead><tr>
+                    <th>תאריך</th><th>ספק</th><th>ח.פ</th><th>מס׳ חשבונית</th>
+                    <th className="end">לפני מע״מ</th><th className="end">כולל מע״מ</th><th><span className="inv-sr">קובץ</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {result.notBooked.map((i) => (
+                      <tr key={i.id}>
+                        <td className="num">{dateIL(i.invoice_date)}</td>
+                        <td className="inv-strong">{i.supplier_name || '—'}</td>
+                        <td className="inv-muted">{i.supplier_tax_id || '—'}</td>
+                        <td>{i.invoice_number || '—'}</td>
+                        <td className="end amt">{money(i.amount_before_vat)}</td>
+                        <td className="end amt">{money(i.total_incl_vat)}</td>
+                        <td className="end">
+                          <button type="button" className="btn-icon" title="צפייה בקובץ" aria-label="צפייה בקובץ" onClick={() => openFile(i, showToast)}><FileText aria-hidden="true" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Section>
           )}
 
           {differs.length > 0 && (
-            <Section title={`⚠️ הותאמו לפי מספר, אבל הסכום שונה (${differs.length})`} color="#92400E">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '620px' }}>
-                <thead><tr>
-                  <th style={th}>ספק</th><th style={th}>מס׳ חשבונית</th>
-                  <th style={{ ...th, textAlign: 'left' }}>בחשבונית לפני מע״מ</th><th style={{ ...th, textAlign: 'left' }}>בחשבונית כולל</th><th style={{ ...th, textAlign: 'left' }}>בכרטסת</th><th style={th}></th>
-                </tr></thead>
-                <tbody>
-                  {differs.map(({ invoice: i, line: l }) => (
-                    <tr key={i.id}>
-                      <td style={{ ...td, fontWeight: 600 }}>{i.supplier_name}</td>
-                      <td style={td}>{i.invoice_number}</td>
-                      <td style={num}>{money(i.amount_before_vat)}</td>
-                      <td style={num}>{money(i.total_incl_vat)}</td>
-                      <td style={{ ...num, color: '#92400E', fontWeight: 700 }}>{money(l.amount)}</td>
-                      <td style={td}><button title="צפייה בקובץ" onClick={() => openFile(i, showToast)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>📄</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <Section title="הותאמו לפי מספר, אבל הסכום שונה" count={differs.length} tone="warn">
+              <div className="inv-table-wrap">
+                <table className="inv-table">
+                  <thead><tr>
+                    <th>ספק</th><th>מס׳ חשבונית</th>
+                    <th className="end">בחשבונית לפני מע״מ</th><th className="end">בחשבונית כולל</th><th className="end">בכרטסת</th><th><span className="inv-sr">קובץ</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {differs.map(({ invoice: i, line: l }) => (
+                      <tr key={i.id}>
+                        <td className="inv-strong">{i.supplier_name}</td>
+                        <td>{i.invoice_number}</td>
+                        <td className="end amt">{money(i.amount_before_vat)}</td>
+                        <td className="end amt">{money(i.total_incl_vat)}</td>
+                        <td className="end amt inv-amt-warn">{money(l.amount)}</td>
+                        <td className="end">
+                          <button type="button" className="btn-icon" title="צפייה בקובץ" aria-label="צפייה בקובץ" onClick={() => openFile(i, showToast)}><FileText aria-hidden="true" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Section>
           )}
 
           {result.noFile.length > 0 && (
-            <Section title={`📄 נקלטו בהנה״ח, ואין קובץ במערכת (${result.noFile.length})`} color="#1E40AF" open={false}>
-              <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '0 0 0.4rem' }}>חשבוניות שהנהלת החשבונות קיבלה ממקור אחר. כדאי להעלות אותן כדי שהארכיון יהיה שלם.</p>
+            <Section title="נקלטו בהנה״ח, ואין קובץ במערכת" count={result.noFile.length} open={false}>
+              <p className="inv-section-note">חשבוניות שהנהלת החשבונות קיבלה ממקור אחר. כדאי להעלות אותן כדי שהארכיון יהיה שלם.</p>
               <LinesTable lines={result.noFile} />
             </Section>
           )}
 
           {result.otherLines.length > 0 && (
-            <Section title={`🏦 תנועות בנק / אשראי ואחרות (${result.otherLines.length})`} color="#6B7280" open={false}>
-              <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '0 0 0.4rem' }}>שורות בלי סוג מסמך (נקלטו מהבנק או מכרטיס האשראי). ייבדקו מול דפי הבנק והאשראי בשלב הבא.</p>
+            <Section title="תנועות בנק, אשראי ואחרות" count={result.otherLines.length} open={false}>
+              <p className="inv-section-note">שורות בלי סוג מסמך (נקלטו מהבנק או מכרטיס האשראי). ייבדקו מול דפי הבנק והאשראי בשלב הבא.</p>
               <LinesTable lines={result.otherLines} />
             </Section>
           )}
 
           {result.reversed.length > 0 && (
-            <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginBottom: 0 }}>
+            <p className="inv-footnote num">
               {result.reversed.length} שורות הן רישום וביטולו (מתקזזות), ולא נספרו.
             </p>
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }

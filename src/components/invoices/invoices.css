@@ -1,0 +1,245 @@
+/* Supplier invoices (חשבוניות ספקים): upload, delivery package to the
+   bookkeeper, the month's invoices and the three reconciliations.
+   Everything is scoped under .invoices-page; shared tokens and base classes
+   (card, tag, dot, notice, btn, table) come from App.css. */
+
+/* ── Header: month picker as the page-level control ─────────────────────── */
+.invoices-page .inv-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.invoices-page .inv-month input { min-width: 170px; }
+
+.invoices-page .inv-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ── Shared text bits ───────────────────────────────────────────────────── */
+.invoices-page .inv-lead { color: var(--ink-2); max-width: 64ch; text-wrap: pretty; margin-bottom: 16px; }
+.invoices-page .inv-empty { color: var(--muted); max-width: 72ch; text-wrap: pretty; }
+.invoices-page .inv-meta { font-size: 13px; color: var(--muted); margin-bottom: 12px; overflow-wrap: anywhere; }
+.invoices-page .inv-hint { font-size: 13px; color: var(--muted); }
+.invoices-page .inv-small { font-size: 12.5px; }
+.invoices-page .inv-text-danger { color: var(--danger); font-weight: 500; }
+.invoices-page .inv-footnote { font-size: 12.5px; color: var(--faint); padding: 12px 18px 16px; border-top: 1px solid var(--line); }
+.invoices-page .inv-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* A one-line remark with a status dot (replaces coloured paragraphs). */
+.invoices-page .inv-note {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 12px;
+  text-wrap: pretty;
+}
+.invoices-page .inv-note .dot { transform: translateY(-1px); }
+
+.invoices-page .inv-notice { margin-top: 12px; font-size: 13.5px; }
+.invoices-page .inv-notice > svg { margin-top: 2px; }
+.invoices-page .inv-dup-list,
+.invoices-page .inv-warn-list { padding-inline-start: 18px; margin: 4px 0; }
+.invoices-page .inv-warn-list { margin: 0; }
+
+.invoices-page .inv-allgood { display: flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 500; }
+
+/* ── Card head with actions ─────────────────────────────────────────────── */
+.invoices-page .inv-head { flex-wrap: wrap; }
+.invoices-page .inv-head-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.invoices-page .inv-head-actions { flex-wrap: wrap; gap: 8px; }
+
+/* Tags in a row: counts, statuses */
+.invoices-page .inv-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.invoices-page .inv-counts { margin-top: 4px; }
+.invoices-page .inv-card-checks + .inv-counts { margin-top: 16px; }
+.invoices-page .inv-tag-wrap { white-space: normal; }
+
+.invoices-page .inv-group-title { margin: 40px 0 16px; }
+.invoices-page .inv-group-title h2 { margin: 0; }
+.invoices-page .inv-group-title p { color: var(--muted); margin-top: 2px; text-wrap: pretty; }
+
+/* ── Upload card ────────────────────────────────────────────────────────── */
+.invoices-page .inv-upload { transition: border-color 150ms ease, background-color 150ms ease; }
+.invoices-page .inv-upload.is-dragging {
+  border-color: var(--brand);
+  border-style: dashed;
+  background: var(--brand-soft);
+}
+.invoices-page .inv-upload-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
+.invoices-page .inv-progress { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+.invoices-page .inv-progress-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink-2); }
+.invoices-page .inv-progress .meter > i { transition: width 300ms var(--ease); }
+
+.invoices-page .inv-review-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* Upload queue: one hairline row per file */
+.invoices-page .inv-queue { list-style: none; border-top: 1px solid var(--line); }
+.invoices-page .inv-queue-item { padding: 12px 18px; }
+.invoices-page .inv-queue-item + .inv-queue-item { border-top: 1px solid var(--line); }
+.invoices-page .inv-q-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13.5px; min-height: 32px; }
+.invoices-page .inv-q-line > svg { color: var(--muted); }
+.invoices-page .inv-q-name { font-weight: 500; overflow-wrap: anywhere; }
+.invoices-page .inv-q-msg { color: var(--ink-2); overflow-wrap: anywhere; }
+.invoices-page .inv-q-end { margin-inline-start: auto; }
+.invoices-page .inv-q-line.is-muted,
+.invoices-page .inv-q-line.is-muted .inv-q-msg { color: var(--muted); }
+.invoices-page .inv-q-line.is-danger > svg,
+.invoices-page .inv-q-line.is-danger .inv-q-msg { color: var(--danger); }
+.invoices-page .inv-q-line.is-ok > svg { color: var(--ok); }
+.invoices-page .inv-q-approve-error { margin-bottom: 8px; }
+.invoices-page .inv-queue-item > .inv-form { margin-top: 0; }
+.invoices-page .inv-q-line + .inv-form { margin-top: 10px; }
+
+.invoices-page .inv-spin { animation: invSpin 900ms linear infinite; }
+@keyframes invSpin { to { transform: rotate(360deg); } }
+
+/* ── Invoice form (inline, inside the queue or under a table row) ───────── */
+.invoices-page .inv-form {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.invoices-page .inv-form-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.invoices-page .inv-form-close { margin-inline-start: auto; }
+.invoices-page .inv-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px 16px;
+  margin-top: 12px;
+}
+.invoices-page .inv-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.invoices-page .inv-field > span { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.invoices-page .inv-field input,
+.invoices-page .inv-field select { width: 100%; min-width: 0; }
+.invoices-page .inv-form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.invoices-page .inv-delete { margin-inline-start: auto; }
+
+/* ── Delivery package ───────────────────────────────────────────────────── */
+.invoices-page .inv-delivery-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+.invoices-page .inv-delivery-sum { display: flex; flex-direction: column; gap: 8px; }
+.invoices-page .inv-delivery-total { font-size: 17px; font-weight: 500; color: var(--ink); }
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+.invoices-page .inv-table-wrap { overflow-x: auto; position: relative; }
+.invoices-page .inv-table { min-width: 600px; }
+.invoices-page .inv-table-main { min-width: 820px; }
+.invoices-page .inv-table-bank { min-width: 760px; }
+.invoices-page .inv-table td { padding-block: 10px; vertical-align: middle; }
+.invoices-page .inv-table .amt { direction: ltr; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.invoices-page .inv-strong { font-weight: 500; }
+.invoices-page .inv-table-main th, .invoices-page .inv-table-main td { padding-inline: 12px; }
+.invoices-page .inv-table td.inv-strong { min-width: 140px; }
+.invoices-page .inv-nowrap { white-space: nowrap; }
+.invoices-page .card.flush { overflow: clip; }
+.invoices-page .inv-muted { color: var(--muted); }
+.invoices-page .inv-amt-warn { color: var(--warn); font-weight: 600; }
+.invoices-page .inv-table .action-buttons { gap: 0; }
+.invoices-page .inv-table tr.is-open td { background: var(--surface-2); border-bottom-color: transparent; }
+.invoices-page .btn-icon.is-active { background: var(--sunken); color: var(--ink); }
+.invoices-page .inv-form-row td { padding: 0 16px 16px; background: var(--surface-2); }
+/* The form lives in a wide scrolling table: keep it pinned to the visible width. */
+.invoices-page .inv-table-main-wrap { container-type: inline-size; }
+.invoices-page .inv-form-row .inv-form { position: sticky; inset-inline-start: 16px; max-width: calc(100cqw - 32px); }
+@media (hover: hover) and (pointer: fine) {
+  .invoices-page .inv-form-row:hover { background: transparent; }
+}
+.invoices-page .inv-table tr.is-flagged td { background: var(--danger-soft); }
+.invoices-page .inv-table-top { border-top: 1px solid var(--line); }
+
+.invoices-page .inv-warn-ico { display: inline-flex; color: var(--warn); cursor: help; }
+
+/* Bank: status cell = dot + short text */
+.invoices-page .inv-status { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; }
+.invoices-page .inv-status .dot { transform: translateY(-1px); }
+.invoices-page .inv-status.is-danger { color: var(--danger); font-weight: 600; }
+.invoices-page .inv-card-checks { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13.5px; }
+.invoices-page .inv-card-checks li { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+.invoices-page .inv-card-checks .dot { transform: translateY(-1px); }
+
+/* Card statements: imported cards row + two check blocks */
+.invoices-page .inv-imports { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.invoices-page .inv-import { display: inline-flex; align-items: center; gap: 2px; min-height: 40px; }
+.invoices-page .inv-sub { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.invoices-page .inv-sub h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.invoices-page .inv-sub-table { margin-top: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+
+/* ── Collapsible sections (native details/summary) ──────────────────────── */
+.invoices-page .inv-section { border-top: 1px solid var(--line); }
+.invoices-page .inv-section > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 150ms ease;
+}
+.invoices-page .inv-section > summary::-webkit-details-marker { display: none; }
+.invoices-page .inv-section > summary:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+@media (hover: hover) and (pointer: fine) {
+  .invoices-page .inv-section > summary:hover { background: var(--surface-2); }
+}
+.invoices-page .inv-chev { color: var(--muted); transition: transform 160ms var(--ease); }
+.invoices-page .inv-section:not([open]) .inv-chev { transform: rotate(90deg); }
+.invoices-page .inv-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--sunken);
+  border-radius: 999px;
+  padding: 0 8px;
+  line-height: 20px;
+}
+.invoices-page .inv-section-note { font-size: 13px; color: var(--muted); padding: 0 18px 10px; text-wrap: pretty; }
+.invoices-page .inv-section > .inv-table-wrap,
+.invoices-page .inv-section-body > .inv-table-wrap { border-top: 1px solid var(--line); }
+
+/* ── Phones ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .invoices-page .inv-month { width: 100%; }
+  .invoices-page .inv-month input { flex: 1; }
+  .invoices-page .inv-kpis { grid-template-columns: 1fr 1fr; }
+  .invoices-page .inv-kpis .kpi-value { font-size: 20px; }
+  .invoices-page .inv-head-actions { width: 100%; }
+  .invoices-page .inv-upload-actions .btn { flex: 1 1 auto; }
+  .invoices-page .inv-delivery-row .btn { width: 100%; }
+  .invoices-page .inv-fields { grid-template-columns: 1fr 1fr; }
+  .invoices-page .inv-form { padding: 12px; }
+  .invoices-page .inv-form-row td { padding: 0 8px 12px; }
+  .invoices-page .inv-form-row .inv-form { inset-inline-start: 8px; max-width: calc(100cqw - 16px); }
+}
+@media (max-width: 420px) {
+  .invoices-page .inv-fields { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invoices-page .inv-spin { animation: none; }
+  .invoices-page .inv-chev,
+  .invoices-page .inv-progress .meter > i { transition: none; }
+}

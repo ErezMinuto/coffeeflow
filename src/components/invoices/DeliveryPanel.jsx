@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AlertTriangle, ChevronDown, CircleCheck, Download } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import { buildInvoiceZip, saveBlob } from '../../lib/invoiceZip';
@@ -13,12 +14,6 @@ import { buildInvoiceZip, saveBlob } from '../../lib/invoiceZip';
 const money = (v) => Number(v || 0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dateIL = (d) => (d ? d.slice(0, 10).split('-').reverse().join('/') : '—');
 const ym = (d) => (d ? `${d.slice(5, 7)}/${d.slice(0, 4)}` : 'ללא תאריך');
-
-const card = { background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxWidth: '1000px', margin: '1.25rem auto', border: '2px solid #D5DBC8' };
-const btn = (bg, disabled) => ({ padding: '0.7rem 1.1rem', fontSize: '0.98rem', fontWeight: 700, color: 'white', background: disabled ? '#9CA3AF' : bg, border: 'none', borderRadius: '8px', cursor: disabled ? 'default' : 'pointer' });
-const chip = (bg, color) => ({ background: bg, color, borderRadius: '999px', padding: '3px 11px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap' });
-const th = { textAlign: 'right', padding: '0.4rem 0.55rem', borderBottom: '2px solid #E5E7EB', fontSize: '0.8rem', color: '#374151', whiteSpace: 'nowrap' };
-const td = { padding: '0.4rem 0.55rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.86rem' };
 
 export default function DeliveryPanel({ onDelivered }) {
   const { showToast, user } = useApp();
@@ -66,11 +61,11 @@ export default function DeliveryPanel({ onDelivered }) {
         p_created_by_name: user?.fullName || user?.primaryEmailAddress?.emailAddress || null,
       });
       if (error) throw new Error(`הקובץ ירד, אבל הסימון כ״נשלח״ נכשל: ${error.message}. אפשר ללחוץ שוב`);
-      showToast(`📦 נשלחו ${d.invoice_count} חשבוניות`);
+      showToast(`נשלחו ${d.invoice_count} חשבוניות`);
       onDelivered?.();
       load();
     } catch (e) {
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(e.message, 'error');
     } finally {
       setBusy(null);
     }
@@ -84,70 +79,91 @@ export default function DeliveryPanel({ onDelivered }) {
       if (error) throw error;
       const { blob, failed } = await buildInvoiceZip(rows || [], { indexName: 'סיכום-החבילה.csv', onProgress: (d, t) => setBusy(`${d}/${t}`) });
       saveBlob(blob, `חשבוניות-לרו״ח_${dl.created_at.slice(0, 10)}.zip`);
-      if (failed.length) showToast(`⚠️ ${failed.length} קבצים לא ירדו`, 'warning');
+      if (failed.length) showToast(`${failed.length} קבצים לא ירדו`, 'warning');
     } catch (e) {
-      showToast(`❌ ${e.message}`, 'error');
+      showToast(e.message, 'error');
     } finally {
       setBusy(null);
     }
   }
 
-  if (state.loading) return <div style={card}><p style={{ color: '#6B7280', margin: 0 }}>טוען…</p></div>;
-  if (state.error) return <div style={card}><p style={{ color: '#991B1B', margin: 0 }}>❌ {state.error}</p></div>;
+  const head = (
+    <div className="card-head">
+      <h2>חבילה לרו״ח</h2>
+    </div>
+  );
+  if (state.loading) return <section className="card flush">{head}<div className="empty-state">בטעינה…</div></section>;
+  if (state.error) return <section className="card flush">{head}<div className="card-body"><div className="notice danger" role="alert">{state.error}</div></div></section>;
 
   const rows = state.undelivered;
   const byMonth = rows.reduce((m, r) => m.set(ym(r.invoice_date), (m.get(ym(r.invoice_date)) || 0) + 1), new Map());
   const total = rows.reduce((s, r) => s + (Number(r.total_incl_vat) || 0), 0);
 
   return (
-    <div style={card}>
-      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>📦 חבילה לרו״ח</h3>
-      <p style={{ color: '#6B7280', fontSize: '0.86rem', margin: '0.3rem 0 0.8rem' }}>
-        כל החשבוניות המאושרות שעוד לא נשלחו, מכל חודש. אחרי ההורדה הן מסומנות כנשלחו ולא ייכנסו שוב לחבילה הבאה.
-      </p>
+    <section className="card flush inv-delivery">
+      {head}
+      <div className="card-body">
+        <p className="inv-lead">
+          כל החשבוניות המאושרות שעוד לא נשלחו, מכל חודש. אחרי ההורדה הן מסומנות כנשלחו ולא ייכנסו שוב לחבילה הבאה.
+        </p>
 
-      {rows.length === 0 ? (
-        <p style={{ fontWeight: 600, color: '#166534', margin: 0 }}>✅ אין חשבוניות חדשות. הכל נשלח.</p>
-      ) : (
-        <>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.8rem' }}>
-            <span style={chip('#EFF6FF', '#1E40AF')}>{rows.length} חשבוניות · ₪{money(total)}</span>
-            {[...byMonth].map(([m, n]) => <span key={m} style={chip('#F3F4F6', '#4B5563')}>{m}: {n}</span>)}
+        {rows.length === 0 ? (
+          <div className="inv-allgood">
+            <CircleCheck size={18} aria-hidden="true" />
+            <span>אין חשבוניות חדשות. הכל נשלח.</span>
           </div>
-          <button style={btn('#3D4A2E', !!busy)} disabled={!!busy} onClick={sendNew}>
-            {busy ? `מכין חבילה… ${busy}` : `📦 הורדת חבילה חדשה (${rows.length})`}
-          </button>
-        </>
-      )}
-      {state.badDates.length > 0 && (
-        <p style={{ fontSize: '0.84rem', color: '#991B1B', margin: '0.7rem 0 0' }}>
-          ⚠️ {state.badDates.length} חשבוניות עם תאריך לא תקין ({state.badDates.map((r) => `${r.supplier_name || ''} #${r.invoice_number || ''}`).join(', ')}) לא ייכנסו לחבילה עד שהתאריך יתוקן.
-        </p>
-      )}
-      {state.pending > 0 && (
-        <p style={{ fontSize: '0.84rem', color: '#92400E', margin: '0.7rem 0 0' }}>
-          {state.pending} חשבוניות עדיין ממתינות לאישור. הן ייכנסו לחבילה אחרי שיאושרו.
-        </p>
-      )}
+        ) : (
+          <div className="inv-delivery-row">
+            <div className="inv-delivery-sum">
+              <div className="inv-delivery-total num">{rows.length} חשבוניות · ₪{money(total)}</div>
+              <div className="inv-tags">
+                {[...byMonth].map(([m, n]) => <span key={m} className="tag num">{m}: {n}</span>)}
+              </div>
+            </div>
+            <button type="button" className="btn primary" disabled={!!busy} onClick={sendNew}>
+              <Download aria-hidden="true" />
+              {busy ? `הכנת חבילה… ${busy}` : `הורדת חבילה חדשה (${rows.length})`}
+            </button>
+          </div>
+        )}
+        {state.badDates.length > 0 && (
+          <div className="notice danger inv-notice">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <div>{state.badDates.length} חשבוניות עם תאריך לא תקין ({state.badDates.map((r) => `${r.supplier_name || ''} #${r.invoice_number || ''}`).join(', ')}) לא ייכנסו לחבילה עד שהתאריך יתוקן.</div>
+          </div>
+        )}
+        {state.pending > 0 && (
+          <div className="inv-note">
+            <span className="dot warn" aria-hidden="true" />
+            <span>{state.pending} חשבוניות עדיין ממתינות לאישור. הן ייכנסו לחבילה אחרי שיאושרו.</span>
+          </div>
+        )}
+      </div>
 
       {state.deliveries.length > 0 && (
-        <details style={{ marginTop: '1rem' }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: '0.92rem', color: '#374151' }}>חבילות שנשלחו ({state.deliveries.length})</summary>
-          <div style={{ overflowX: 'auto', marginTop: '0.5rem' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
+        <details className="inv-section">
+          <summary>
+            <ChevronDown className="inv-chev" size={16} aria-hidden="true" />
+            <span>חבילות שנשלחו</span>
+            <span className="inv-count num">{state.deliveries.length}</span>
+          </summary>
+          <div className="inv-table-wrap">
+            <table className="inv-table">
               <thead><tr>
-                <th style={th}>נשלחה</th><th style={th}>ע״י</th><th style={th}>חשבוניות</th><th style={th}>טווח תאריכים</th><th style={{ ...th, textAlign: 'left' }}>סה״כ</th><th style={th}></th>
+                <th>נשלחה</th><th>ע״י</th><th className="end">חשבוניות</th><th>טווח תאריכים</th><th className="end">סה״כ</th><th><span className="inv-sr">פעולות</span></th>
               </tr></thead>
               <tbody>
                 {state.deliveries.map((dl) => (
                   <tr key={dl.id}>
-                    <td style={td}>{dateIL(dl.created_at)}</td>
-                    <td style={{ ...td, color: '#6B7280' }}>{dl.created_by_name || ''}</td>
-                    <td style={td}>{dl.invoice_count}</td>
-                    <td style={td}>{dateIL(dl.oldest_invoice)} – {dateIL(dl.newest_invoice)}</td>
-                    <td style={{ ...td, textAlign: 'left', direction: 'ltr' }}>{money(dl.total_incl_vat)}</td>
-                    <td style={td}>
-                      <button disabled={!!busy} onClick={() => downloadAgain(dl)} style={{ background: 'none', border: 'none', cursor: busy ? 'default' : 'pointer', color: '#556B3A', fontWeight: 600 }}>⬇️ הורדה שוב</button>
+                    <td className="num">{dateIL(dl.created_at)}</td>
+                    <td className="inv-muted">{dl.created_by_name || ''}</td>
+                    <td className="end num">{dl.invoice_count}</td>
+                    <td className="num">{dateIL(dl.oldest_invoice)} – {dateIL(dl.newest_invoice)}</td>
+                    <td className="end amt">{money(dl.total_incl_vat)}</td>
+                    <td className="end">
+                      <button type="button" className="btn ghost sm" disabled={!!busy} onClick={() => downloadAgain(dl)}>
+                        <Download aria-hidden="true" />הורדה שוב
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -156,6 +172,6 @@ export default function DeliveryPanel({ onDelivered }) {
           </div>
         </details>
       )}
-    </div>
+    </section>
   );
 }
