@@ -207,17 +207,20 @@ const EXPECTED_FRESH_DATA: Array<{
   // transaction_date (business signal), not synced_at: the hourly revenue sync
   // re-writes rows constantly, so synced_at would advance even if MFlow stopped
   // returning new documents. Minuto sells every day across POS + EcoSite +
-  // back office, so a 12h budget catches a freeze within half a day without
-  // false-positiving on a quiet evening. Saturday gets 36h: the Friday-to-first-
+  // back office, so a per-weekday budget catches a freeze within a day without
+  // false-positiving on a normal night. Saturday gets 36h: the Friday-to-first-
   // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy. Sunday
   // gets 24h: Saturday-evening to first-Sunday-sale was 16.3h on 2026-11-08,
-  // again with the sync healthy.
+  // again with the sync healthy. Weekdays get 18h: the watchdog runs at 10:00
+  // Israel and the first sale usually lands 10:15–12:30, so a normal night
+  // (last sale ~19:30–22:00) reads 12–15h — it fired at 13.4h on Wed
+  // 2026-11-18 with the sync healthy. 18h still catches a freeze the next day.
   // Google data the agents plan from. Synced twice daily by GitHub Actions
   // (google-sync-daily.yml); 36h allows for GitHub's schedule delays. Search
   // Console went unsynced for 6 months before this check existed.
   { table: 'google_search_console', column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Search Console keywords (SEO agent + strategist)' },
   { table: 'google_ads',            column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Ads performance (advisor + strategist)' },
-  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, sunday_max_age_hours: 24, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
+  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 18, saturday_max_age_hours: 36, sunday_max_age_hours: 24, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
 interface HealthFinding {

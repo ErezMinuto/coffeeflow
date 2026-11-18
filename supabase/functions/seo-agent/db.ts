@@ -60,9 +60,14 @@ export async function insertTasks(
     }
     return t
   })
+  // defaultToNull:false → `Prefer: missing=default`. A bulk insert sends the
+  // UNION of every row's keys, so a key only some rows set (status/error_msg on
+  // a task rejected at enqueue, scheduled_for, experiment_id) would otherwise
+  // be NULL on the rows that omit it — and status/scheduled_for are NOT NULL.
+  // That crashed organic-orchestrator's emit_tasks on 2026-11-11 and 11-18.
   const { data, error } = await supabase
     .from('seo_tasks')
-    .insert(normalized)
+    .insert(normalized, { defaultToNull: false })
     .select()
   if (error) throw new Error(`insertTasks failed: ${error.message}`)
   return (data ?? []) as SeoTaskRow[]
