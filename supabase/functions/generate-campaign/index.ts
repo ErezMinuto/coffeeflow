@@ -1112,9 +1112,22 @@ interface RenderDraftPayload {
   ctaUrl?: string;
   campaignType?: string;
   // Optional design around the words (the words themselves never change):
-  products?: string[];      // 1-4 Minuto coffee products, exact or unique short names
+  products?: string[];      // 1-6 Minuto coffee products, exact or unique short names
   sceneBrief?: string;      // a scene for an image built around the real bags
+  bannerUrl?: string;       // an existing hero image in our marketing bucket (wins over sceneBrief)
   promoDeadline?: string;   // YYYY-MM-DD, last day of the offer (legal footer line)
+  // Template sections. Each is a design slot for approved words, passed
+  // through as given (trimmed), never rewritten.
+  kicker?: string;
+  headline?: string;
+  offer?: { title?: string; text?: string; code?: string; ctaText?: string; ctaUrl?: string };
+  notes?: string[];
+  facts?: Array<{ label?: string; value?: string }>;
+  tip?: { title?: string; text?: string };
+  gridTitle?: string;
+  closingText?: string;
+  heroProduct?: string;     // which of `products` the hero shows when there is no image
+  productNotes?: Record<string, string>;  // product name (as in `products`) -> one line on its card
 }
 
 
@@ -1126,6 +1139,52 @@ function isMinutoUrl(raw: string): boolean {
     const u = new URL(raw);
     return u.protocol === "https:" && (u.hostname === "minuto.co.il" || u.hostname === "www.minuto.co.il");
   } catch { return false; }
+}
+
+const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+// Hero images come only from our own public marketing bucket: the draft goes
+// to the whole list, and a bare "marketing/banners/x.jpg" path is accepted.
+function marketingBannerUrl(raw: string): string | null {
+  const base = `${SUPA_URL}/storage/v1/object/public/marketing/`;
+  const path = raw.startsWith(base) ? raw.slice(base.length) : raw.replace(/^\/?(marketing\/)?/, "");
+  if (!/^[A-Za-z0-9._\-\/]+\.(jpe?g|png|webp)$/i.test(path) || path.includes("..") || path.startsWith("/")) return null;
+  return base + path;
+}
+
+// Section fields, validated. Text is kept exactly as given (trimmed).
+function renderSections(p: RenderDraftPayload): { ok: true; s: Record<string, any> } | { ok: false; error: string } {
+  const kicker = txt(p.kicker), headline = txt(p.headline), gridTitle = txt(p.gridTitle), closingText = txt(p.closingText);
+  if (kicker.length > 60 || headline.length > 120 || gridTitle.length > 60 || closingText.length > 200) {
+    return { ok: false, error: "section too long (kicker ≤60, headline ≤120, grid_title ≤60, closing_text ≤200)" };
+  }
+  let offer: Record<string, string> | null = null;
+  if (p.offer != null) {
+    if (typeof p.offer !== "object" || Array.isArray(p.offer)) return { ok: false, error: "offer must be an object" };
+    const o = { title: txt(p.offer.title), text: txt(p.offer.text), code: txt(p.offer.code), ctaText: txt(p.offer.ctaText), ctaUrl: txt(p.offer.ctaUrl) };
+    if (!o.title) return { ok: false, error: "offer needs a title" };
+    if (o.title.length > 80 || o.text.length > 300 || o.code.length > 30 || o.ctaText.length > 40) {
+      return { ok: false, error: "offer too long (title ≤80, text ≤300, code ≤30, cta_text ≤40)" };
+    }
+    if (o.ctaUrl && !isMinutoUrl(o.ctaUrl)) return { ok: false, error: "offer cta_url must be an https://minuto.co.il link" };
+    offer = Object.fromEntries(Object.entries(o).filter(([, v]) => v));
+  }
+  const notes = Array.isArray(p.notes) ? p.notes.map(txt).filter(Boolean) : [];
+  if (notes.length > 4 || notes.some((n) => n.length > 30)) return { ok: false, error: "notes: at most 4, each ≤30 characters" };
+  const facts = Array.isArray(p.facts)
+    ? p.facts.filter((f) => f && typeof f === "object").map((f) => ({ label: txt(f.label), value: txt(f.value) })).filter((f) => f.label && f.value)
+    : [];
+  if (facts.length > 4 || facts.some((f) => f.label.length > 30 || f.value.length > 40)) {
+    return { ok: false, error: "facts: at most 4, label ≤30 and value ≤40 characters" };
+  }
+  let tip: { title: string; text: string } | null = null;
+  if (p.tip != null) {
+    if (typeof p.tip !== "object" || Array.isArray(p.tip)) return { ok: false, error: "tip must be an object" };
+    tip = { title: txt(p.tip.title), text: txt(p.tip.text) };
+    if (!tip.text) return { ok: false, error: "tip needs text" };
+    if (tip.title.length > 60 || tip.text.length > 400) return { ok: false, error: "tip too long (title ≤60, text ≤400)" };
+  }
+  return { ok: true, s: { kicker, headline, offer, notes, facts, tip, gridTitle, closingText } };
 }
 
 async function handleRenderDraft(p: RenderDraftPayload) {
@@ -1144,9 +1203,17 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   const productNames = Array.isArray(p.products) ? p.products.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
   const sceneBrief   = String(p.sceneBrief ?? "").trim();
   const promoDeadline = String(p.promoDeadline ?? "").trim();
-  if (productNames.length > 4) return err(400, "at most 4 products");
+  if (productNames.length > 6) return err(400, "at most 6 products");
   if (sceneBrief.length > 600) return err(400, "scene_brief too long (≤600)");
-  if (sceneBrief && !productNames.length) return err(400, "scene_brief needs products: the scene is built around their real bags");
+  const bannerIn = txt(p.bannerUrl);
+  const givenBanner = bannerIn ? marketingBannerUrl(bannerIn) : null;
+  if (bannerIn && !givenBanner) return err(400, "banner_url must be a .jpg/.png/.webp in the marketing storage bucket (e.g. marketing/banners/x.jpg)");
+  if (sceneBrief && !givenBanner && !productNames.length) return err(400, "scene_brief needs products: the scene is built around their real bags");
+  const sec = renderSections(p);
+  if (!sec.ok) return err(400, sec.error);
+  const heroName = txt(p.heroProduct);
+  const noteMap = p.productNotes && typeof p.productNotes === "object" && !Array.isArray(p.productNotes) ? p.productNotes : {};
+  if (Object.values(noteMap).some((v) => typeof v !== "string" || v.trim().length > 80)) return err(400, "product_notes: one line per product, ≤80 characters");
   if (promoDeadline && (!/^\d{4}-\d{2}-\d{2}$/.test(promoDeadline) || isNaN(Date.parse(promoDeadline)))) {
     return err(400, "promo_deadline must be YYYY-MM-DD");
   }
@@ -1156,21 +1223,6 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   const subject = subjectIn
     .replace(/[\s‎‏]*\|[\s‎‏]*פרסומת[\s‎‏]*$/, "")
     .trim() + RENDER_SUBJECT_SUFFIX;
-
-  // A chat tool can fire twice for one approval. Same copy, still a draft,
-  // within 15 minutes = the same draft.
-  const since = new Date(Date.now() - 15 * 60_000).toISOString();
-  const { data: dupe } = await supabase
-    .from("campaigns")
-    .select("id, html_content")
-    .eq("user_id", p.userId)
-    .eq("status", "draft")
-    .eq("subject", subject)
-    .eq("message", body)
-    .gte("created_at", since)
-    .limit(1)
-    .maybeSingle();
-  if (dupe) return ok({ ok: true, existed: true, campaign: { id: dupe.id, subject, htmlContent: dupe.html_content } });
 
   // Products: real catalog rows (photo, price, link), Minuto roasted coffee only.
   // deno-lint-ignore no-explicit-any
@@ -1188,11 +1240,70 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     products = r.products;
   }
 
-  // Scene image around the real bags. A render only counts if it passes the
-  // label check; otherwise the first product's real photo is the hero.
+  // Per-card lines and the hero product, by the names the caller used.
+  const pick = (name: string) => {
+    const r = resolveCoffee([name], products);
+    return r.ok && r.products.length === 1 ? r.products[0] : null;
+  };
+  const cardNote = new Map<string, string>();
+  for (const [name, note] of Object.entries(noteMap)) {
+    const pr = pick(name);
+    if (!pr) return err(400, `product_notes: "${name}" is not one of the products in this email`);
+    if (String(note).trim()) cardNote.set(String(pr.woo_id), String(note).trim());
+  }
+  const heroPick = heroName ? pick(heroName) : null;
+  if (heroName && !heroPick) return err(400, `hero_product "${heroName}" is not one of the products in this email`);
+
+  // A chat tool can fire twice for one approval. Same copy, same products and
+  // same sections, still a draft, within 15 minutes = the same draft. A
+  // re-render that only changes a section is a new draft.
+  const since = new Date(Date.now() - 15 * 60_000).toISOString();
+  const { data: dupes } = await supabase
+    .from("campaigns")
+    .select("id, html_content, product_ids")
+    .eq("user_id", p.userId)
+    .eq("status", "draft")
+    .eq("subject", subject)
+    .eq("message", body)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const sectionsKey = (d: Record<string, any>) => JSON.stringify([
+    d.kicker || "", d.headline || "", d.offer || null, d.notes || [], d.facts || [], d.tip || null,
+    d.gridTitle || "", d.closingText || "", d.bannerUrl || null, d.sceneBrief || "", d.cardNotes || [], d.hero ?? null,
+  ]);
+  // The hero product only shows when there is no image (given or generated).
+  const wantHero = givenBanner || sceneBrief ? null : (heroPick ?? products[0])?.woo_id ?? null;
+  const wantKey = sectionsKey({
+    ...sec.s, bannerUrl: givenBanner, sceneBrief, cardNotes: [...cardNote.entries()].sort(),
+    hero: wantHero == null ? null : String(wantHero),
+  });
+  const wantIds = products.map((pr: any) => String(pr.woo_id)).join(",");
+  const dupe = (dupes ?? []).find((d: any) => {
+    const des = decodeDesign(d.html_content);
+    // A generated scene is stored as bannerUrl; compare the request, not the result.
+    const storedNotes = Object.entries(des.productNotes ?? {}).filter(([, v]) => v?.note).map(([k, v]) => [k, v.note]).sort();
+    const storedHero = des.sceneBrief || des.bannerUrl || des.heroProductId == null ? null : String(des.heroProductId);
+    const stored = sectionsKey({
+      ...des, bannerUrl: des.sceneBrief ? (givenBanner ?? null) : des.bannerUrl ?? null, cardNotes: storedNotes, hero: storedHero,
+    });
+    return stored === wantKey && (d.product_ids ?? []).map(String).join(",") === wantIds;
+  });
+  if (dupe) return ok({ ok: true, existed: true, campaign: { id: dupe.id, subject, htmlContent: dupe.html_content } });
+
+  // An approved hero image is used as is, once we know it exists.
   let bannerUrl: string | null = null;
   let scene: { attempts: number; issues: string[]; used: boolean } | null = null;
-  if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
+  if (givenBanner) {
+    const head = await fetch(givenBanner, { method: "HEAD" }).catch(() => null);
+    if (!head?.ok || !/^image\//.test(head.headers.get("content-type") ?? "")) {
+      return err(400, `banner_url not found in storage (HTTP ${head?.status ?? "error"})`);
+    }
+    bannerUrl = givenBanner;
+    if (sceneBrief) scene = { attempts: 0, issues: ["banner_url given: the approved image is the hero, no scene was generated"], used: false };
+  } else if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
+    // Scene image around the real bags. A render only counts if it passes the
+    // label check; otherwise the first product's real photo is the hero.
     // Special editions ship in a jar; a bag scene would show the wrong pack.
     scene = { attempts: 0, issues: ["special edition (jar) in the products: real photos used instead"], used: false };
   } else if (sceneBrief && products.length) {
@@ -1207,7 +1318,11 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   const emailProducts = products.map((pr: any) => ({
     woo_id: pr.woo_id, name: pr.name, price: pr.price, regular_price: pr.regular_price, sale_price: pr.sale_price,
     short_description: pr.short_description, image_url: pr.image_url, permalink: pr.permalink,
+    note: cardNote.get(String(pr.woo_id)),
   }));
+  // With an image the hero is the image and every product sits in the grid;
+  // without one, the chosen (else first) product photo is the hero.
+  const heroProductId = bannerUrl ? null : (heroPick ?? emailProducts[0])?.woo_id ?? null;
 
   // The template escapes the body itself and applies **bold** and line
   // breaks, so the copy goes in exactly as approved.
@@ -1222,8 +1337,16 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     products:       emailProducts,
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
     promoDeadline:  promoDeadline || null,
-    heroProductId:  !bannerUrl && emailProducts.length ? emailProducts[0].woo_id : null,
+    heroProductId,
     sceneBrief:     sceneBrief || undefined,
+    kicker:         sec.s.kicker || undefined,
+    headline:       sec.s.headline || undefined,
+    offer:          sec.s.offer,
+    notes:          sec.s.notes.length ? sec.s.notes : undefined,
+    facts:          sec.s.facts.length ? sec.s.facts : undefined,
+    tip:            sec.s.tip,
+    gridTitle:      sec.s.gridTitle || undefined,
+    closingText:    sec.s.closingText || undefined,
   });
 
   const { data: inserted, error: insertErr } = await supabase
