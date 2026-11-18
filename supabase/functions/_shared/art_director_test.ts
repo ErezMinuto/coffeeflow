@@ -18,8 +18,8 @@ function reply(over: Record<string, unknown> = {}): string {
   })
 }
 
-Deno.test('the action list is the 14 the owner approved, each with a realism note', () => {
-  assertEquals(Object.keys(ACTIONS).length, 14)
+Deno.test('the action list is the 14 the owner approved plus the lifestyle action (2026-11-18), each with a realism note', () => {
+  assertEquals(Object.keys(ACTIONS).length, 15)
   assert(ACTIONS.steaming_milk.includes('never parked on the drip tray'))
   for (const [k, note] of Object.entries(ACTIONS)) assert(note.length > 40, k)
 })
@@ -158,12 +158,21 @@ Deno.test('brief review problems parse; unreadable output counts as none', () =>
 
 Deno.test('every image lives in one space; the space check reaches the critic as a note', () => {
   assert(AD_SYSTEM.includes('spaces never mix') && AD_SYSTEM.includes('Ghibli R15'))
-  for (const sp of ['roastery', 'bar', 'product', 'craft'] as const) {
+  for (const sp of ['roastery', 'bar', 'product', 'craft', 'lifestyle'] as const) {
     const r = parseArtDirection(reply({ space: sp }), keys)
     assert(r.ok, sp)
     if (r.ok) assert(criticQuestions(r.value).notes.includes(SPACE_QUESTIONS[sp]), sp)
   }
   assert(SPACE_QUESTIONS.roastery.includes('café chairs'))
+  assert(SPACE_QUESTIONS.lifestyle.includes('espresso machines'))
+})
+
+Deno.test('lifestyle: coffee out in the world has a space, an action and references', () => {
+  assert(AD_SYSTEM.includes('- lifestyle:') && AD_SYSTEM.includes('real photographer'))
+  assert(ACTIONS.coffee_out_in_the_world.includes('nothing is pouring'))
+  const r = parseArtDirection(reply({ space: 'lifestyle', action: 'coffee_out_in_the_world' }), keys)
+  assert(r.ok)
+  assert(referenceCandidates().some(p => p.key.startsWith('cups/')) && referenceCandidates().some(p => p.key.startsWith('brewing/')))
 })
 
 Deno.test('candidates rank: passing first, then fewest notes, then render order', () => {

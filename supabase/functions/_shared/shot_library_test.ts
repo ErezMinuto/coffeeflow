@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, shotProducts, normalizeProductNames, classifyIgImage, nextImageKind, weeklyMixInstructions, mixRefusal, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotFolders, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
@@ -225,6 +225,13 @@ Deno.test('bag scenes keep the real bag and fill the frame asked for', () => {
     }
   }
   assert(bagScenePrompt(SHOTS.bag_with_drink, { product_name: 'Guji' }, '9:16').includes('espresso'))
+  // Lifestyle moments (owner, 2026-11-18) have their own scene, not the counter fallback.
+  for (const moment of ['the bag on a picnic in nature', 'the bag on a breakfast table at home', 'the bag and a cup outdoors']) {
+    const shot = SHOTS.bag_hero.moments.includes(moment) ? SHOTS.bag_hero : SHOTS.bag_with_drink
+    const p = bagScenePrompt(shot, { product_name: 'Guji', moment }, '4:5')
+    assert(!p.includes('café counter, a few freshly roasted'), moment)
+    assert(p.includes('professional lifestyle photographer'), moment)
+  }
   assert(shotChecklist(SHOTS.bag_hero, { product_name: 'Guji' }).some(q => q.includes('sealed')))
 })
 
@@ -235,4 +242,52 @@ Deno.test('steaming milk keeps the steam wand out of frame and QA counts wands',
   assert(shotChecklist(SHOTS.bar_moment, {}).some(q => q.includes('at most one steam wand')))
   assert(!shotFolders(SHOTS.bar_moment, { moment: 'steaming milk' }).includes('hands'))
   assertEquals(shotFolders(SHOTS.bar_moment, { moment: 'a cup in hand' }), SHOTS.bar_moment.folders)
+})
+
+Deno.test('multi-bag: 2-3 distinct coffees, first is product_name, prompt and QA name them all', () => {
+  assertEquals(normalizeProductNames('Guji', ['Guji', 'Kenya AA+', 'guji', 'Yirgacheffe', 'Aristo']), ['Guji', 'Kenya AA+', 'Yirgacheffe'])
+  assertEquals(normalizeProductNames('Guji', ['Guji']), undefined)
+  assertEquals(normalizeProductNames('Guji', 'Kenya'), undefined)
+  const slots = { product_name: 'Guji', product_names: ['Guji', 'Dark Chocolate'], moment: 'the bag on a breakfast table at home' }
+  const p = bagScenePrompt(SHOTS.bag_hero, slots, '4:5')
+  assert(p.includes('"Guji"') && p.includes('"Dark Chocolate"') && p.includes('show all 2 bags'))
+  assert(shotChecklist(SHOTS.bag_hero, slots).some(q => q.includes('exactly 2 Minuto coffee bags')))
+  assert(shotChecklist(SHOTS.bag_hero, { product_name: 'Guji' }).some(q => q.includes('exactly one Minuto coffee bag')))
+  assertEquals(shotProducts({ product_name: 'Guji' }), ['Guji'])
+})
+
+Deno.test('multi-bag: applyPlannedShot keeps product_names on bag shots only', () => {
+  const bag = applyPlannedShot({ destination: 'ig_post', shot_type: 'bag_hero', shot_slots: { product_names: ['Guji', 'Kenya AA+'], moment: 'the bag on a picnic in nature' } }, { enabled: true }).brief
+  assertEquals(bag.product_name, 'Guji')
+  assertEquals((bag.shot_slots as Record<string, unknown>).product_names, ['Guji', 'Kenya AA+'])
+  const drink = applyPlannedShot({ destination: 'ig_post', shot_type: 'finished_drink', shot_slots: { product_names: ['Guji', 'Kenya AA+'] } }, { enabled: true }).brief
+  assertEquals((drink.shot_slots as Record<string, unknown>).product_names, undefined)
+})
+
+Deno.test('weekly mix: classify by art-director space first, then by the planned shot', () => {
+  assertEquals(classifyIgImage({ shot_type: 'bag_hero', shot_slots: { moment: 'the bag on a picnic in nature' } }), 'lifestyle')
+  assertEquals(classifyIgImage({ shot_type: 'bag_hero', shot_slots: { moment: 'the bag on the counter' } }), 'other')
+  assertEquals(classifyIgImage({ shot_type: 'bar_moment' }), 'real_place')
+  assertEquals(classifyIgImage({ shot_type: 'roastery' }), 'real_place')
+  assertEquals(classifyIgImage({ shot_type: 'bar_moment' }, 'lifestyle'), 'lifestyle')
+  assertEquals(classifyIgImage({ shot_type: 'finished_drink' }, 'craft'), 'real_place')
+  assertEquals(classifyIgImage({ shot_type: 'roastery' }, 'product'), 'other')
+  assertEquals(classifyIgImage(null), 'other')
+})
+
+Deno.test('weekly mix: 80% lifestyle, every 5th image a real bar/roastery one', () => {
+  const c = { lifestyle: 0, real_place: 0, other: 0 }
+  const order: string[] = []
+  for (let i = 0; i < 11; i++) { const k = nextImageKind(c); order.push(k); c[k]++ }
+  assertEquals(c, { lifestyle: 9, real_place: 2, other: 0 })
+  assertEquals(order[4], 'real_place'); assertEquals(order[9], 'real_place')
+  // Refusals: other kinds always, a real one above 20%; never a lifestyle one.
+  assert(mixRefusal({ lifestyle: 3, real_place: 0, other: 0 }, 'other'))
+  assertEquals(mixRefusal({ lifestyle: 0, real_place: 0, other: 0 }, 'real_place'), null)
+  assert(mixRefusal({ lifestyle: 1, real_place: 1, other: 0 }, 'real_place'))
+  assertEquals(mixRefusal({ lifestyle: 4, real_place: 1, other: 0 }, 'real_place'), null)
+  assertEquals(mixRefusal({ lifestyle: 20, real_place: 0, other: 0 }, 'lifestyle'), null)
+  assertEquals(classifyIgImage({ shot_type: 'finished_drink', scene_brief: 'LIFESTYLE: a picnic in a pine forest' }), 'lifestyle')
+  const text = weeklyMixInstructions({ lifestyle: 4, real_place: 0, other: 0 })
+  assert(text.includes('80%') && text.includes("NEXT IG IMAGE: an image of Minuto's own place"))
 })

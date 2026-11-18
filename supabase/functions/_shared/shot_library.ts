@@ -35,6 +35,10 @@ export type ShotType =
 export interface ShotSlots {
   // Required for bag shots: the WooCommerce product (Hebrew or English name).
   product_name?: string
+  // Bag shots only, optional: 2-3 Minuto coffees shown together around one
+  // theme (owner, 2026-11-18). product_name is always the first of them, so
+  // everything that reads one product (no-repeat, guards) keeps working.
+  product_names?: string[]
   // Which moment of the shot, from the shot's `moments` list.
   moment?: string
   // finished_drink only.
@@ -66,11 +70,14 @@ export interface ShotDef {
 export const SHOTS: Record<ShotType, ShotDef> = {
   bag_hero: {
     id: 'bag_hero', label: 'Bag hero',
-    use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post',
+    use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post; in the shop or as a lifestyle photo at home or out in nature',
     // A new scene around the real bag (bagScenePrompt, owner 2026-11-07);
     // the real photo below is the fallback when no render passes the label check.
     source: 'real_photo', folders: ['bag_scenes', 'coffee_bags'],
-    moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light'],
+    // Lifestyle moments (owner, 2026-11-18): the bag out in the world, at home
+    // and in nature, not only in the shop.
+    moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light',
+      'the bag on a breakfast table at home', 'the bag on a picnic in nature', 'the bag on a balcony at sunrise', 'the bag on a camping trip'],
     needs_product: true, enabled: true,
   },
   bar_moment: {
@@ -130,7 +137,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     id: 'bag_with_drink', label: 'Bag and drink',
     use_for: 'a Minuto bag next to a finished cup, pairing a product with how it tastes',
     source: 'real_photo', folders: ['bag_scenes'],
-    moments: ['the bag beside a cup'],
+    moments: ['the bag beside a cup', 'the bag and a cup outdoors'],
     needs_product: true, enabled: true,    // owner's bag shoot 2026-10-28 (every photo has an espresso)
   },
 }
@@ -208,6 +215,26 @@ export function resolveMoment(shot: ShotDef, moment?: string): string {
   return shot.moments.find(x => x.toLowerCase() === m) ?? shot.moments[0]
 }
 
+export const MAX_BAGS_PER_SHOT = 3
+
+/** The bags a bag shot shows: product_names when it lists 2-3 distinct
+ *  coffees, else product_name alone. Never more than MAX_BAGS_PER_SHOT. */
+export function shotProducts(slots: ShotSlots): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const n of [slots.product_name, ...(Array.isArray(slots.product_names) ? slots.product_names : [])]) {
+    const v = typeof n === 'string' ? n.trim() : ''
+    if (v && !seen.has(v.toLowerCase())) { seen.add(v.toLowerCase()); out.push(v) }
+  }
+  return out.slice(0, MAX_BAGS_PER_SHOT)
+}
+
+/** Clean a planner's product_names: 2-3 distinct names, first = product_name. */
+export function normalizeProductNames(productName: string | undefined, raw: unknown): string[] | undefined {
+  const names = shotProducts({ product_name: productName, product_names: Array.isArray(raw) ? raw.map(String) : [] })
+  return names.length >= 2 ? names : undefined
+}
+
 // ── Packshots ────────────────────────────────────────────────────────────────
 // Studio packshots in upload_images/coffee_bags/, keyed by file. Aliases match
 // woo_products names, which are often Hebrew-only for house blends.
@@ -279,19 +306,40 @@ export function shotEditBrief(shot: ShotDef, slots: ShotSlots): string {
 // published only when no render passes.
 export function bagScenePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): string {
   const frame = RATIO_WORDS[ratio] ?? ratio
-  const name = (slots.product_name ?? 'coffee').trim()
-  const bag = `the real Minuto "${name}" coffee bag from the reference image, sealed and standing upright`
+  const names = shotProducts(slots)
+  const name = (names[0] ?? 'coffee').trim()
+  const bag = names.length > 1
+    ? `the ${names.length} real Minuto coffee bags from the reference images (${names.map(n => `"${n}"`).join(', ')}), sealed and standing upright side by side, slightly staggered, every label facing the camera`
+    : `the real Minuto "${name}" coffee bag from the reference image, sealed and standing upright`
   const scene: Record<string, string> = {
     'the bag on the counter': `${bag} on a warm wooden café counter, a few freshly roasted coffee beans beside it, soft morning window light`,
     'the bag in daylight': `${bag} on a pale stone surface by a window, bright natural daylight and soft shadows`,
     'the bag in warm lamp light': `${bag} on a dark wooden shelf in the warm glow of a lamp, a calm evening mood`,
     'the bag beside a cup': `${bag} on a warm wooden café counter beside a freshly made espresso in a small ceramic cup on its saucer, soft morning light`,
+    // Lifestyle (owner, 2026-11-18): real places a customer drinks Minuto coffee.
+    'the bag on a breakfast table at home': `${bag} on a wooden kitchen table at home by a sunny window, beside a ceramic cup of coffee and a plate with a croissant, a linen napkin, morning sun casting soft window shadows across the table`,
+    'the bag on a picnic in nature': `${bag} on a checked picnic blanket in a pine forest clearing, beside a ceramic cup of coffee, dappled late-afternoon sunlight through the trees, the forest softly out of focus behind`,
+    'the bag on a balcony at sunrise': `${bag} on a small wooden balcony table beside a cup of coffee, potted herbs at the edge of the frame, the city rooftops softly out of focus behind in warm golden sunrise light`,
+    'the bag on a camping trip': `${bag} on a flat rock beside a steaming enamel camping mug, a small camping stove and a manual coffee grinder nearby, a misty valley softly out of focus behind in early-morning light`,
+    'the bag and a cup outdoors': `${bag} on a weathered wooden outdoor café table beside a freshly made cappuccino in a ceramic cup on its saucer, open shade, a leafy street softly out of focus behind`,
   }
   const moment = resolveMoment(shot, slots.moment)
-  return `Scene: a ${frame} editorial photograph of ${scene[moment] ?? scene['the bag on the counter']}.\n\n` + bagSceneRules(frame)
+  return `Scene: a ${frame} editorial photograph of ${scene[moment] ?? scene['the bag on the counter']}.\n\n` + BAG_PHOTO_STYLE + '\n\n' + bagSceneRules(frame, names.length || 1)
 }
 
-export function bagSceneRules(frame: string): string {
+// Owner, 2026-11-18: images should look like a real photographer took them.
+export const BAG_PHOTO_STYLE = 'Shot by a professional lifestyle photographer on a full-frame camera with a 50mm prime lens at f/2.8: ' +
+  'real natural light with a clear direction and soft real shadows, shallow depth of field with the background gently blurred, ' +
+  'true-to-life colours, believable everyday textures and small natural imperfections, subtle film grain. A real photograph, never a glossy CGI render.'
+
+export function bagSceneRules(frame: string, count = 1): string {
+  if (count > 1) {
+    return `Hard rules: show all ${count} bags from the references, each exactly once, every bag SEALED and upright (never open, torn or spilling). ` +
+      `Each bag keeps its exact proportions, stag logo, "MINUTO Café Roastery" wordmark and label artwork; do not redraw, simplify or invent label text. ` +
+      `Every label faces the camera and is in sharp focus. Any loose coffee beans are medium-roasted, light-cinnamon brown, not black or oily. ` +
+      `No other bags or packaging, no people, no hands, no added text, numbers, prices, signs or logos anywhere except what is printed on the real bags. ` +
+      `Premium, warm, natural photography for a specialty coffee roastery's Instagram. ${frame[0].toUpperCase()}${frame.slice(1)} frame.`
+  }
   return `Hard rules: show the bag from the reference exactly once, SEALED and upright (never open, torn or spilling). ` +
     `It keeps its exact proportions, stag logo, "MINUTO Café Roastery" wordmark and label artwork; do not redraw, simplify or invent label text. ` +
     `The label faces the camera and is in sharp focus. Any loose coffee beans are medium-roasted, light-cinnamon brown, not black or oily. ` +
@@ -366,13 +414,22 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
   const text   = 'Is all sharp, readable text in the image correctly spelled? (n/a if there is none)'
   switch (shot.id) {
     case 'bag_hero':
-    case 'bag_with_drink':
+    case 'bag_with_drink': {
+      const names = shotProducts(slots)
+      if (names.length > 1) {
+        return [ground, text,
+          `Are exactly ${names.length} Minuto coffee bags the main subject, each shown once?`,
+          `Do the bags' printed labels read clearly as ${names.join(', ')}?`,
+          'Are the bags sealed and upright, with no people, hands or other packaging in the image?',
+          ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bags?'] : [])]
+      }
       // Packshots are studio images by design, so no "real photograph" question.
       return [ground, text,
         'Is exactly one Minuto coffee bag the main subject?',
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
         'Is the bag sealed and upright, with no people, hands or other packaging in the image?',
         ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
+    }
     case 'bar_moment':
       // A recreated STILL scene: no hands, nothing pouring, no invented marks
       // (a test retouch printed a fake "Minuto" logo on the machine).
@@ -440,6 +497,7 @@ Reply as JSON {"shot_type": "<id>", "moment": "<one of that shot's moments>", "d
 export function normalizeShotChoice(
   raw: Record<string, unknown> | null | undefined,
   productName?: string,
+  productNames?: unknown,
 ): { shot: ShotDef; slots: ShotSlots } {
   let id = raw?.shot_type
   if (!isShotType(id) || !SHOTS[id].enabled) id = productName ? 'bag_hero' : 'finished_drink'
@@ -449,6 +507,7 @@ export function normalizeShotChoice(
     shot,
     slots: {
       product_name: shot.needs_product ? productName : undefined,
+      product_names: shot.needs_product ? normalizeProductNames(productName, productNames) : undefined,
       moment: resolveMoment(shot, typeof raw?.moment === 'string' ? raw.moment : undefined),
       drink: shot.id === 'finished_drink'
         ? (typeof raw?.drink === 'string' && raw.drink.trim() ? raw.drink.trim() : 'cappuccino')
@@ -477,8 +536,10 @@ Choose a topic the menu below can show: if nothing on the menu shows what a capt
 SHOT MENU (shot_type: what it shows. moments):
 ${plannerShotMenu()}
 
-An Instagram visual's brief (destination "ig_post") carries, in this order: caption_he (the same caption the post will publish), shot_type, shot_slots { moment (copy one of that shot's moments verbatim), product_name (exact Minuto product name, bag shots only), drink (finished_drink only, e.g. "cappuccino") }. ${sceneRule}
-- Bag shots (bag_hero, bag_with_drink) only when the post features one specific Minuto coffee. They use real photos of that bag.
+An Instagram visual's brief (destination "ig_post") carries, in this order: caption_he (the same caption the post will publish), shot_type, shot_slots { moment (copy one of that shot's moments verbatim), product_name (exact Minuto product name, bag shots only), product_names (optional, bag shots only: 2-3 exact Minuto product names shown together, the first equal to product_name), drink (finished_drink only, e.g. "cappuccino") }. ${sceneRule}
+- Bag shots (bag_hero, bag_with_drink) when the post features a Minuto coffee. They use real photos of the bag. A bag shot may show 2-3 coffees together when the caption has one clear theme that ties them (our Ethiopian coffees, light vs dark roast, a gift trio for the holidays): list them in product_names and write the caption about that theme.
+- Lifestyle bag moments (at home, on a picnic, a balcony, camping, outdoors) are real-photographer lifestyle photos of the bag out in the world.
+- Image mix (owner, 2026-11-18): about 80% of Instagram images are lifestyle (a lifestyle bag moment, or finished_drink / brew_ritual with a scene_brief that starts "LIFESTYLE:" and names the place) and the rest are Minuto's own bar or roastery (bar_moment, roastery) from its real photos.
 - Hands, pours and the espresso machine come only from real photos: pick bar_moment (or roastery for roasting). brew_ritual, finished_drink and beans_closeup are still scenes with no hands and nothing pouring.
 - Carousels (a slides[] array) keep their per-slide scene_brief for now.`
 }
@@ -490,7 +551,9 @@ An Instagram visual's brief (destination "ig_post") carries, in this order: capt
 export function shotSceneSummary(shot: ShotDef, slots: ShotSlots): string {
   const moment = resolveMoment(shot, slots.moment)
   const what = shot.needs_product
-    ? `the Minuto ${slots.product_name ?? ''} coffee bag, ${moment}`.replace(/\s+/g, ' ')
+    ? (shotProducts(slots).length > 1
+      ? `the Minuto ${shotProducts(slots).join(' + ')} coffee bags together, ${moment}`
+      : `the Minuto ${slots.product_name ?? ''} coffee bag, ${moment}`).replace(/\s+/g, ' ')
     : shot.id === 'finished_drink'
       ? `a ${slots.drink ?? 'cappuccino'} in a Minuto cup, ${moment}, still life`
       : moment
@@ -542,10 +605,11 @@ export function applyPlannedShot(
   const rawSlots = (b.shot_slots && typeof b.shot_slots === 'object' && !Array.isArray(b.shot_slots))
     ? b.shot_slots as Record<string, unknown> : {}
   const str = (v: unknown) => typeof v === 'string' && v.trim() ? v.trim() : undefined
-  const product = str(rawSlots.product_name) ?? str(b.product_name)
+  const productList = Array.isArray(rawSlots.product_names) ? rawSlots.product_names.map(String).filter(n => n.trim()) : []
+  const product = str(rawSlots.product_name) ?? str(b.product_name) ?? (productList[0]?.trim() || undefined)
   const moment  = str(rawSlots.moment) ?? str(b.moment)
   const drink   = str(rawSlots.drink) ?? str(b.drink)
-  const { shot, slots } = normalizeShotChoice({ shot_type: asked, moment, drink }, product)
+  const { shot, slots } = normalizeShotChoice({ shot_type: asked, moment, drink }, product, productList)
 
   let note: string | undefined
   if (shot.id !== asked) {
@@ -558,6 +622,7 @@ export function applyPlannedShot(
 
   const cleanSlots: ShotSlots = {}
   if (slots.product_name) cleanSlots.product_name = slots.product_name
+  if (slots.product_names) cleanSlots.product_names = slots.product_names
   if (slots.moment)       cleanSlots.moment = slots.moment
   if (slots.drink)        cleanSlots.drink = slots.drink
 
@@ -577,3 +642,70 @@ export function applyPlannedShot(
   return { brief: b, picked: true, note }
 }
 
+
+// ── Weekly image mix (owner, 2026-11-18) ─────────────────────────────────────
+// "80% will be lifestyle and the rest with our real images". Lifestyle: the
+// real-photographer photos of coffee out in the world (Minuto bags at home or
+// in nature, or a cup or brewer there when every coffee was featured
+// recently). Real images: scenes of Minuto's own bar and roastery, made from
+// its photos. Every 5th image is a real one; the other four are lifestyle.
+export const REAL_PLACE_SHARE = 0.2
+export type ImageKind = 'lifestyle' | 'real_place' | 'other'
+
+export const LIFESTYLE_BAG_MOMENTS: ReadonlySet<string> = new Set([
+  'the bag on a breakfast table at home', 'the bag on a picnic in nature', 'the bag on a balcony at sunrise',
+  'the bag on a camping trip', 'the bag and a cup outdoors',
+])
+
+/** A scene_brief that asks the art director for a lifestyle image without a bag. */
+export const isLifestyleHint = (sceneBrief: unknown): boolean => /^\s*lifestyle\s*:/i.test(String(sceneBrief ?? ''))
+
+/** What kind of image an IG visual is. The art director's chosen space wins
+ *  when it rendered the image; otherwise the planned shot decides. */
+export function classifyIgImage(
+  brief: { shot_type?: unknown; shot_slots?: { moment?: unknown } | null; scene_brief?: unknown } | null,
+  adSpace?: unknown,
+): ImageKind {
+  const space = typeof adSpace === 'string' ? adSpace : ''
+  if (space === 'lifestyle') return 'lifestyle'
+  if (space === 'bar' || space === 'roastery' || space === 'craft') return 'real_place'
+  if (space) return 'other'
+  const shot = typeof brief?.shot_type === 'string' ? brief.shot_type : ''
+  const moment = typeof brief?.shot_slots?.moment === 'string' ? brief.shot_slots.moment.trim().toLowerCase() : ''
+  if ((shot === 'bag_hero' || shot === 'bag_with_drink') && LIFESTYLE_BAG_MOMENTS.has(moment)) return 'lifestyle'
+  if (shot === 'bar_moment' || shot === 'roastery') return 'real_place'
+  if (shot && isLifestyleHint(brief?.scene_brief)) return 'lifestyle'
+  return 'other'
+}
+
+export interface WeekMixCounts { lifestyle: number; real_place: number; other: number }
+
+const mixTotal = (c: WeekMixCounts) => c.lifestyle + c.real_place + c.other
+
+/** The kind the next IG image should be: every 5th image of the week is a
+ *  real one (images 5, 10, ...), the rest lifestyle. */
+export function nextImageKind(c: WeekMixCounts): ImageKind {
+  return c.real_place < Math.floor((mixTotal(c) + 1) * REAL_PLACE_SHARE) ? 'real_place' : 'lifestyle'
+}
+
+/** Why an image of this kind may not be queued now, or null when it may. */
+export function mixRefusal(c: WeekMixCounts, kind: ImageKind): string | null {
+  if (kind === 'other') return 'the owner wants about 80% lifestyle images and the rest from Minuto\'s real bar and roastery photos; make this a lifestyle image (a bag shot with a lifestyle moment, or a "LIFESTYLE:" scene) or a bar_moment / roastery image'
+  if (kind === 'real_place' && c.real_place + 1 > Math.ceil((mixTotal(c) + 1) * REAL_PLACE_SHARE)) {
+    return `this week already has ${c.real_place} images of Minuto's bar or roastery out of ${mixTotal(c)}, more than the owner's 20%; make this a lifestyle image`
+  }
+  return null
+}
+
+/** The weekly-mix block for planner prompts. */
+export function weeklyMixInstructions(c: WeekMixCounts): string {
+  const next = nextImageKind(c)
+  const what: Record<'lifestyle' | 'real_place', string> = {
+    lifestyle: 'a LIFESTYLE image: a bag shot (bag_hero or bag_with_drink) with one of the lifestyle moments (breakfast table at home, picnic in nature, balcony at sunrise, camping trip, a cup outdoors), 1 bag or 2-3 around one theme. If every coffee was featured recently, pick finished_drink or brew_ritual and start scene_brief with "LIFESTYLE:" and the place (a home table, a picnic, a balcony, a hike), so it is set out in the world without a bag.',
+    real_place: "an image of Minuto's own place, made from its real photos: bar_moment (the bar and the Strada X) or roastery.",
+  }
+  return `=== WEEKLY IMAGE MIX (owner, 2026-11-18) ===\n` +
+    `About 80% of Instagram images are lifestyle (real-photographer photos of Minuto coffee at home or out in nature, mostly with the real bags) and the rest are Minuto's own bar or roastery from its real photos: every 5th image is a real one. Other kinds (a bag on the counter, a still life, beans) are not made.\n` +
+    `This week so far: ${c.lifestyle} lifestyle, ${c.real_place} Minuto's bar/roastery${c.other ? `, ${c.other} other` : ''}.\n` +
+    `NEXT IG IMAGE: ${what[next as 'lifestyle' | 'real_place']}\n\n`
+}
