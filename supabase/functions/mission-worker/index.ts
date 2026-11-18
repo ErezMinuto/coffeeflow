@@ -51,7 +51,7 @@ import {
 } from '../seo-agent/services/sceneRepeat.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 import {
-  applyPlannedShot, classifyIgImage, plannerShotInstructions, weeklyMixInstructions, withIgDestination, WEEKLY_MIX, type WeekMixCounts,
+  applyPlannedShot, classifyIgImage, mixRefusal, plannerShotInstructions, weeklyMixInstructions, withIgDestination, type WeekMixCounts,
 } from '../_shared/shot_library.ts'
 
 const CORS = {
@@ -549,9 +549,9 @@ serve(runLogged('mission-worker', async (req, log) => {
     // deadlocking, and the lock must not reintroduce that failure.
     const storySubject = storyLock
       ? renderStoryLockPolicy(storyLock)
-      : `STORY POLICY: the daily story is a brewing method, ritual, brewing tip, roast-day or café-ambiance moment (bar_moment, roastery, brew_ritual, finished_drink, beans_closeup), OR a bag story when its caption is about one Minuto coffee (bag_hero or bag_with_drink, real photos of the bag). Mix them across the week.\n`
+      : `STORY POLICY: the daily story follows the WEEKLY IMAGE MIX below (owner, 2026-11-18): a lifestyle image (a Minuto bag at home or out in nature, 1 bag or 2-3 around a theme; or a "LIFESTYLE:" scene without a bag), or, when the mix says so, Minuto's own bar or roastery (bar_moment, roastery).\n`
     const storyPolicy = c.storyRemainingToday > 0
-      ? `${storySubject}Mechanics: visual aspect:"story", caption_he written first, then the shot_type; post media_type:"story". A bag story sets shot_slots.product_name to an exact lineup coffee NOT on the "featured on Instagram" list. A story without a bag needs no coffee and is NEVER blocked by recently-featured beans: if every coffee was featured recently, make the story without a bag and queue it now.\n`
+      ? `${storySubject}Mechanics: visual aspect:"story", caption_he written first, then the shot_type; post media_type:"story". A bag story sets shot_slots.product_name to an exact lineup coffee NOT on the "featured on Instagram" list. A story without a bag needs no coffee and is NEVER blocked by recently-featured beans: if every coffee was featured recently, make the story without a bag (a "LIFESTYLE:" scene on finished_drink or brew_ritual, or bar_moment / roastery when the mix calls for one) and queue it now.\n`
       : ''
     // ORPHAN RECOVERY. A completed IG visual with no instagram_post is a finished
     // render waiting to be posted — committing it needs NO new render, so it works
@@ -569,7 +569,7 @@ serve(runLogged('mission-worker', async (req, log) => {
       capLine +
       orphanBlock +
       storyPolicy +
-      weeklyMixInstructions(c.weekMix, c.dayIndex) +
+      weeklyMixInstructions(c.weekMix) +
       `Queue ONLY what STILL NEEDED lists, then WAIT. A post is a TWO-STEP pipeline (visual_generation destination:"ig_post" → wait for COMPLETE → instagram_post parented to it). Never queue a feed when none is due or the weekly cap is reached, never more than ${IG_FEED_MAX_PER_DAY} feed/day. When nothing is needed, note_progress and wait.\n\n`
   }
 
@@ -777,14 +777,17 @@ serve(runLogged('mission-worker', async (req, log) => {
               feedUnitsQueuedThisStep++
             }
           }
-          // (a2b) WEEKLY IMAGE MIX (owner, 2026-11-18): at most 5 lifestyle
-          // and 2 Minuto's-place images a week, so every kind gets its turn.
-          const mixKind = classifyIgImage(rawBrief as Parameters<typeof classifyIgImage>[0])
-          if (isDailyIgCadence && cadence) {
-            const kind = mixKind
-            const mix = cadence.weekMix
-            if (kind !== 'other' && mix[kind] >= WEEKLY_MIX[kind].max) {
-              newNotes.push(`(did NOT queue the IG visual — this week already has ${mix[kind]} ${kind === 'lifestyle' ? 'lifestyle' : "Minuto's place (bar/roastery)"} images, the weekly maximum. Pick another kind of image; see WEEKLY IMAGE MIX.)`)
+          // (a2b) WEEKLY IMAGE MIX (owner, 2026-11-18): about 80% lifestyle,
+          // the rest Minuto's bar/roastery from its real photos. Carousels keep
+          // their own per-slide scenes, and an active story theme lock (the
+          // admin's explicit subject) wins over the mix for stories, so the
+          // two rules can never deadlock the daily story.
+          const isCarousel = Array.isArray((rawBrief as { slides?: unknown }).slides) && ((rawBrief as { slides: unknown[] }).slides).length > 0
+          const mixKind = isCarousel ? 'other' as const : classifyIgImage(rawBrief as Parameters<typeof classifyIgImage>[0])
+          if (isDailyIgCadence && cadence && !isCarousel && !(isStoryVisual && storyLock)) {
+            const refusal = mixRefusal(cadence.weekMix, mixKind)
+            if (refusal) {
+              newNotes.push(`(did NOT queue the IG visual — ${refusal}. See WEEKLY IMAGE MIX.)`)
               continue
             }
           }

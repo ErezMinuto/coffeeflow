@@ -81,7 +81,7 @@ import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandG
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 import { noBagTail } from './no_bag_tail.ts'
 import {
-  SHOTS, classifyIgImage, isShotType, normalizeShotChoice, shotChecklist, shotProducts, shotRouterPrompt, type WeekMixCounts,
+  SHOTS, classifyIgImage, isLifestyleHint, isShotType, normalizeShotChoice, shotChecklist, shotProducts, shotRouterPrompt, type WeekMixCounts,
   type ShotDef, type ShotSlots,
 } from '../_shared/shot_library.ts'
 import { AD_PROMPT_VERSION, adUserMessage, isRealRejection, referenceCandidates, type OwnerVerdict, type RecentPost } from '../_shared/art_director.ts'
@@ -760,8 +760,9 @@ async function handleShot(
   if (ART_DIRECTOR_ENABLED && !shot.needs_product) {
     // A planner that wants a lifestyle image without a bag says so in
     // scene_brief ("LIFESTYLE: a picnic in the forest", owner 2026-11-18).
-    const lifestyleHint = /^\s*lifestyle\s*:/i.test(brief.scene_brief ?? '') ? ` (${String(brief.scene_brief).trim().slice(0, 200)})` : ''
-    return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim() + lifestyleHint)
+    const lifestyle = isLifestyleHint(brief.scene_brief)
+    const lifestyleHint = lifestyle ? ` (${String(brief.scene_brief).trim().slice(0, 200)})` : ''
+    return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim() + lifestyleHint, lifestyle ? 'lifestyle' : undefined)
   }
 
   // Every bag in the shot, not only the first (owner, 2026-11-18: 2-3 bags).
@@ -942,6 +943,7 @@ async function handleArtDirected(
   brief: VisualGenerationBrief,
   workerId: string,
   plannerHint: string,
+  requiredSpace?: 'lifestyle',
 ): Promise<Response> {
   const aspect = brief.aspect ?? 'story'
   const budget = shotBudget()
@@ -954,7 +956,7 @@ async function handleArtDirected(
     weekImageMix(supabase, task.id).catch(() => undefined),
   ])
   const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, verdicts, plannerHint, weekMix }) },
+    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, verdicts, plannerHint, weekMix, requiredSpace }) },
   ]
   const { ad, imageUrl, renderRaw, verdict, qaAttempts } = await runArtDirector({
     conversation, aspect, allowed, budget, log: (m) => console.log(`[seo-worker-visual] ${workerId} ${m}`),

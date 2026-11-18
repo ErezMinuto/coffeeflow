@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, shotProducts, normalizeProductNames, classifyIgImage, nextImageKind, weeklyMixInstructions, WEEKLY_MIX, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, shotProducts, normalizeProductNames, classifyIgImage, nextImageKind, weeklyMixInstructions, mixRefusal, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotFolders, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
@@ -275,13 +275,19 @@ Deno.test('weekly mix: classify by art-director space first, then by the planned
   assertEquals(classifyIgImage(null), 'other')
 })
 
-Deno.test('weekly mix: a week of 1 story a day + 4 feeds lands inside 4-5 lifestyle and 1-2 real-place', () => {
-  const perDay = [2, 1, 2, 1, 2, 1, 2]   // 11 images
+Deno.test('weekly mix: 80% lifestyle, every 5th image a real bar/roastery one', () => {
   const c = { lifestyle: 0, real_place: 0, other: 0 }
-  perDay.forEach((n, day) => { for (let i = 0; i < n; i++) c[nextImageKind(c, day)]++ })
-  assert(c.lifestyle >= WEEKLY_MIX.lifestyle.min && c.lifestyle <= WEEKLY_MIX.lifestyle.max, JSON.stringify(c))
-  assert(c.real_place >= WEEKLY_MIX.real_place.min && c.real_place <= WEEKLY_MIX.real_place.max, JSON.stringify(c))
-  assert(c.other >= 3, JSON.stringify(c))
-  const text = weeklyMixInstructions({ lifestyle: 5, real_place: 2, other: 3 }, 6)
-  assert(text.includes('lifestyle is full') && text.includes("Minuto's place is full") && text.includes('NEXT IG IMAGE: any OTHER kind'))
+  const order: string[] = []
+  for (let i = 0; i < 11; i++) { const k = nextImageKind(c); order.push(k); c[k]++ }
+  assertEquals(c, { lifestyle: 9, real_place: 2, other: 0 })
+  assertEquals(order[4], 'real_place'); assertEquals(order[9], 'real_place')
+  // Refusals: other kinds always, a real one above 20%; never a lifestyle one.
+  assert(mixRefusal({ lifestyle: 3, real_place: 0, other: 0 }, 'other'))
+  assertEquals(mixRefusal({ lifestyle: 0, real_place: 0, other: 0 }, 'real_place'), null)
+  assert(mixRefusal({ lifestyle: 1, real_place: 1, other: 0 }, 'real_place'))
+  assertEquals(mixRefusal({ lifestyle: 4, real_place: 1, other: 0 }, 'real_place'), null)
+  assertEquals(mixRefusal({ lifestyle: 20, real_place: 0, other: 0 }, 'lifestyle'), null)
+  assertEquals(classifyIgImage({ shot_type: 'finished_drink', scene_brief: 'LIFESTYLE: a picnic in a pine forest' }), 'lifestyle')
+  const text = weeklyMixInstructions({ lifestyle: 4, real_place: 0, other: 0 })
+  assert(text.includes('80%') && text.includes("NEXT IG IMAGE: an image of Minuto's own place"))
 })

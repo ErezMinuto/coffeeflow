@@ -539,6 +539,7 @@ ${plannerShotMenu()}
 An Instagram visual's brief (destination "ig_post") carries, in this order: caption_he (the same caption the post will publish), shot_type, shot_slots { moment (copy one of that shot's moments verbatim), product_name (exact Minuto product name, bag shots only), product_names (optional, bag shots only: 2-3 exact Minuto product names shown together, the first equal to product_name), drink (finished_drink only, e.g. "cappuccino") }. ${sceneRule}
 - Bag shots (bag_hero, bag_with_drink) when the post features a Minuto coffee. They use real photos of the bag. A bag shot may show 2-3 coffees together when the caption has one clear theme that ties them (our Ethiopian coffees, light vs dark roast, a gift trio for the holidays): list them in product_names and write the caption about that theme.
 - Lifestyle bag moments (at home, on a picnic, a balcony, camping, outdoors) are real-photographer lifestyle photos of the bag out in the world.
+- Image mix (owner, 2026-11-18): about 80% of Instagram images are lifestyle (a lifestyle bag moment, or finished_drink / brew_ritual with a scene_brief that starts "LIFESTYLE:" and names the place) and the rest are Minuto's own bar or roastery (bar_moment, roastery) from its real photos.
 - Hands, pours and the espresso machine come only from real photos: pick bar_moment (or roastery for roasting). brew_ritual, finished_drink and beans_closeup are still scenes with no hands and nothing pouring.
 - Carousels (a slides[] array) keep their per-slide scene_brief for now.`
 }
@@ -643,11 +644,12 @@ export function applyPlannedShot(
 
 
 // ── Weekly image mix (owner, 2026-11-18) ─────────────────────────────────────
-// "4-5 like these in a week and 1-2 based on our real images", the rest any
-// other kind, so the feed shows every kind of image. "These" are the
-// real-photographer lifestyle shots (a bag at home or out in nature); "real
-// images" are scenes of Minuto's own bar and roastery, made from its photos.
-export const WEEKLY_MIX = { lifestyle: { min: 4, max: 5 }, real_place: { min: 1, max: 2 } } as const
+// "80% will be lifestyle and the rest with our real images". Lifestyle: the
+// real-photographer photos of coffee out in the world (Minuto bags at home or
+// in nature, or a cup or brewer there when every coffee was featured
+// recently). Real images: scenes of Minuto's own bar and roastery, made from
+// its photos. Every 5th image is a real one; the other four are lifestyle.
+export const REAL_PLACE_SHARE = 0.2
 export type ImageKind = 'lifestyle' | 'real_place' | 'other'
 
 export const LIFESTYLE_BAG_MOMENTS: ReadonlySet<string> = new Set([
@@ -655,9 +657,15 @@ export const LIFESTYLE_BAG_MOMENTS: ReadonlySet<string> = new Set([
   'the bag on a camping trip', 'the bag and a cup outdoors',
 ])
 
+/** A scene_brief that asks the art director for a lifestyle image without a bag. */
+export const isLifestyleHint = (sceneBrief: unknown): boolean => /^\s*lifestyle\s*:/i.test(String(sceneBrief ?? ''))
+
 /** What kind of image an IG visual is. The art director's chosen space wins
  *  when it rendered the image; otherwise the planned shot decides. */
-export function classifyIgImage(brief: { shot_type?: unknown; shot_slots?: { moment?: unknown } | null } | null, adSpace?: unknown): ImageKind {
+export function classifyIgImage(
+  brief: { shot_type?: unknown; shot_slots?: { moment?: unknown } | null; scene_brief?: unknown } | null,
+  adSpace?: unknown,
+): ImageKind {
   const space = typeof adSpace === 'string' ? adSpace : ''
   if (space === 'lifestyle') return 'lifestyle'
   if (space === 'bar' || space === 'roastery' || space === 'craft') return 'real_place'
@@ -666,39 +674,38 @@ export function classifyIgImage(brief: { shot_type?: unknown; shot_slots?: { mom
   const moment = typeof brief?.shot_slots?.moment === 'string' ? brief.shot_slots.moment.trim().toLowerCase() : ''
   if ((shot === 'bag_hero' || shot === 'bag_with_drink') && LIFESTYLE_BAG_MOMENTS.has(moment)) return 'lifestyle'
   if (shot === 'bar_moment' || shot === 'roastery') return 'real_place'
+  if (shot && isLifestyleHint(brief?.scene_brief)) return 'lifestyle'
   return 'other'
 }
 
 export interface WeekMixCounts { lifestyle: number; real_place: number; other: number }
 
-/** Which kind the next IG image should be. dayIndex: 0 = Sunday (the
- *  cadence's week start) … 6. Paced so the week ends inside the targets. */
-export function nextImageKind(c: WeekMixCounts, dayIndex: number): ImageKind {
-  const day = Math.min(6, Math.max(0, Math.floor(dayIndex)))
-  const lifestyleDue = Math.ceil(WEEKLY_MIX.lifestyle.min * (day + 1) / 7)
-  const realDue = day >= 3 ? WEEKLY_MIX.real_place.min : 0
-  if (c.lifestyle < lifestyleDue && c.lifestyle < WEEKLY_MIX.lifestyle.max) return 'lifestyle'
-  if (c.real_place < realDue && c.real_place < WEEKLY_MIX.real_place.max) return 'real_place'
-  if (c.other < 1) return 'other'
-  if (c.lifestyle < WEEKLY_MIX.lifestyle.min) return 'lifestyle'
-  return 'other'
+const mixTotal = (c: WeekMixCounts) => c.lifestyle + c.real_place + c.other
+
+/** The kind the next IG image should be: every 5th image of the week is a
+ *  real one (images 5, 10, ...), the rest lifestyle. */
+export function nextImageKind(c: WeekMixCounts): ImageKind {
+  return c.real_place < Math.floor((mixTotal(c) + 1) * REAL_PLACE_SHARE) ? 'real_place' : 'lifestyle'
+}
+
+/** Why an image of this kind may not be queued now, or null when it may. */
+export function mixRefusal(c: WeekMixCounts, kind: ImageKind): string | null {
+  if (kind === 'other') return 'the owner wants about 80% lifestyle images and the rest from Minuto\'s real bar and roastery photos; make this a lifestyle image (a bag shot with a lifestyle moment, or a "LIFESTYLE:" scene) or a bar_moment / roastery image'
+  if (kind === 'real_place' && c.real_place + 1 > Math.ceil((mixTotal(c) + 1) * REAL_PLACE_SHARE)) {
+    return `this week already has ${c.real_place} images of Minuto's bar or roastery out of ${mixTotal(c)}, more than the owner's 20%; make this a lifestyle image`
+  }
+  return null
 }
 
 /** The weekly-mix block for planner prompts. */
-export function weeklyMixInstructions(c: WeekMixCounts, dayIndex: number): string {
-  const next = nextImageKind(c, dayIndex)
-  const what: Record<ImageKind, string> = {
-    lifestyle: 'a LIFESTYLE image: a bag shot (bag_hero or bag_with_drink) with one of the lifestyle moments (at home, picnic in nature, balcony, camping, outdoors), optionally 2-3 bags around one theme. If every coffee was featured recently, pick finished_drink or brew_ritual and start scene_brief with "LIFESTYLE:" and the place (a home table, a picnic, a balcony), so the art director sets it out in the world.',
+export function weeklyMixInstructions(c: WeekMixCounts): string {
+  const next = nextImageKind(c)
+  const what: Record<'lifestyle' | 'real_place', string> = {
+    lifestyle: 'a LIFESTYLE image: a bag shot (bag_hero or bag_with_drink) with one of the lifestyle moments (breakfast table at home, picnic in nature, balcony at sunrise, camping trip, a cup outdoors), 1 bag or 2-3 around one theme. If every coffee was featured recently, pick finished_drink or brew_ritual and start scene_brief with "LIFESTYLE:" and the place (a home table, a picnic, a balcony, a hike), so it is set out in the world without a bag.',
     real_place: "an image of Minuto's own place, made from its real photos: bar_moment (the bar and the Strada X) or roastery.",
-    other: 'any OTHER kind, different from the last few posts: brew_ritual, finished_drink, beans_closeup, or a bag on the counter, by the window or in lamp light.',
   }
-  const full: string[] = []
-  if (c.lifestyle >= WEEKLY_MIX.lifestyle.max) full.push(`lifestyle is full (${c.lifestyle}/${WEEKLY_MIX.lifestyle.max}): no more lifestyle moments this week`)
-  if (c.real_place >= WEEKLY_MIX.real_place.max) full.push(`Minuto's place is full (${c.real_place}/${WEEKLY_MIX.real_place.max}): no more bar_moment or roastery this week`)
   return `=== WEEKLY IMAGE MIX (owner, 2026-11-18) ===\n` +
-    `Every week: ${WEEKLY_MIX.lifestyle.min}-${WEEKLY_MIX.lifestyle.max} lifestyle images (real-photographer photos of Minuto bags at home or out in nature), ` +
-    `${WEEKLY_MIX.real_place.min}-${WEEKLY_MIX.real_place.max} images of Minuto's own bar or roastery (from its real photos), and every other image a different kind, so the feed shows all kinds of images.\n` +
-    `This week so far: ${c.lifestyle} lifestyle, ${c.real_place} Minuto's place, ${c.other} other.\n` +
-    `NEXT IG IMAGE: ${what[next]}\n` +
-    (full.length ? `${full.join('; ')}.\n` : '') + '\n'
+    `About 80% of Instagram images are lifestyle (real-photographer photos of Minuto coffee at home or out in nature, mostly with the real bags) and the rest are Minuto's own bar or roastery from its real photos: every 5th image is a real one. Other kinds (a bag on the counter, a still life, beans) are not made.\n` +
+    `This week so far: ${c.lifestyle} lifestyle, ${c.real_place} Minuto's bar/roastery${c.other ? `, ${c.other} other` : ''}.\n` +
+    `NEXT IG IMAGE: ${what[next as 'lifestyle' | 'real_place']}\n\n`
 }

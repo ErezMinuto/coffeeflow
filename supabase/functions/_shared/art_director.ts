@@ -66,7 +66,7 @@ Spaces (owner + Gemini, 2026-11-13). Every image happens in exactly one space, a
 - craft: a close-up of one detail of the work (espresso running from the spouts, microfoam, beans tumbling in the cooling bin, the trier's beans). One subject, the rest soft.
 - lifestyle: Minuto coffee out in the world, the way a customer enjoys it: a breakfast table at home by the window, a balcony at sunrise, a picnic blanket in a pine forest, a flat rock beside a stream, a camp table on a hiking trip, a desk with a laptop pushed aside, a Mediterranean beach in the early morning. The coffee (a cup, a brewer, a small dish of roasted beans) is the subject in the foreground; the place is a soft, believable background that tells the story. Light comes from the place itself: real sun, open shade, golden hour. No espresso machine, roaster, bar counter or production equipment. References for the cup, brewer or beans come from the cups, brewing or beans photos.
 Choose references from the chosen space only (for lifestyle: a cup, brewer or beans photo; the place itself is described in the prompt).
-Mix it up (owner, 2026-11-18): the owner wants real lifestyle photos in the feed too, not only shots of the shop. When most recent posts are bar, roastery or craft, a lifestyle image is the better choice.
+Image mix (owner, 2026-11-18): about 80% of Minuto's Instagram images are lifestyle and the rest are Minuto's own bar or roastery. Unless this post's planner idea is a bar or roastery moment, choose lifestyle. When THIS POST gives a REQUIRED SPACE, use that space.
 
 Real-world rules (hard rules; a brief that breaks one is rewritten before it is rendered):
 - The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
@@ -139,6 +139,7 @@ export function adUserMessage(opts: {
   photos?: IndexedPhoto[]
   // This week's IG images by kind (owner's weekly mix, 2026-11-18).
   weekMix?: { lifestyle: number; real_place: number; other: number }
+  requiredSpace?: Space
 }): string {
   const photos = opts.photos ?? referenceCandidates()
   const verdicts = opts.verdicts ?? []
@@ -153,7 +154,8 @@ export function adUserMessage(opts: {
     `format: ${ASPECT_WORDS[opts.aspect] ?? opts.aspect}`,
     `goal: ${opts.goal ?? 'Instagram post for Minuto'}`,
     ...(opts.plannerHint ? [`planner's idea (a hint only; you decide): ${opts.plannerHint}`] : []),
-    ...(opts.weekMix ? [`this week so far: ${opts.weekMix.lifestyle} lifestyle, ${opts.weekMix.real_place} at Minuto's bar or roastery (owner wants at most 2 a week; at 2 or more, choose product or lifestyle), ${opts.weekMix.other} other`] : []),
+    ...(opts.weekMix ? [`this week so far: ${opts.weekMix.lifestyle} lifestyle, ${opts.weekMix.real_place} at Minuto's bar or roastery, ${opts.weekMix.other} other (the owner wants about 80% lifestyle, the rest bar or roastery)`] : []),
+    ...(opts.requiredSpace ? [`REQUIRED SPACE: ${opts.requiredSpace} (the owner's weekly image mix needs this kind of image now)`] : []),
     `caption: ${opts.caption}`,
   ].join('\n')
 }
