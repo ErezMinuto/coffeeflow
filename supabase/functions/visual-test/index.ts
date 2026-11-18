@@ -4,7 +4,7 @@ import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  PHOTO_EXCLUDE, SHOTS, bagScenePrompt, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief,
+  PHOTO_EXCLUDE, SHOTS, bagScenePrompt, shotProducts, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief,
   shotFolders, shotGeneratePrompt, shotUsesRealPhoto,
   type ShotDef,
   type ShotSlots, type ShotType,
@@ -440,6 +440,10 @@ interface BagSceneResult {
 async function renderBagScene(
   supabase: ReturnType<typeof createClient>, shot: ShotDef, slots: ShotSlots, ratio: string,
 ): Promise<BagSceneResult> {
+  // Several bags (owner, 2026-11-18): every one needs its studio packshot,
+  // each goes in as its own reference and the label check names them all.
+  const names = shotProducts(slots)
+  if (names.length > 1) return await renderMultiBagScene(shot, slots, ratio, names)
   const prompt = bagScenePrompt(shot, slots, ratio)
   const out: BagSceneResult = { image: null, reference: null, prompt, attempts: 0, issues: [] }
   // The studio packshot shows the label flat and sharp, the best reference
@@ -472,6 +476,45 @@ async function renderBagScene(
       if (!matchesRatio(readImageSize(decodeBase64(img.data)), ratio)) { out.issues.push(`attempt ${out.attempts}: wrong aspect ratio`); continue }
       const verdict = parseBagLabelCheck((await geminiParts(BAG_CHECK_MODEL,
         [...refParts, { text: 'Generated image to check:' }, { inline_data: { mime_type: mime, data: img.data } }, { text: bagLabelCheckPrompt([name]) }],
+        { responseMimeType: 'application/json', temperature: 0 }, 45_000)).map(p => p.text || '').join(''))
+      if (!verdict.pass) { out.issues.push(`attempt ${out.attempts}: ${verdict.issues.join('; ') || 'failed the label check'}`); continue }
+      out.image = { b64: img.data, mime }
+      return out
+    } catch (e) {
+      out.issues.push(`attempt ${out.attempts}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+  return out
+}
+
+async function renderMultiBagScene(shot: ShotDef, slots: ShotSlots, ratio: string, names: string[]): Promise<BagSceneResult> {
+  const prompt = bagScenePrompt(shot, slots, ratio)
+  const out: BagSceneResult = { image: null, reference: null, prompt, attempts: 0, issues: [] }
+  const refParts: any[] = []
+  const refs: string[] = []
+  for (const [i, name] of names.entries()) {
+    const pack = packshotFor(name)
+    if (!pack) { out.issues.push(`no packshot for "${name}"`); return out }
+    const url = `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${pack}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+    if (!res.ok) { out.issues.push(`reference ${res.status}: ${url}`); return out }
+    refParts.push({ text: `Reference image ${i + 1}: the real Minuto "${name}" coffee bag. Reproduce THIS EXACT bag.` },
+      { inline_data: { mime_type: mimeOf(url), data: encodeBase64(await res.arrayBuffer()) } })
+    refs.push(url)
+  }
+  out.reference = refs[0]
+  const started = Date.now()
+  while (out.attempts < BAG_SCENE_ATTEMPTS && Date.now() - started < BAG_SCENE_BUDGET_MS) {
+    out.attempts++
+    try {
+      const parts = await geminiParts(BAG_SCENE_MODEL, [...refParts, { text: prompt }],
+        { responseModalities: ['IMAGE', 'TEXT'], imageConfig: { aspectRatio: ratio } }, 90_000)
+      const img = parts.map(p => p.inlineData || p.inline_data).find(d => d?.data && String(d.mimeType || d.mime_type).startsWith('image/'))
+      if (!img) { out.issues.push(`attempt ${out.attempts}: no image returned`); continue }
+      const mime = String(img.mimeType || img.mime_type)
+      if (!matchesRatio(readImageSize(decodeBase64(img.data)), ratio)) { out.issues.push(`attempt ${out.attempts}: wrong aspect ratio`); continue }
+      const verdict = parseBagLabelCheck((await geminiParts(BAG_CHECK_MODEL,
+        [...refParts, { text: 'Generated image to check:' }, { inline_data: { mime_type: mime, data: img.data } }, { text: bagLabelCheckPrompt(names) }],
         { responseMimeType: 'application/json', temperature: 0 }, 45_000)).map(p => p.text || '').join(''))
       if (!verdict.pass) { out.issues.push(`attempt ${out.attempts}: ${verdict.issues.join('; ') || 'failed the label check'}`); continue }
       out.image = { b64: img.data, mime }
@@ -562,7 +605,10 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
       referencePhoto = bagScene.reference
       sentPrompt = bagScene.prompt
     } else {
-      console.warn(`[visual-test] bag scene for "${slots.product_name}" failed, publishing the real photo: ${bagScene.issues.join(' | ')}`)
+      console.warn(`[visual-test] bag scene for "${shotProducts(slots).join(', ')}" failed, publishing the real photo: ${bagScene.issues.join(' | ')}`)
+      // The real photos show one bag: fall back to the first product alone,
+      // and report the slots used so the critic checks for one bag.
+      delete slots.product_names
     }
   }
 

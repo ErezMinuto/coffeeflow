@@ -50,7 +50,9 @@ import {
   type RecentScene,
 } from '../seo-agent/services/sceneRepeat.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
-import { applyPlannedShot, withIgDestination, plannerShotInstructions } from '../_shared/shot_library.ts'
+import {
+  applyPlannedShot, classifyIgImage, plannerShotInstructions, weeklyMixInstructions, withIgDestination, WEEKLY_MIX, type WeekMixCounts,
+} from '../_shared/shot_library.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -117,10 +119,13 @@ async function fetchRecentlyFeaturedIgProducts(
       .limit(400)
     const names = new Set<string>()
     for (const v of (data ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
-      const b = v.brief_data as { destination?: unknown; product_name?: unknown } | null
+      const b = v.brief_data as { destination?: unknown; product_name?: unknown; shot_slots?: { product_names?: unknown } } | null
       if (String(b?.destination ?? '').toLowerCase() !== 'ig_post') continue
       const pn = String(b?.product_name ?? '').trim()
       if (pn) names.add(pn)
+      // A shot with 2-3 bags features every one of them (owner, 2026-11-18).
+      const more = b?.shot_slots?.product_names
+      if (Array.isArray(more)) for (const n of more) { const t = String(n ?? '').trim(); if (t) names.add(t) }
     }
     return [...names]
   } catch (e: any) {
@@ -235,6 +240,8 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
   const weekStart = new Date(dayStart); weekStart.setUTCDate(weekStart.getUTCDate() - dayIndex)
   const weekIso = weekStart.toISOString()
   let storiesToday = 0, feedsToday = 0, feedsThisWeek = 0, igVisualsToday = 0, igVisualsInFlight = 0, igStoryVisualsToday = 0
+  // This week's IG images by kind, for the owner's weekly mix (2026-11-18).
+  const weekMix: WeekMixCounts = { lifestyle: 0, real_place: 0, other: 0 }
   try {
     // instagram_post tasks since the start of THIS week (covers today too).
     const { data: igTasks } = await supabase
@@ -264,6 +271,18 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
       if (String((v.brief_data as { aspect?: unknown } | null)?.aspect ?? '').toLowerCase() === 'story') igStoryVisualsToday++
       if (v.status === 'pending' || v.status === 'processing') igVisualsInFlight++
     }
+    const { data: weekVis } = await supabase
+      .from('seo_tasks')
+      .select('brief_data, status, result_data->art_direction->>space')
+      .eq('task_type', 'visual_generation')
+      .eq('brief_data->>destination', 'ig_post')
+      .neq('status', 'failed')
+      .gte('created_at', weekIso)
+      .limit(400)
+    for (const v of (weekVis ?? []) as Array<{ brief_data: Record<string, unknown> | null; space?: string | null }>) {
+      if (Array.isArray((v.brief_data as { slides?: unknown } | null)?.slides)) { weekMix.other++; continue }
+      weekMix[classifyIgImage(v.brief_data as Parameters<typeof classifyIgImage>[0], v.space)]++
+    }
   } catch (e: any) {
     console.warn(`[mission-worker] IG-cadence count failed: ${e?.message ?? e}`)
   }
@@ -283,6 +302,7 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
   const visualCapHit = igVisualsToday >= IG_VISUAL_DAILY_CAP
   return {
     storiesToday, feedsToday, feedsThisWeek, igVisualsToday, igVisualsInFlight, igStoryVisualsToday,
+    weekMix, dayIndex,
     storyRemainingToday, feedRemainingWeekMin, feedRemainingWeekMax,
     pacedFeedTarget, feedDueToday, dayQuotaMet, visualCapHit,
   }
@@ -549,6 +569,7 @@ serve(runLogged('mission-worker', async (req, log) => {
       capLine +
       orphanBlock +
       storyPolicy +
+      weeklyMixInstructions(c.weekMix, c.dayIndex) +
       `Queue ONLY what STILL NEEDED lists, then WAIT. A post is a TWO-STEP pipeline (visual_generation destination:"ig_post" → wait for COMPLETE → instagram_post parented to it). Never queue a feed when none is due or the weekly cap is reached, never more than ${IG_FEED_MAX_PER_DAY} feed/day. When nothing is needed, note_progress and wait.\n\n`
   }
 
@@ -756,6 +777,17 @@ serve(runLogged('mission-worker', async (req, log) => {
               feedUnitsQueuedThisStep++
             }
           }
+          // (a2b) WEEKLY IMAGE MIX (owner, 2026-11-18): at most 5 lifestyle
+          // and 2 Minuto's-place images a week, so every kind gets its turn.
+          const mixKind = classifyIgImage(rawBrief as Parameters<typeof classifyIgImage>[0])
+          if (isDailyIgCadence && cadence) {
+            const kind = mixKind
+            const mix = cadence.weekMix
+            if (kind !== 'other' && mix[kind] >= WEEKLY_MIX[kind].max) {
+              newNotes.push(`(did NOT queue the IG visual — this week already has ${mix[kind]} ${kind === 'lifestyle' ? 'lifestyle' : "Minuto's place (bar/roastery)"} images, the weekly maximum. Pick another kind of image; see WEEKLY IMAGE MIX.)`)
+              continue
+            }
+          }
           // (a3) STORY THEME LOCK — the gate that makes the admin's "espresso
           // and latte art only" actually bind. Judged on the emitted
           // scene_brief, not on the model's intent: a rejected story comes
@@ -802,7 +834,13 @@ serve(runLogged('mission-worker', async (req, log) => {
           // (e.g. two Sweet Leona feed posts in a day). Only applies when a
           // product is named; bag-free lifestyle scenes (no product_name) pass.
           const productName = String((rawBrief as { product_name?: unknown }).product_name ?? '').trim()
-          if (productName) {
+          const slotNames = (rawBrief as { shot_slots?: { product_names?: unknown } }).shot_slots?.product_names
+          // Every named coffee, even when product_name itself is missing, so a
+          // brief can never slip a bag past the guards via product_names.
+          const featured = [...new Set([...(productName ? [productName] : []),
+            ...(Array.isArray(slotNames) ? slotNames.map(n => String(n ?? '').trim()).filter(Boolean) : [])])]
+          let productBlocked = false
+          for (const productName of featured) {
             // Brand guard. The catalog block already only shows Minuto's own
             // roasts, but the model writes product_name as free text and can
             // name something that was never on the list.
@@ -810,15 +848,20 @@ serve(runLogged('mission-worker', async (req, log) => {
             if (!heroVerdict.ok) {
               newNotes.push(`(did NOT queue IG visual — ${heroVerdict.why}. Pick a Minuto roast from the lineup above.)`)
               console.warn(`[mission-worker] brand guard rejected hero "${productName}": ${heroVerdict.why}`)
-              continue
+              productBlocked = true
+              break
             }
             const key = normProduct(productName)
             if (recentIgProductSet.has(key) || igProductsQueuedThisStep.has(key)) {
               newNotes.push(`(did NOT queue IG visual for "${productName}" — that coffee was already featured on Instagram within the last ${IG_PRODUCT_REPEAT_DAYS} days. Pick a DIFFERENT bean from the lineup so posts don't cannibalize.)`)
-              continue
+              productBlocked = true
+              break
             }
-            igProductsQueuedThisStep.add(key)
           }
+          if (productBlocked) continue
+          for (const n of featured) igProductsQueuedThisStep.add(normProduct(n))
+          // Counted only once every guard above let it through.
+          if (isDailyIgCadence && cadence) cadence.weekMix[mixKind]++
           if (sceneText) {
             scenesForRepeatCheck.unshift({ id: '(this step)', created_at: new Date().toISOString(), aspect, scene_brief: sceneText })
           }

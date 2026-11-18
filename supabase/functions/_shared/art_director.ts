@@ -137,6 +137,8 @@ export function adUserMessage(opts: {
   verdicts?: OwnerVerdict[]
   plannerHint?: string
   photos?: IndexedPhoto[]
+  // This week's IG images by kind (owner's weekly mix, 2026-11-18).
+  weekMix?: { lifestyle: number; real_place: number; other: number }
 }): string {
   const photos = opts.photos ?? referenceCandidates()
   const verdicts = opts.verdicts ?? []
@@ -151,6 +153,7 @@ export function adUserMessage(opts: {
     `format: ${ASPECT_WORDS[opts.aspect] ?? opts.aspect}`,
     `goal: ${opts.goal ?? 'Instagram post for Minuto'}`,
     ...(opts.plannerHint ? [`planner's idea (a hint only; you decide): ${opts.plannerHint}`] : []),
+    ...(opts.weekMix ? [`this week so far: ${opts.weekMix.lifestyle} lifestyle, ${opts.weekMix.real_place} at Minuto's bar or roastery (owner wants at most 2 a week; at 2 or more, choose product or lifestyle), ${opts.weekMix.other} other`] : []),
     `caption: ${opts.caption}`,
   ].join('\n')
 }
