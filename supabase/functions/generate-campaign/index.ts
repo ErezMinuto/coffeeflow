@@ -17,6 +17,7 @@ import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/c
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE, isSpecialEdition, shortProductName } from "./email_template.ts";
 import { generateSceneImage } from "./scene_image.ts";
+import { artDirectEmailHero } from "./email_art_director.ts";
 import { resolveCoffee } from "./resolve_products.ts";
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -1114,7 +1115,9 @@ interface RenderDraftPayload {
   // Optional design around the words (the words themselves never change):
   products?: string[];      // 1-6 Minuto coffee products, exact or unique short names
   sceneBrief?: string;      // a scene for an image built around the real bags
-  bannerUrl?: string;       // an existing hero image in our marketing bucket (wins over sceneBrief)
+  bannerUrl?: string;       // an existing hero image in our marketing bucket (wins over everything)
+  artDirect?: boolean;      // the email art director designs the hero (when no bannerUrl / sceneBrief)
+  artNote?: string;         // the owner's wishes for the image, passed to the art director
   promoDeadline?: string;   // YYYY-MM-DD, last day of the offer (legal footer line)
   // Template sections. Each is a design slot for approved words, passed
   // through as given (trimmed), never rewritten.
@@ -1211,6 +1214,9 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   if (sceneBrief && !givenBanner && !productNames.length) return err(400, "scene_brief needs products: the scene is built around their real bags");
   const sec = renderSections(p);
   if (!sec.ok) return err(400, sec.error);
+  const artNote = txt(p.artNote);
+  if (artNote.length > 500) return err(400, "art_note too long (≤500)");
+  const artDirect = p.artDirect === true && !givenBanner && !sceneBrief;
   const heroName = txt(p.heroProduct);
   const noteMap = p.productNotes && typeof p.productNotes === "object" && !Array.isArray(p.productNotes) ? p.productNotes : {};
   if (Object.values(noteMap).some((v) => typeof v !== "string" || v.trim().length > 80)) return err(400, "product_notes: one line per product, ≤80 characters");
@@ -1273,9 +1279,9 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     d.gridTitle || "", d.closingText || "", d.bannerUrl || null, d.sceneBrief || "", d.cardNotes || [], d.hero ?? null,
   ]);
   // The hero product only shows when there is no image (given or generated).
-  const wantHero = givenBanner || sceneBrief ? null : (heroPick ?? products[0])?.woo_id ?? null;
+  const wantHero = givenBanner || sceneBrief || artDirect ? null : (heroPick ?? products[0])?.woo_id ?? null;
   const wantKey = sectionsKey({
-    ...sec.s, bannerUrl: givenBanner, sceneBrief, cardNotes: [...cardNote.entries()].sort(),
+    ...sec.s, bannerUrl: givenBanner, sceneBrief: artDirect ? `art:${artNote}` : sceneBrief, cardNotes: [...cardNote.entries()].sort(),
     hero: wantHero == null ? null : String(wantHero),
   });
   const wantIds = products.map((pr: any) => String(pr.woo_id)).join(",");
@@ -1283,9 +1289,12 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     const des = decodeDesign(d.html_content);
     // A generated scene is stored as bannerUrl; compare the request, not the result.
     const storedNotes = Object.entries(des.productNotes ?? {}).filter(([, v]) => v?.note).map(([k, v]) => [k, v.note]).sort();
-    const storedHero = des.sceneBrief || des.bannerUrl || des.heroProductId == null ? null : String(des.heroProductId);
+    const storedHero = des.sceneBrief || des.artDirected || des.bannerUrl || des.heroProductId == null ? null : String(des.heroProductId);
+    // An art-directed draft is compared by its request (the owner's note),
+    // not by the concept the art director chose.
     const stored = sectionsKey({
       ...des, bannerUrl: des.sceneBrief ? (givenBanner ?? null) : des.bannerUrl ?? null, cardNotes: storedNotes, hero: storedHero,
+      sceneBrief: des.artDirected ? `art:${des.artNote ?? ""}` : des.sceneBrief,
     });
     return stored === wantKey && (d.product_ids ?? []).map(String).join(",") === wantIds;
   });
@@ -1294,6 +1303,8 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   // An approved hero image is used as is, once we know it exists.
   let bannerUrl: string | null = null;
   let scene: { attempts: number; issues: string[]; used: boolean } | null = null;
+  let art: Record<string, unknown> | null = null;
+  let artConcept = "";
   if (givenBanner) {
     const head = await fetch(givenBanner, { method: "HEAD" }).catch(() => null);
     if (!head?.ok || !/^image\//.test(head.headers.get("content-type") ?? "")) {
@@ -1301,6 +1312,34 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     }
     bannerUrl = givenBanner;
     if (sceneBrief) scene = { attempts: 0, issues: ["banner_url given: the approved image is the hero, no scene was generated"], used: false };
+  } else if (artDirect) {
+    // The art director designs the hero from the approved copy. Its concept is
+    // stored as the sceneBrief so the next email does something different.
+    const { data: recent } = await supabase.from("campaigns")
+      .select("html_content").eq("user_id", p.userId).eq("campaign_type", "brain")
+      .order("created_at", { ascending: false }).limit(8);
+    const recentScenes = (recent ?? []).map((c: any) => decodeDesign(c.html_content).sceneBrief)
+      .filter((x: unknown): x is string => typeof x === "string" && !!x.trim()).map((x: string) => x.slice(0, 200));
+    const res = await artDirectEmailHero({
+      copy: {
+        subject: subjectIn, preheader, headline: sec.s.headline, kicker: sec.s.kicker, body,
+        offerTitle: sec.s.offer?.title ?? "", offerText: sec.s.offer?.text ?? "",
+      },
+      products: products.map((pr: any) => ({
+        woo_id: pr.woo_id, name: pr.name, short: shortProductName(pr.name),
+        description: String(pr.short_description ?? "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim(),
+        image_url: pr.image_url, jar: isSpecialEdition(pr.name),
+      })),
+      recentScenes, artNote, geminiKey: GEMINI_KEY, supabaseUrl: SUPA_URL, supabase,
+      log: (m) => console.log(m),
+    });
+    bannerUrl = res.url;
+    artConcept = res.concept ? `${res.direction?.mode ?? ""}: ${res.concept}`.slice(0, 600) : "";
+    art = {
+      used: !!res.url, mode: res.direction?.mode ?? null, concept: res.concept, why: res.direction?.why ?? "",
+      design: res.design, attempts: res.attempts, notes: res.notes.slice(0, 6), issues: res.issues.slice(-4),
+    };
+    console.log("render-draft art:", JSON.stringify({ ...art, prompt: res.direction?.prompt }));
   } else if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
     // Scene image around the real bags. A render only counts if it passes the
     // label check; otherwise the first product's real photo is the hero.
@@ -1338,7 +1377,9 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
     promoDeadline:  promoDeadline || null,
     heroProductId,
-    sceneBrief:     sceneBrief || undefined,
+    sceneBrief:     artConcept || sceneBrief || undefined,
+    artDirected:    artDirect || undefined,
+    artNote:        artDirect && artNote ? artNote : undefined,
     kicker:         sec.s.kicker || undefined,
     headline:       sec.s.headline || undefined,
     offer:          sec.s.offer,
@@ -1368,7 +1409,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .single();
   if (insertErr) return err(500, insertErr.message);
 
-  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent }, scene });
+  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent }, scene, art });
 }
 
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────
