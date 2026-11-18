@@ -225,6 +225,13 @@ Deno.test('bag scenes keep the real bag and fill the frame asked for', () => {
     }
   }
   assert(bagScenePrompt(SHOTS.bag_with_drink, { product_name: 'Guji' }, '9:16').includes('espresso'))
+  // Lifestyle moments (owner, 2026-11-18) have their own scene, not the counter fallback.
+  for (const moment of ['the bag on a picnic in nature', 'the bag on a breakfast table at home', 'the bag and a cup outdoors']) {
+    const shot = SHOTS.bag_hero.moments.includes(moment) ? SHOTS.bag_hero : SHOTS.bag_with_drink
+    const p = bagScenePrompt(shot, { product_name: 'Guji', moment }, '4:5')
+    assert(!p.includes('café counter, a few freshly roasted'), moment)
+    assert(p.includes('professional lifestyle photographer'), moment)
+  }
   assert(shotChecklist(SHOTS.bag_hero, { product_name: 'Guji' }).some(q => q.includes('sealed')))
 })
 

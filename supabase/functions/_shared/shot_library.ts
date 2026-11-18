@@ -66,11 +66,14 @@ export interface ShotDef {
 export const SHOTS: Record<ShotType, ShotDef> = {
   bag_hero: {
     id: 'bag_hero', label: 'Bag hero',
-    use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post',
+    use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post; in the shop or as a lifestyle photo at home or out in nature',
     // A new scene around the real bag (bagScenePrompt, owner 2026-11-07);
     // the real photo below is the fallback when no render passes the label check.
     source: 'real_photo', folders: ['bag_scenes', 'coffee_bags'],
-    moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light'],
+    // Lifestyle moments (owner, 2026-11-18): the bag out in the world, at home
+    // and in nature, not only in the shop.
+    moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light',
+      'the bag on a breakfast table at home', 'the bag on a picnic in nature', 'the bag on a balcony at sunrise', 'the bag on a camping trip'],
     needs_product: true, enabled: true,
   },
   bar_moment: {
@@ -130,7 +133,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     id: 'bag_with_drink', label: 'Bag and drink',
     use_for: 'a Minuto bag next to a finished cup, pairing a product with how it tastes',
     source: 'real_photo', folders: ['bag_scenes'],
-    moments: ['the bag beside a cup'],
+    moments: ['the bag beside a cup', 'the bag and a cup outdoors'],
     needs_product: true, enabled: true,    // owner's bag shoot 2026-10-28 (every photo has an espresso)
   },
 }
@@ -286,10 +289,21 @@ export function bagScenePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): 
     'the bag in daylight': `${bag} on a pale stone surface by a window, bright natural daylight and soft shadows`,
     'the bag in warm lamp light': `${bag} on a dark wooden shelf in the warm glow of a lamp, a calm evening mood`,
     'the bag beside a cup': `${bag} on a warm wooden café counter beside a freshly made espresso in a small ceramic cup on its saucer, soft morning light`,
+    // Lifestyle (owner, 2026-11-18): real places a customer drinks Minuto coffee.
+    'the bag on a breakfast table at home': `${bag} on a wooden kitchen table at home by a sunny window, beside a ceramic cup of coffee and a plate with a croissant, a linen napkin, morning sun casting soft window shadows across the table`,
+    'the bag on a picnic in nature': `${bag} on a checked picnic blanket in a pine forest clearing, beside a ceramic cup of coffee, dappled late-afternoon sunlight through the trees, the forest softly out of focus behind`,
+    'the bag on a balcony at sunrise': `${bag} on a small wooden balcony table beside a cup of coffee, potted herbs at the edge of the frame, the city rooftops softly out of focus behind in warm golden sunrise light`,
+    'the bag on a camping trip': `${bag} on a flat rock beside a steaming enamel camping mug, a small camping stove and a manual coffee grinder nearby, a misty valley softly out of focus behind in early-morning light`,
+    'the bag and a cup outdoors': `${bag} on a weathered wooden outdoor café table beside a freshly made cappuccino in a ceramic cup on its saucer, open shade, a leafy street softly out of focus behind`,
   }
   const moment = resolveMoment(shot, slots.moment)
-  return `Scene: a ${frame} editorial photograph of ${scene[moment] ?? scene['the bag on the counter']}.\n\n` + bagSceneRules(frame)
+  return `Scene: a ${frame} editorial photograph of ${scene[moment] ?? scene['the bag on the counter']}.\n\n` + BAG_PHOTO_STYLE + '\n\n' + bagSceneRules(frame)
 }
+
+// Owner, 2026-11-18: images should look like a real photographer took them.
+export const BAG_PHOTO_STYLE = 'Shot by a professional lifestyle photographer on a full-frame camera with a 50mm prime lens at f/2.8: ' +
+  'real natural light with a clear direction and soft real shadows, shallow depth of field with the background gently blurred, ' +
+  'true-to-life colours, believable everyday textures and small natural imperfections, subtle film grain. A real photograph, never a glossy CGI render.'
 
 export function bagSceneRules(frame: string): string {
   return `Hard rules: show the bag from the reference exactly once, SEALED and upright (never open, torn or spilling). ` +

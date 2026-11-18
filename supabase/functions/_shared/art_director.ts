@@ -17,7 +17,7 @@ import { PHOTO_EXCLUDE } from './shot_library.ts'
 
 export const AD_MODEL = 'claude-opus-5-5'
 export const AD_CRITIC_MODEL = 'gemini-3.1-pro-preview'
-export const AD_PROMPT_VERSION = 'art-director-v3'
+export const AD_PROMPT_VERSION = 'art-director-v4'
 
 // Owner-approved 2026-11-07 ("List is right"). How each action REALLY looks;
 // the art director must follow it and the critic checks it.
@@ -36,6 +36,8 @@ export const ACTIONS: Record<string, string> = {
   bags_on_the_shelf: "Sealed Minuto bags stand upright on a shelf or counter; labels face out exactly as the real bags.",
   cupping: "Rows of small cups of ground coffee on a table; someone breaks the crust with a spoon or sniffs the aroma.",
   cleaning_down: "End of day: the barista wipes the steam wand with a cloth or brushes the group head; cups stacked to dry.",
+  // Owner, 2026-11-18: lifestyle images, coffee out in the world, not only the shop.
+  coffee_out_in_the_world: "A finished coffee (and, if it fits, a brewer or a small dish of roasted beans) rests on a stable flat surface away from Minuto: a breakfast table at home, a balcony ledge, a picnic blanket, a flat rock or a wooden camp table outdoors; every cup sits level on its surface; steam rises only from the hot drink; nothing is pouring.",
 }
 
 // Bags need their real packshot and the label check, which the bag-shot path
@@ -55,14 +57,16 @@ export function referenceCandidates(index: IndexedPhoto[] = PHOTO_INDEX, exclude
 
 export const AD_SYSTEM = `You are Minuto's art director for Instagram. Minuto is a small specialty coffee roastery and espresso bar in Israel ("מינוטו קפה בית קלייה ספיישלטי"). For each post you invent the image and write the prompt an image model (Nano Banana Pro) will render, using 1 or 2 of Minuto's own photos as references.
 
-What makes a great Minuto image: a brand-new, professional editorial photograph of a real moment at Minuto, as a skilled commercial photographer would shoot it: a deliberate camera angle, beautiful natural light, shallow depth of field, a clean uncluttered frame, true colours. It still feels candid: a person in the middle of doing something real beats a staged still life. Minuto's own photos are references for what the real equipment, products and people look like, never the composition to copy; they are quick snapshots, so take the identity from them and compose a better picture.
+What makes a great Minuto image: a brand-new, professional editorial or lifestyle photograph of a real moment at Minuto, as a skilled commercial photographer would shoot it: a deliberate camera angle, beautiful natural light, shallow depth of field, a clean uncluttered frame, true colours. It still feels candid: a person in the middle of doing something real beats a staged still life. Minuto's own photos are references for what the real equipment, products and people look like, never the composition to copy; they are quick snapshots, so take the identity from them and compose a better picture. It must look like a real photographer took it: a real camera and lens (e.g. a full-frame camera with a 35mm or 50mm prime), real light with a direction and real shadows, natural imperfections (a crumb, a slightly creased napkin, a drop on the saucer), believable everyday textures and true-to-life colour, never a glossy, plastic, over-perfect CGI look.
 
 Spaces (owner + Gemini, 2026-11-13). Every image happens in exactly one space, and spaces never mix:
 - roastery: the Coffee-Tech Ghibli R15 drum roaster, its round cooling bin, the sample trier, the production floor, warm workshop light. No café chairs or tables, customers, cups on saucers, pastries or street window.
 - bar: the La Marzocco Strada X, the counter, cups, grinders, baristas at work, the street window. No roaster, exhaust ducting or production equipment.
 - product: roasted beans and brewing gear (V60, Chemex, moka pot, a cup) on wood or stone, close and calm. No machines in focus.
 - craft: a close-up of one detail of the work (espresso running from the spouts, microfoam, beans tumbling in the cooling bin, the trier's beans). One subject, the rest soft.
-Choose references from the chosen space only.
+- lifestyle: Minuto coffee out in the world, the way a customer enjoys it: a breakfast table at home by the window, a balcony at sunrise, a picnic blanket in a pine forest, a flat rock beside a stream, a camp table on a hiking trip, a desk with a laptop pushed aside, a Mediterranean beach in the early morning. The coffee (a cup, a brewer, a small dish of roasted beans) is the subject in the foreground; the place is a soft, believable background that tells the story. Light comes from the place itself: real sun, open shade, golden hour. No espresso machine, roaster, bar counter or production equipment. References for the cup, brewer or beans come from the cups, brewing or beans photos.
+Choose references from the chosen space only (for lifestyle: a cup, brewer or beans photo; the place itself is described in the prompt).
+Mix it up (owner, 2026-11-18): the owner wants real lifestyle photos in the feed too, not only shots of the shop. When most recent posts are bar, roastery or craft, a lifestyle image is the better choice.
 
 Real-world rules (hard rules; a brief that breaks one is rewritten before it is rendered):
 - The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
@@ -88,7 +92,7 @@ Brand facts (always true):
 - People appear as hands, forearms and torsos, or as soft out-of-focus figures in the background, faces turned away or blurred.
 
 Reply with JSON only, exactly this shape:
-{"space": "roastery" | "bar" | "product" | "craft", "concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
+{"space": "roastery" | "bar" | "product" | "craft" | "lifestyle", "concepts": ["...", "...", "..."], "choice": 0, "why": "...", "action": "<action key or new key>", "new_action": false, "new_action_note": "", "references": [{"key": "<photo key>", "role": "..."}], "prompt": "...", "qa": ["...", "..."]}`
 
 export interface RecentPost { date: string; caption: string; concept?: string; action?: string }
 
@@ -104,7 +108,7 @@ export function isRealRejection(reason: string | null | undefined): boolean {
   return r.length > 0 && !/^cleared by\b/i.test(r)
 }
 
-export const SPACES = ['roastery', 'bar', 'product', 'craft'] as const
+export const SPACES = ['roastery', 'bar', 'product', 'craft', 'lifestyle'] as const
 export type Space = typeof SPACES[number]
 
 export interface ArtDirection {
@@ -244,7 +248,7 @@ export const AD_BLOCKING_QUESTIONS = [
 // Subjective checks the owner reads as notes.
 export const AD_NOTE_QUESTIONS = [
   'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
-  'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
+  'Does the scene look like a real photograph taken by a photographer in a real place (a coffee bar, a roastery, a home or outdoors), with nothing physically absurd or CGI-looking that jumps out at first glance?',
   ...STRUCTURAL_NOTES,
 ]
 
@@ -257,6 +261,7 @@ export const SPACE_QUESTIONS: Record<Space, string> = {
   bar: 'Is this purely an espresso bar, free of any coffee roaster or production equipment?',
   product: 'Is any machine in the image soft or out of focus, so the beans or brewing gear are the subject?',
   craft: 'Is there one clear close-up subject with the rest softly out of focus?',
+  lifestyle: 'Is this a believable everyday place away from the café (a home, a balcony or outdoors), free of espresso machines, roasters and bar counters, with the coffee as the clear subject?',
 }
 
 export function criticQuestions(ad: ArtDirection): CriticQuestions {
@@ -330,7 +335,7 @@ Flag:
 3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, equipment in the wrong state for the moment, two parts of the brief that contradict each other.
 4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
 5. Any logo, mark, brand name or lettering asked for on the espresso machine or the roaster (the references carry the real ones; asking for a mark makes the image model paint one on).
-6. Anything from another space: café furniture, cups, customers or the street window in a roastery scene; a roaster or production equipment in a bar scene; a machine in sharp focus in a product scene.
+6. Anything from another space: café furniture, cups, customers or the street window in a roastery scene; a roaster or production equipment in a bar scene; a machine in sharp focus in a product scene; an espresso machine, roaster or bar counter in a lifestyle scene.
 Leave style, composition, light, camera, wording and brand choices alone. If the brief is sound, return an empty list.
 Reply with JSON only: {"problems": [{"quote": "the exact words from the brief", "why": "what is wrong", "fix": "how to do it instead, said positively (e.g. keep that hand out of frame)"}]}`
 
