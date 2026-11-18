@@ -81,7 +81,7 @@ import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandG
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 import { noBagTail } from './no_bag_tail.ts'
 import {
-  SHOTS, isShotType, normalizeShotChoice, shotChecklist, shotRouterPrompt,
+  SHOTS, classifyIgImage, isLifestyleHint, isShotType, normalizeShotChoice, shotChecklist, shotProducts, shotRouterPrompt, type WeekMixCounts,
   type ShotDef, type ShotSlots,
 } from '../_shared/shot_library.ts'
 import { AD_PROMPT_VERSION, adUserMessage, isRealRejection, referenceCandidates, type OwnerVerdict, type RecentPost } from '../_shared/art_director.ts'
@@ -742,7 +742,7 @@ async function handleShot(
   let routerWhy: string | undefined
   let choice: { shot: ShotDef; slots: ShotSlots }
   if (isShotType(brief.shot_type)) {
-    choice = normalizeShotChoice({ shot_type: brief.shot_type, moment: brief.shot_slots?.moment, drink: brief.shot_slots?.drink }, product)
+    choice = normalizeShotChoice({ shot_type: brief.shot_type, moment: brief.shot_slots?.moment, drink: brief.shot_slots?.drink }, product, brief.shot_slots?.product_names)
   } else {
     routedBy = 'router'
     let routed: Record<string, unknown> = {}
@@ -758,11 +758,16 @@ async function handleShot(
   console.log(`[seo-worker-visual] ${workerId} shot=${shot.id} ${JSON.stringify(slots)} (by ${routedBy}${routerWhy ? `: ${routerWhy}` : ''})`)
 
   if (ART_DIRECTOR_ENABLED && !shot.needs_product) {
-    return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim())
+    // A planner that wants a lifestyle image without a bag says so in
+    // scene_brief ("LIFESTYLE: a picnic in the forest", owner 2026-11-18).
+    const lifestyle = isLifestyleHint(brief.scene_brief)
+    const lifestyleHint = lifestyle ? ` (${String(brief.scene_brief).trim().slice(0, 200)})` : ''
+    return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim() + lifestyleHint, lifestyle ? 'lifestyle' : undefined)
   }
 
-  if (slots.product_name) {
-    const verdict = screenHeroProduct(slots.product_name, buildBrandIndex([]))
+  // Every bag in the shot, not only the first (owner, 2026-11-18: 2-3 bags).
+  for (const name of shotProducts(slots)) {
+    const verdict = screenHeroProduct(name, buildBrandIndex([]))
     if (!verdict.ok) {
       await safeMarkFailed(supabase, task, `brand guard: ${verdict.why}`, true)
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brand guard blocked product_name' })
@@ -806,7 +811,10 @@ async function handleShot(
     imageUrl = json.url; raw = json
     let critique: VisualCritique
     try {
-      critique = await evaluateShot(imageUrl, shot, slots, typeof json.real_photo === 'string' ? json.real_photo : null, budget)
+      // visual-test drops product_names when it falls back to a real photo of
+      // one bag, so check against the slots it actually rendered.
+      const rendered = (json.shot_slots && typeof json.shot_slots === 'object') ? json.shot_slots as ShotSlots : slots
+      critique = await evaluateShot(imageUrl, shot, rendered, typeof json.real_photo === 'string' ? json.real_photo : null, budget)
     } catch (e: any) {
       // Unlike the legacy path, an unanswerable QA does NOT count as a pass.
       critique = { passes: false, missing: [], issues: [`QA could not run: ${e?.message ?? e}`], suggested_adjustment: '' } as VisualCritique
@@ -912,24 +920,43 @@ async function ownerVerdicts(supabase: ReturnType<typeof createSupabase>): Promi
   }))
 }
 
+// This week's IG images by kind (week starts Sunday 00:00 UTC, as the daily
+// cadence counts it), without the task being rendered now.
+async function weekImageMix(supabase: ReturnType<typeof createSupabase>, selfId: string): Promise<WeekMixCounts> {
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0); start.setUTCDate(start.getUTCDate() - start.getUTCDay())
+  const { data } = await supabase.from('seo_tasks')
+    .select('id, brief_data, result_data->art_direction->>space')
+    .eq('task_type', 'visual_generation').eq('brief_data->>destination', 'ig_post')
+    .neq('status', 'failed').gte('created_at', start.toISOString()).limit(400)
+  const mix: WeekMixCounts = { lifestyle: 0, real_place: 0, other: 0 }
+  for (const v of (data ?? []) as Array<Record<string, any>>) {
+    if (v.id === selfId) continue
+    if (Array.isArray(v.brief_data?.slides)) { mix.other++; continue }
+    mix[classifyIgImage(v.brief_data, v.space)]++
+  }
+  return mix
+}
+
 async function handleArtDirected(
   supabase: ReturnType<typeof createSupabase>,
   task: SeoTaskRow,
   brief: VisualGenerationBrief,
   workerId: string,
   plannerHint: string,
+  requiredSpace?: 'lifestyle',
 ): Promise<Response> {
   const aspect = brief.aspect ?? 'story'
   const budget = shotBudget()
   const caption = brief.caption_he ?? await childCaption(supabase, task.id) ?? brief.scene_brief ?? ''
   const allowed = new Set(referenceCandidates().map(p => p.key))
-  const [recent, learnings, verdicts] = await Promise.all([
+  const [recent, learnings, verdicts, weekMix] = await Promise.all([
     recentArtPosts(supabase).catch(() => [] as RecentPost[]),
     artDirectorLearnings(supabase).catch(() => [] as string[]),
     ownerVerdicts(supabase).catch(() => [] as OwnerVerdict[]),
+    weekImageMix(supabase, task.id).catch(() => undefined),
   ])
   const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, verdicts, plannerHint }) },
+    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, verdicts, plannerHint, weekMix, requiredSpace }) },
   ]
   const { ad, imageUrl, renderRaw, verdict, qaAttempts } = await runArtDirector({
     conversation, aspect, allowed, budget, log: (m) => console.log(`[seo-worker-visual] ${workerId} ${m}`),

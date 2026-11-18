@@ -836,10 +836,17 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // 3. bag_hero product_name — block.
-      const heroVerdict = screenHeroProduct(brief.product_name, brandIndex)
+      // 3. bag_hero product_name — block. A bag shot may show 2-3 coffees
+      // (shot_slots.product_names, owner 2026-11-18): every one is screened.
+      const slotNames = (brief.shot_slots as { product_names?: unknown } | undefined)?.product_names
+      const heroNames = [brief.product_name, ...(Array.isArray(slotNames) ? slotNames : [])]
+      let heroVerdict = screenHeroProduct(brief.product_name, brandIndex)
+      let blockedName = String(brief.product_name ?? '')
+      for (const n of heroNames) {
+        const v = screenHeroProduct(n, brandIndex)
+        if (!v.ok) { heroVerdict = v; blockedName = String(n ?? ''); break }
+      }
       if (!heroVerdict.ok) {
-        const blockedName = String(brief.product_name ?? '')
         const original    = { task_type: et.task_type, brief }
         et.task_type    = 'dynamic_experiment'
         et.task_subtype = 'brand_guard_block'

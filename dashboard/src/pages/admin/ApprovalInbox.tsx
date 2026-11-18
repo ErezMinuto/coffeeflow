@@ -17,6 +17,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Send } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { PanelHead, RefreshButton, LoadingRows, Empty, Tag } from './seoUi'
+import { ImageLightbox } from '../../components/shared/ImageLightbox'
 
 type Kind = 'rec' | 'campaign' | 'task' | 'signal'
 
@@ -30,6 +31,7 @@ export interface InboxItem {
   status:   string
   created:  string
   imageUrl?: string
+  imageUrls?: string[]     // every image to show full size (a carousel's slides)
   link?:    string
   targetUrl?: string        // the live page this item is about (external, opens in a new tab)
   raw:      Record<string, any>
@@ -45,6 +47,15 @@ const DESTINATION_LABEL: Record<string, string> = { ig_post: 'אינסטגרם',
 const SIGNAL_KIND_LABEL: Record<string, string> = { capability_request: 'בקשת יכולת', bug_report: 'דיווח על תקלה', feature_idea: 'רעיון לפיצ׳ר' }
 
 /** What a waiting seo_task IS, in words: each task type keeps its meaning in different fields. */
+// Every image a task produced, for the full-size viewer: a carousel's slides
+// in order, else the single image.
+function taskImages(t: Record<string, any>): string[] {
+  const slides = Array.isArray(t.result_data?.carousel_slides) ? t.result_data.carousel_slides : []
+  const urls = slides.map((s: any) => s?.image_url).filter((u: unknown): u is string => typeof u === 'string' && u.length > 0)
+  if (urls.length) return urls
+  return typeof t.result_data?.image_url === 'string' && t.result_data.image_url ? [t.result_data.image_url] : []
+}
+
 function describeTask(t: Record<string, any>): { group: string; title: string; detail: string; targetUrl?: string } {
   const rd = t.result_data ?? {}, bd = t.brief_data ?? {}
   if (t.task_type === 'technical_seo') {
@@ -189,7 +200,8 @@ async function loadInbox(): Promise<InboxItem[]> {
     const d = describeTask(t)
     out.push({ key: `task:${t.id}`, kind: 'task', id: t.id, group: `${d.group}: ממתינים לבדיקה`,
       title: d.title, detail: d.detail, status: t.status, created: t.created_at,
-      targetUrl: d.targetUrl, imageUrl: t.result_data?.image_url ?? t.result_data?.carousel_slides?.[0]?.image_url, raw: t })
+      targetUrl: d.targetUrl, imageUrl: t.result_data?.image_url ?? t.result_data?.carousel_slides?.[0]?.image_url,
+      imageUrls: taskImages(t), raw: t })
   }
   for (const s of (sigs.data ?? []) as any[]) {
     out.push({ key: `signal:${s.id}`, kind: 'signal', id: s.id,
@@ -322,6 +334,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<{ images: string[]; label: string } | null>(null)
 
   const refresh = useCallback(async () => {
     try { setError(null); setItems(await loadInbox()); setSelected(new Set()) }
@@ -400,7 +413,19 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                     <li key={it.key} className={`px-4 pt-3 pb-2 transition-colors ${selected.has(it.key) ? 'bg-brand-50' : ''}`}>
                       <div className="flex items-start gap-3">
                         <input type="checkbox" className="mt-[3px] shrink-0" aria-label={`בחירה: ${it.title}`} checked={selected.has(it.key)} onChange={() => toggle(it.key)} />
-                        {it.imageUrl && <img src={it.imageUrl} alt="" className="w-14 h-14 object-cover rounded-md border border-surface-200 shrink-0" loading="lazy" />}
+                        {it.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setViewing({ images: it.imageUrls?.length ? it.imageUrls : [it.imageUrl!], label: it.title })}
+                            className="relative shrink-0 rounded-md cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
+                            aria-label={`הצגת התמונה בגודל מלא: ${it.title}`}
+                          >
+                            <img src={it.imageUrl} alt="" className="w-14 h-14 object-cover rounded-md border border-surface-200" loading="lazy" />
+                            {(it.imageUrls?.length ?? 0) > 1 && (
+                              <span className="absolute bottom-0.5 end-0.5 rounded bg-black/70 px-1 text-[10.5px] leading-4 text-white num">{it.imageUrls!.length}</span>
+                            )}
+                          </button>
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start gap-3">
                             <div className="flex-1 min-w-0 text-[14px] font-medium leading-snug text-surface-900 break-words" dir="auto">{it.title}</div>
@@ -445,6 +470,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
           )
         })}
       </div>
+      {viewing && <ImageLightbox images={viewing.images} label={viewing.label} onClose={() => setViewing(null)} />}
     </div>
   )
 }
