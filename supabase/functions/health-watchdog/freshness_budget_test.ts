@@ -1,15 +1,17 @@
 import { assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import { freshnessBudgetHours } from './freshness_budget.ts'
 
-const mflow = { max_age_hours: 12, saturday_max_age_hours: 36, sunday_max_age_hours: 24 }
+const mflow = { max_age_hours: 18, saturday_max_age_hours: 36, sunday_max_age_hours: 24 }
 
 Deno.test('Saturday morning in Israel gets the Shabbat budget', () => {
   assertEquals(freshnessBudgetHours(mflow, new Date('2026-10-31T08:00:00Z')), 36)
 })
 
 Deno.test('the rest of the week keeps the normal budget', () => {
-  assertEquals(freshnessBudgetHours(mflow, new Date('2026-10-30T08:00:00Z')), 12)
-  assertEquals(freshnessBudgetHours(mflow, new Date('2026-11-02T08:00:00Z')), 12)
+  assertEquals(freshnessBudgetHours(mflow, new Date('2026-10-30T08:00:00Z')), 18)
+  assertEquals(freshnessBudgetHours(mflow, new Date('2026-11-02T08:00:00Z')), 18)
+  // 2026-11-18 (Wed): last sale Tue 18:37 UTC, run at 08:00 UTC = 13.4h, sync healthy.
+  assertEquals(freshnessBudgetHours(mflow, new Date('2026-11-18T08:00:00Z')), 18)
 })
 
 Deno.test('Sunday morning in Israel gets the after-Shabbat budget', () => {
@@ -24,7 +26,7 @@ Deno.test('a source with only a Saturday budget keeps the normal one on Sunday',
 Deno.test('Saturday follows Israel time, not UTC', () => {
   assertEquals(freshnessBudgetHours(mflow, new Date('2026-10-30T22:30:00Z')), 36)
   assertEquals(freshnessBudgetHours(mflow, new Date('2026-10-31T22:30:00Z')), 24)
-  assertEquals(freshnessBudgetHours(mflow, new Date('2026-11-01T22:30:00Z')), 12)
+  assertEquals(freshnessBudgetHours(mflow, new Date('2026-11-01T22:30:00Z')), 18)
 })
 
 Deno.test('a source with no Saturday budget is unaffected', () => {
