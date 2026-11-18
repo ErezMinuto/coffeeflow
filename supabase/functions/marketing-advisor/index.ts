@@ -2733,7 +2733,7 @@ ${dataSection}`;
       // live API call: this runs on every chat turn, and the strategist can pull
       // live Google numbers itself with get_google_campaign_performance.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts, brainEmails] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts, brainEmails, coffeeInStock] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -2761,6 +2761,14 @@ ${dataSection}`;
           .eq("campaign_type", "brain")
           .order("created_at", { ascending: false })
           .limit(8),
+        // In-stock Minuto coffee with its real description: the email product
+        // cards and tasting-note chips come from here.
+        supabase.from("woo_products")
+          .select("name, price, short_description")
+          .eq("stock_status", "instock")
+          .or(`categories.cs.{"פולי קפה טרי - קפה ספשלטי specialty coffee"},categories.cs.{"תערובות קפה מינוטו"}`)
+          .order("name")
+          .limit(40),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -2782,6 +2790,12 @@ ${dataSection}`;
           return `  • id=${c.campaign_id} | ${c.name} — ${c.advertising_channel_type ?? "?"} — ${c.status} — ${daily} — bidding ${c.bidding_strategy_type ?? "?"}`;
         })
         .join("\n") || "  (no Google campaigns synced — run a Google sync, or the account has none)";
+
+      const plainText = (h: unknown) => String(h ?? "").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim();
+      const coffeeBlock = (coffeeInStock.data ?? [])
+        .filter((p: any) => !/ירוק|green coffee|unroasted|raw coffee|veneto|ונטו|toddy|טודי/i.test(String(p.name ?? "")))
+        .map((p: any) => `  • ${p.name} — ₪${p.price}${/roastery|מהדורה מיוחדת|special edition/i.test(String(p.name)) ? " — special edition, ships in a JAR" : ""} — ${plainText(p.short_description).slice(0, 160) || "(no description)"}`)
+        .join("\n") || `  (no in-stock coffee found${coffeeInStock.error ? `: ${coffeeInStock.error.message}` : ""})`;
 
       const scenesBlock = (brainEmails.data ?? [])
         .map((c: any) => ({ c, scene: decodeDesign(c.html_content).sceneBrief }))
@@ -2873,7 +2887,9 @@ Your tools fall into two classes, and the distinction matters:
 6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a BLOG article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. It does NOT write emails. Never tell the owner a draft is on its way unless this tool returned "queued".
 7. \`delegate_to_agent\` — hands work to the agent that makes it: \`email\` (the email agent), \`blog\` (the blog writer) or \`instagram\` (the IG worker). Fire ONLY after the owner's explicit yes in chat for that specific piece; the work then goes straight to the agent with no further approval click. Everything it makes is a DRAFT: nothing is sent, scheduled or published, and the owner sends or publishes it themselves.
    - Email with FINISHED copy (the owner wrote or approved the exact words): pass \`final_copy\` with subject, preheader, body, cta_text, cta_url. The text is used WORD FOR WORD: copy it exactly from the owner's approved version, do not polish, shorten, translate or "fix" it. **bold** and line breaks are kept. cta_url must be a minuto.co.il link. The only change the system makes is the legal " | פרסומת" suffix on the subject.
-     To make it a real marketing email, also pass \`products\` (1-4 Minuto coffees it features), \`scene_brief\` (an English photo scene that fits this email and differs from the recent scenes in your live data; the image is built around those products' REAL bags and label-checked, with the real product photo as the fallback) and \`promo_deadline\` (YYYY-MM-DD) when there is an offer end date. Propose the products and the scene to the owner in chat first; the image takes about a minute.
+     The template has more slots than the body, and an email with empty slots reads as unfinished. Every slot is part of the copy the owner approves, so draft them all in chat with the body and pass them word for word: \`preheader\` (always: the inbox preview line, shown under the headline too; it extends the subject, never repeats it), \`kicker\` (2-4 words above the headline), \`headline\` (the email's first line inside; never the subject again), \`offer\` (title + text + optional code / cta_text / cta_url; whenever the email has an offer it goes HERE, as a block the reader sees in one glance, never only inside body prose), \`notes\` (up to 4 tasting-note chips, from the real product descriptions), \`facts\` (up to 4 label/value pairs), \`tip\` (title + one short brewing or buying tip), \`grid_title\` (heading over the product cards), \`product_notes\` (one short line per product card, from its real description) and \`closing_text\` (one line above the last button).
+     Products: pass \`products\` (1-6 Minuto coffees). When an offer covers any beans, show 4-6 in-stock roasted beans so the reader can pick a full set from the email; pick from the in-stock list in your live data. The hero image is designed by Minuto's email art director, an expert designer: after the hand-off it reads the approved email, invents the concept and renders it from Minuto's real bag and library photos (about 2-3 minutes). You do not design or describe the image yourself. Pass \`art_note\` with the owner's own wishes or verdicts about the image when they gave any (their words). Only when the owner approved a specific existing image, pass it as \`banner_url\` (a marketing-bucket path like "marketing/banners/x.jpg"); the art director then steps aside. Pass \`promo_deadline\` (YYYY-MM-DD) when there is an offer end date. Propose the products to the owner in chat first. After the draft is made, tell the owner the art director's concept and ask for their verdict on the image; their verdict goes in \`art_note\` on the next render.
+     The result lists any slot left empty. If one is, say so to the owner rather than calling it complete.
    - Email from a BRIEF (no finished copy): pass \`brief\` with angle, and optionally subject_he, products, target_segment. The email agent writes the copy.
    - Blog: \`brief\` with keyword (Hebrew), topic (the H1), key_points, products (exact Minuto coffee names). Instagram: \`brief\` with caption_he (the approved Hebrew caption), optional hashtags, media_type, product_name.
    - Report exactly what the result says: a finished-copy email is a draft in Marketing → History right away; a brief is queued and the draft appears a few minutes later. If it refused or failed, say so and do not promise a draft. Never say an email was sent or scheduled.
@@ -2911,6 +2927,28 @@ Both hands refuse anything over their caps before writing a single thing, so an 
 
 Owner has not yet approved the image URL or final budget. **Do not call draft_meta_campaign for this yet.**
 
+# Minuto email playbook (craft and brand rules for every email you draft)
+Brand rules, no exceptions:
+- Hebrew is gender-inclusive: no masculine-only 2nd person. Plural ("שלכם", "תבחרו") or impersonal phrasing.
+- No em-dashes (—) anywhere in Hebrew copy, subject or preheader. Commas or a new sentence.
+- Minuto is "בית קלייה" ("מינוטו קפה בית קלייה ספיישלטי"), never "מקלה".
+- Roasting is weekly ("קולים פולים טריים בכל שבוע"). Never daily, never "this morning", never "on the day of your order".
+- Special editions (Roastery Brisas and other Roastery editions) ship in a jar, never a bag. Don't write or show them as a bag.
+- Only our own advantages. Never a weakness of competitors or of supermarket / commercial coffee, named or unnamed.
+- Promote only Minuto roasted specialty coffee. No green coffee, no Veneto, no resold brands as the featured product.
+- The retail bag is 330g (also 1kg). Use those sizes, never 250g.
+- Offers come from the owner. Write the offer exactly as the owner set it (what, how it applies, when it ends); never invent a discount or change its terms.
+Craft rules:
+- One email, one job: one offer or one story, one main action. Every section serves it.
+- Lead with what the reader gets (the coffee in their cup, the deal in their cart), not with us or with mechanism.
+- Concrete beats vague: name the coffee, the tasting notes from its real description, the bag size, the exact dates and how the offer applies. A line that says nothing checkable ("הקפה שלכם תמיד יהיה טרי ואיכותי") is filler: cut it or replace it with a fact.
+- Swap test: if a competitor could send the same sentence unchanged, rewrite it with something only Minuto can say (weekly roasting in Rehovot, the roast date on the bag, a named origin and its notes).
+- Honest urgency only: the real end date and time. No fake countdowns, no "last chance" before it is.
+- No AI tells: no "זה לא X, זה Y" reveals, no "בלי X, בלי Y, בלי Z" lists, no self-answered questions ("התוצאה? ..."), no stock openers, no pile of clauses after a finished sentence. At most one exclamation mark in the whole email.
+- Subject and preheader work as a pair: the subject earns the open, the preheader adds the next fact (dates, how it applies). The headline inside says something the subject didn't.
+- Short paragraphs, plain words. Bold (**...**) only the one or two facts a skimmer must catch.
+Before you show a draft, check it against every rule above and fix what fails.
+
 # Live Data Snapshot (refreshed each turn)
 
 ## Meta — Last week (${weekStart} → ${weekEnd2})
@@ -2931,6 +2969,9 @@ ${draftsBlock}
 
 ## Past Google Drafts (created via this strategist — for continuity)
 ${googleDraftsBlock}
+
+## Minuto coffee in stock now (the only valid email products; tasting notes come from these descriptions)
+${coffeeBlock}
 
 ## Recent email image scenes (scene_brief of the latest email drafts you made)
 ${scenesBlock}
@@ -3029,15 +3070,37 @@ ${postsBlock}
             rationale: { type: "string", description: "One line: why this, why now." },
             final_copy: {
               type: "object",
-              description: "email only: the owner's FINISHED copy, exactly as approved. Do not edit a single word.",
+              description: "email only: the owner's FINISHED copy, exactly as approved, with every template slot filled. Do not edit a single word.",
               properties: {
                 subject:   { type: "string" },
                 preheader: { type: "string" },
                 body:      { type: "string", description: "Full body. Use \\n for line breaks and **text** for bold, as in the approved copy. No greeting is added." },
                 cta_text:  { type: "string", description: "Button text." },
                 cta_url:   { type: "string", description: "Button link, must be https://minuto.co.il or https://www.minuto.co.il." },
-                products:  { type: "array", items: { type: "string" }, description: "Optional, 1-4 Minuto coffee products to feature, by name (\"Aristo\", \"Dark Chocolate\"). Shown as product cards with their real photo, price and link. If a name is refused, the result lists the valid ones: pick from it and call again." },
-                scene_brief: { type: "string", description: "Optional, needs products. One or two sentences in English describing a photo SCENE that fits this email's message, offer and season: setting, surface, light, props and mood. It must differ from the scenes listed under 'Recent email image scenes' in your live data. The image is generated around the REAL bags of the products and checked against them; if it fails the check, the real product photo is used. Don't describe the bags themselves and don't ask for text in the image." },
+                kicker:    { type: "string", description: "2-4 words above the headline (≤60 chars)." },
+                headline:  { type: "string", description: "The headline inside the email (≤120 chars). Must differ from the subject." },
+                offer: {
+                  type: "object",
+                  description: "The offer block. Required whenever the email has an offer: the offer goes here, not only in the body.",
+                  properties: {
+                    title:    { type: "string", description: "The offer in one line (≤80 chars)." },
+                    text:     { type: "string", description: "How it applies and when (≤300 chars)." },
+                    code:     { type: "string", description: "Coupon code, only if the offer has one." },
+                    cta_text: { type: "string", description: "Optional button text in the offer block." },
+                    cta_url:  { type: "string", description: "Optional https://minuto.co.il link for that button." },
+                  },
+                  required: ["title"],
+                },
+                notes:     { type: "array", items: { type: "string" }, description: "Up to 4 tasting-note chips (≤30 chars each), from the real product descriptions." },
+                facts:     { type: "array", items: { type: "object", properties: { label: { type: "string" }, value: { type: "string" } }, required: ["label", "value"] }, description: "Up to 4 label/value facts (origin, process, roast...)." },
+                tip:       { type: "object", properties: { title: { type: "string" }, text: { type: "string" } }, required: ["text"], description: "A short tip box (title ≤60, text ≤400)." },
+                grid_title: { type: "string", description: "Heading over the product cards (≤60 chars)." },
+                product_notes: { type: "object", additionalProperties: { type: "string" }, description: "One line per product card (≤80 chars), keyed by the product name exactly as given in products." },
+                closing_text: { type: "string", description: "One line above the last button (≤200 chars)." },
+                products:  { type: "array", items: { type: "string" }, description: "Optional, 1-6 Minuto coffee products to feature, by name (\"Aristo\", \"Dark Chocolate\"). Shown as product cards with their real photo, price and link. If a name is refused, the result lists the valid ones: pick from it and call again." },
+                hero_product: { type: "string", description: "Optional, one of products: the coffee shown in the hero when there is no hero image." },
+                banner_url: { type: "string", description: "Optional, only for an existing image the owner explicitly approved, as a marketing-bucket path (\"marketing/banners/x.jpg\") or its public URL. Used as is; the art director steps aside." },
+                art_note: { type: "string", description: "Optional: the owner's own wishes or verdicts about the hero image, in their words (≤500 chars). The email art director designs the image; this tells it what the owner wants or rejected." },
                 promo_deadline: { type: "string", description: "Optional YYYY-MM-DD: last day of the offer, shown in the legal footer line." },
               },
               required: ["subject", "body"],

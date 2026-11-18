@@ -40,7 +40,7 @@ const b64 = (bytes: Uint8Array) => {
   return btoa(s);
 };
 
-async function fetchRef(url: string): Promise<{ mime: string; data: string }> {
+export async function fetchRef(url: string): Promise<{ mime: string; data: string }> {
   const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
   if (!res.ok) throw new Error(`reference image ${res.status}: ${url}`);
   const mime = (res.headers.get("content-type") || "image/png").split(";")[0].trim();

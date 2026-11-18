@@ -24,6 +24,8 @@ type Db = any;
 export interface DelegateResult { text: string; data: Record<string, unknown> | null }
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+// deno-lint-ignore no-explicit-any
+const obj = (v: unknown): v is Record<string, any> => !!v && typeof v === "object" && !Array.isArray(v);
 const strList = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : []);
 const refused = (why: string): DelegateResult => ({
   text: `NOT delegated: ${why} Nothing was created, so no draft will arrive. Fix it or tell the owner.`,
@@ -60,9 +62,25 @@ async function renderEmailDraft(c: Record<string, any>): Promise<DelegateResult>
       campaignType: "brain",
       // Passed through untouched: the copy is the owner's, word for word.
       subject: c.subject, preheader: c.preheader, body: c.body, ctaText: c.cta_text, ctaUrl: c.cta_url,
-      // Design around the words (the words never change): real products, an
-      // image built around their real bags, and the offer's last day.
-      products: strList(c.products).slice(0, 4), sceneBrief: str(c.scene_brief), promoDeadline: str(c.promo_deadline),
+      // Design around the words (the words never change): real products, a
+      // hero image and the offer's last day. render-draft refuses more than 6 products,
+      // so the brain is told instead of products being dropped silently.
+      // The hero is the art director's (an expert designer), unless the owner
+      // approved an existing image. Brain only passes the owner's wishes.
+      products: strList(c.products), bannerUrl: str(c.banner_url) || undefined,
+      artDirect: !str(c.banner_url), artNote: str(c.art_note) || undefined,
+      promoDeadline: str(c.promo_deadline),
+      // Template sections: design slots for approved words, passed as given.
+      kicker: str(c.kicker) || undefined, headline: str(c.headline) || undefined,
+      offer: obj(c.offer) ? {
+        title: str(c.offer.title), text: str(c.offer.text), code: str(c.offer.code),
+        ctaText: str(c.offer.cta_text), ctaUrl: str(c.offer.cta_url),
+      } : undefined,
+      notes: strList(c.notes), facts: Array.isArray(c.facts) ? c.facts.filter(obj).map((f: any) => ({ label: str(f.label), value: str(f.value) })) : undefined,
+      tip: obj(c.tip) ? { title: str(c.tip.title), text: str(c.tip.text) } : undefined,
+      gridTitle: str(c.grid_title) || undefined, closingText: str(c.closing_text) || undefined,
+      heroProduct: str(c.hero_product) || undefined,
+      productNotes: obj(c.product_notes) ? Object.fromEntries(Object.entries(c.product_notes).map(([k, v]) => [String(k), str(v)])) : undefined,
     }),
   });
   let out: Record<string, any> = {};
@@ -71,13 +89,23 @@ async function renderEmailDraft(c: Record<string, any>): Promise<DelegateResult>
   if (!res.ok || !out?.ok || id == null) {
     return { text: `Email draft FAILED: ${out?.error ?? `HTTP ${res.status}`}. Nothing was created. Tell the owner what went wrong.`, data: { ok: false, error: out?.error ?? `HTTP ${res.status}` } };
   }
-  const sc = out?.scene;
-  const sceneNote = !sc ? ""
-    : sc.used ? ` A scene image built around the real bags passed the label check (attempt ${sc.attempts}) and is the hero.`
-    : ` The scene image did NOT pass (${(sc.issues ?? []).slice(-2).join(" / ") || "no image"}), so the real product photo is the hero instead. Tell the owner.`;
+  const art = out?.art;
+  const sceneNote = !art ? ""
+    : art.used ? ` The art director designed the hero (${art.mode}: ${art.concept}). Why: ${art.why}${art.design != null ? ` Design review: ${art.design}/3.` : ""}${(art.notes ?? []).length ? ` Reviewer notes: ${art.notes.slice(0, 3).join(" | ")}.` : ""} Describe the concept to the owner and ask for their verdict on the image.`
+    : ` The art director's image did NOT come through (${(art.issues ?? []).slice(-2).join(" / ") || "no image"}), so the real product photo is the hero instead. Tell the owner.`;
+  const sc = art ? { used: !!art.used } : out?.scene;
+  // Which design slots carry words, so an empty one is visible in the reply.
+  const slots: Array<[string, boolean]> = [
+    ["preheader", !!str(c.preheader)], ["kicker", !!str(c.kicker)], ["headline", !!str(c.headline)],
+    ["offer", obj(c.offer) && !!str(c.offer.title)], ["products", strList(c.products).length > 0],
+    ["hero image", !!str(c.banner_url) || (art?.used ?? false)], ["notes", strList(c.notes).length > 0],
+    ["tip", obj(c.tip) && !!str(c.tip.text)], ["closing_text", !!str(c.closing_text)],
+  ];
+  const empty = slots.filter(([, on]) => !on).map(([k]) => k);
+  const slotNote = empty.length ? ` Empty sections: ${empty.join(", ")}.` : " Every section is filled.";
   return {
-    text: `Email DRAFT ${out.existed ? "already existed (same copy, created minutes ago; nothing new was made)" : "created"}: campaign id ${id}, subject "${out.campaign.subject}". The copy is word for word as approved; the only addition is the legal " | פרסומת" subject suffix. It is in Marketing → History.${sceneNote} NOTHING was sent or scheduled: the owner picks the audience and sends it from there.`,
-    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history", scene_used: sc?.used ?? null },
+    text: `Email DRAFT ${out.existed ? "already existed (same copy, created minutes ago; nothing new was made)" : "created"}: campaign id ${id}, subject "${out.campaign.subject}". The copy is word for word as approved; the only addition is the legal " | פרסומת" subject suffix. It is in Marketing → History.${sceneNote}${slotNote} NOTHING was sent or scheduled: the owner picks the audience and sends it from there.`,
+    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history", scene_used: sc?.used ?? null, art_concept: art?.concept ?? null },
   };
 }
 
