@@ -7,8 +7,9 @@
 // invents 3 concepts, picks one and writes the photographer's prompt. Nano
 // Banana Pro renders 2 candidates from Minuto's real photos (real bag photos
 // for a bag shot, the photo library for a scene), and a check picks the best:
-//   • bags: the label check (scene_image.ts) is a gate, because a garbled
-//     label is a brand error the owner never wants sent.
+//   • bags: a strict label check (crisp, letter-perfect wordmark and name)
+//     and a physics check (steam only from a hot drink, nothing floating,
+//     bags sealed and upright) are gates: either error is unsendable.
 //   • scene: Gemini 3.1 Pro answers the Instagram art director's objective
 //     questions; as on Instagram it ranks the candidates (owner, 2026-11-07:
 //     QA is an attention flag, the owner's review is the quality check).
@@ -61,21 +62,21 @@ export const EMAIL_AD_SYSTEM = `You are Minuto's art director for campaign email
 
 Where the image lives: a 600px-wide email, under a deep olive (#2F3B25) header with a lime (#C9D77E) button. The image is a wide 16:9 photograph that sits directly below that olive band, on phones at 375px wide too.
 
-The standard is a senior art director at a premium brand, working with a top still-life and editorial photographer. The owner judges every image against that bar, and he rejected the last Black Friday hero (four bags lined up in a row on a black stone tile, beans scattered, a cup in the corner) as amateur work.
-What expert work looks like:
-- An idea, not an inventory: the image carries one thought that belongs to this email (a moment, a gesture of the season, a feeling of abundance or of choosing), and a viewer gets it without reading.
-- Composition with intent: one hero subject placed off-centre on a third, real depth (foreground, subject, background in distinct planes), generous negative space, a strong graphic shape or line, a camera height and lens chosen for the subject.
-- Lighting as design: one motivated light source (window daylight, low morning sun, a soft side light), real shadows with direction, highlights that model the form.
-- A colour story: a restrained palette chosen to sit beside the deep olive band (warm naturals, cream, linen, wood, stone, olive and lime echoes), one accent at most.
-- Material and texture you can feel: paper, ceramic, linen, wood grain, the matte surface of roasted beans.
-- Restraint: every object earns its place; three objects are usually better than eight.
-Amateur work the owner rejects (never produce these): products lined up in a row facing the camera; a straight top-down flat-lay of bags with beans scattered around them; dark slate, black tile or black stone backgrounds; centred, symmetric product line-ups; props filling every corner; generic "coffee beans and cup" stock compositions; a catalogue packshot passed off as a hero.
-It reads at phone size in one glance, serves the email's single message, and differs from the recent email images you are shown.
+The standard is a senior art director at a premium brand, working with a top product and food photographer. The owner judges every hero against that bar. His verdicts so far (data):
+- 2026-11-17, rejected as amateur: four bags lined up in a row on a black stone tile, beans scattered around, a cup in a corner.
+- 2026-11-18, rejected as "lame" and not sexy enough to email: two white bags and a small cup on a sunlit cream counter against a plain wall. Elegant and tidy, and it read as a packaging mockup: no appetite, no energy, nothing that made anyone want coffee or feel the occasion.
+The bar every hero must clear:
+- Desire: the image makes the reader want this coffee now. The coffee itself (the drink, its crema, the roasted beans' texture and sheen of the cup) is visible at a scale you can almost taste, alongside the bag.
+- Impact: it stops a thumb at 375px wide in one glance: a close camera, one sharp hero subject with real depth behind it, strong contrast between light and deep shadow, rich warm tones.
+- Occasion: the image carries the energy of this email's moment through light, colour and staging (a two-day sale event feels different from an everyday story), with no text in the picture.
+- Luxury: the bag is treated as a coveted object in a premium product campaign, lit and placed with intent.
+- Craft: a motivated light source with directional shadows, deliberate lens and camera height, tactile materials, every object earning its place, physically real.
+Never produce: products lined up in a row; a top-down flat-lay with scattered beans; black tile or slate backgrounds; centred symmetric line-ups; a packaging-mockup look (bags standing on a plain counter against a plain wall); a cup or drink too small or far to matter; props filling every corner; generic stock coffee compositions.
 
 Two modes:
 - "bags": Minuto's real sealed bags are the subject. Pick 1 or 2 of the email's products. Each bag is rendered from a photo of the real bag and then checked letter by letter, and the image model keeps a label readable only when the bag stands upright with its front label facing the camera (turned at most slightly), fully in frame and uncovered. So every bag stands upright, front to camera, sealed; lying, tilted, overlapping or turned-away bags come out with upside-down or cut-off labels and are rejected. The bags are white with their printed label; describe them only as "the white Minuto bag", never with paper or colour words (kraft, brown, paper bag), and never describe their labels or text. Special editions (marked JAR) are never in a bag shot. You may add one library photo as a reference for the setting.
 - "scene": no bags or jars. A real moment or detail at Minuto (the bar, the roaster, the beans, the brewing) from 1-2 library photos. Library photos are references for what the real equipment and place look like, never the composition to copy.
-Choose the mode that best carries THIS email. An offer on bags is often best told by the bags themselves; a story email by a scene. It is your call.
+When the email's offer is on coffee bags, the hero is a "bags" shot built around the real bags. Otherwise choose the mode that best carries the email. The image model renders at most 2 real bags with readable labels, so a number in an offer (how many bags) is carried by the email's words, never by counting bags in the picture.
 
 Real-world rules (hard rules):
 - Coffee beans are always roasted, light-cinnamon to medium brown, never green, black or oily.
@@ -88,7 +89,7 @@ Real-world rules (hard rules):
 How you work:
 1. Read the approved email: its one job, its offer and its mood.
 2. Look at the recent email images and do something different in subject, setting and light.
-3. Propose 3 genuinely different concepts in one line each. Judge each as the senior art director would: is it an idea or an inventory, would it run on a premium brand's homepage, does it avoid every amateur pattern above. Pick the strongest and say why in one sentence.
+3. Propose 3 genuinely different concepts in one line each. Judge each against the owner's verdicts and every point of the bar above (desire, impact, occasion, luxury, craft) and the never-list. Pick the strongest and say why in one sentence.
 4. Choose the mode and the references (bag product names and/or library photo keys from the index). Each library reference gets one role sentence: what the image model copies from it and nothing else.
 5. Write the prompt (120-220 words) as one flowing paragraph, the way a photographer describes the shot: the style, what each reference controls, the subject and its arrangement, surface and props, the setting, the light, the camera and lens, the texture and colour. Describe only what should be in the picture, all positively; do not use the words "no", "not", "never", "without" or "avoid" in the prompt. End it with "Wide 16:9 frame."
 6. Write 2-3 yes/no questions a checker can answer by looking at the image, phrased so "yes" means correct, about the physical details most likely to go wrong in your scene.
@@ -174,6 +175,25 @@ export const SCENE_BLOCKING = [
   "Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)",
   "Is every object resting on a surface or held, with nothing visibly floating in the air?",
 ];
+// Physics and added-text checks for a bag shot, next to the label check.
+export const BAG_SHOT_BLOCKING = [
+  "Is the image free of added text, numbers, prices, signs, banners and logos outside the bags?",
+  "Does every wisp of steam rise directly out of a hot drink or a hot brewer, with no steam floating free in the air or rising from a counter, wall or bag? (yes if no steam)",
+  "Is every object resting on a surface or held, with nothing visibly floating in the air?",
+  "Is every bag sealed and standing upright, none open, torn or spilling?",
+  "Are all coffee beans roasted brown, none green? (yes if no beans)",
+];
+
+// The shared label check (also used by Instagram) forgives soft lettering;
+// an email hero is the brand's front page, so its wordmark must be crisp.
+export function emailLabelCheck(names: string[]): string {
+  return checkPrompt(names).replace(
+    "Reply with JSON only:",
+    `- the "MINUTO" wordmark, the "Café Roastery" line or the product name is blurred, smeared or mushy, or has any wrong, missing or extra letter, even if the word is still recognisable
+Reply with JSON only:`,
+  );
+}
+
 export const SCENE_NOTES = [
   "Does the scene look like a real photograph, with nothing physically absurd that jumps out at first glance?",
 ];
@@ -181,11 +201,11 @@ export const SCENE_NOTES = [
 // Design quality, asked of every candidate in both modes and used to rank
 // them: the owner's bar is a senior art director, not a correct packshot.
 export const DESIGN_QUESTIONS = [
-  "Would a senior art director at a premium brand approve this as a homepage hero photograph?",
-  "Is it free of the amateur patterns: products lined up in a row, a top-down flat-lay with scattered beans, a black tile or slate background, a centred symmetric line-up, a cluttered frame?",
-  "Does it have one clear off-centre subject, real depth and directional light, readable at phone size?",
+  "Does the image make you want to drink this coffee right now, with the coffee itself (drink, crema or bean texture) visible at a scale that matters?",
+  "Would it stop a thumb on a phone in one glance: a close, sharp hero subject, real depth, strong light-and-shadow contrast?",
+  "Would a senior art director at a premium brand ship it as a campaign hero, and is it free of the packaging-mockup look (bags on a plain counter against a plain wall), line-ups, flat-lays and clutter?",
 ];
-const DESIGN_SYSTEM = `You are a senior art director reviewing a hero photograph for a premium specialty coffee brand's email, as it will be seen on a phone. Be demanding: answer "yes" only when a top agency would ship it. Reply with JSON only: {"answers": [{"n": 1, "answer": "yes" | "no", "why": "short"}]}`;
+const DESIGN_SYSTEM = `You are a senior art director reviewing a hero photograph for a premium specialty coffee brand's sale email, as it will be seen on a phone. Tidy and pleasant is not enough: answer "yes" only when a top agency would ship it because it creates desire. Reply with JSON only: {"answers": [{"n": 1, "answer": "yes" | "no", "why": "short"}]}`;
 
 // deno-lint-ignore no-explicit-any
 type Part = Record<string, any>;
@@ -306,10 +326,19 @@ export async function artDirectEmailHero(opts: {
         // design review run side by side.
         const correctness = async (): Promise<{ passes: boolean; notes: string[] }> => {
           if (ad!.mode === "bags") {
-            const v = parseCheck((await gemini(CHECK_MODEL, opts.geminiKey,
-              [...labelRefs, { text: "Generated image to check:" }, imagePart, { text: checkPrompt(bagProducts.map((p) => p.short)) }],
-              { responseMimeType: "application/json", temperature: 0 }, 45_000)).map((p) => p.text || "").join(""));
-            return { passes: v.pass, notes: v.issues };
+            const [labels, physics] = await Promise.all([
+              gemini(CHECK_MODEL, opts.geminiKey,
+                [...labelRefs, { text: "Generated image to check:" }, imagePart, { text: emailLabelCheck(bagProducts.map((p) => p.short)) }],
+                { responseMimeType: "application/json", temperature: 0 }, 45_000).then((r) => parseCheck(r.map((p) => p.text || "").join(""))),
+              gemini(AD_CRITIC_MODEL, opts.geminiKey,
+                [{ text: AD_CRITIC_SYSTEM }, imagePart, { text: criticUserMessage([...BAG_SHOT_BLOCKING, ...ad!.qa]) }],
+                { responseMimeType: "application/json", temperature: 0 }, 60_000)
+                .then((r) => parseCritic(r.map((p) => p.text || "").join(""), [...BAG_SHOT_BLOCKING, ...ad!.qa], BAG_SHOT_BLOCKING.length)),
+            ]);
+            return {
+              passes: labels.pass && physics.passes,
+              notes: [...labels.issues, ...[...physics.failed, ...physics.notes].map((f) => `${f.q} → no: ${f.why}`)],
+            };
           }
           const questions = [...SCENE_BLOCKING, ...SCENE_NOTES, ...ad!.qa];
           const v = parseCritic((await gemini(AD_CRITIC_MODEL, opts.geminiKey,
@@ -340,7 +369,7 @@ export async function artDirectEmailHero(opts: {
       .filter((c) => ad!.mode === "scene" || c.passes)
       // Correct first, then the design review's score, then fewest notes.
       .sort((a, b) => Number(b.passes) - Number(a.passes) || b.design - a.design || a.notes.length - b.notes.length);
-    for (const c of cands) if (!("error" in c) && ad.mode === "bags" && !c.passes) issues.push(`attempt ${c.n}: ${c.notes.join("; ") || "failed the label check"}`);
+    for (const c of cands) if (!("error" in c) && ad.mode === "bags" && !c.passes) issues.push(`attempt ${c.n}: ${c.notes.join("; ") || "failed the label or physics check"}`);
     const top = usable[0];
     // A second round replaces the first only with a better candidate.
     if (!top || (best && rank(best) >= rank(top))) continue;

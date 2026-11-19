@@ -2946,7 +2946,8 @@ Craft rules:
 - Swap test: if a competitor could send the same sentence unchanged, rewrite it with something only Minuto can say (weekly roasting in Rehovot, the roast date on the bag, a named origin and its notes).
 - Honest urgency only: the real end date and time. No fake countdowns, no "last chance" before it is.
 - No AI tells: no "זה לא X, זה Y" reveals, no "בלי X, בלי Y, בלי Z" lists, no self-answered questions ("התוצאה? ..."), no stock openers, no pile of clauses after a finished sentence. At most one exclamation mark in the whole email.
-- Subject and preheader work as a pair: the subject earns the open, the preheader adds the next fact (dates, how it applies). The headline inside says something the subject didn't.
+- An email with an offer sells the offer in the first thing the reader sees. The subject states the offer's terms in plain numbers (what they get, for what) and the days it runs; a subject that could head any other week's email fails (owner verdict 2026-11-18 on draft #79: a generic quality slogan in the subject, "bad"). The preheader adds the next fact (how it applies, until when). The headline restates the offer from a different angle and never repeats the subject word for word; a generic lifestyle headline fails. Subject, preheader, headline and offer block all carry the offer.
+- When the owner asks for a new version, write new copy that meets these rules even if an earlier version was approved; keep only what the owner said to keep.
 - Short paragraphs, plain words. Bold (**...**) only the one or two facts a skimmer must catch.
 Before you show a draft, check it against every rule above and fix what fails.
 
