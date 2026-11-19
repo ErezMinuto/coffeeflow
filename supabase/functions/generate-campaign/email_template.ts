@@ -64,6 +64,8 @@ export interface EmailParams {
   sceneBrief?: string;          // the scene the hero image was asked for (stored, not rendered)
   artDirected?: boolean;        // the email art director designed the hero (stored, not rendered)
   artNote?: string;             // the owner's note to the art director (stored, not rendered)
+  bannerJob?: string;           // token of the background banner job still pending (stored, not rendered)
+  heroAlt?: string;             // alt text for a designed banner hero
 }
 
 // Design C, approved by Erez on 2026-11-05 after a dark-mode check in the
@@ -249,7 +251,7 @@ export function buildCampaignHtml(params: EmailParams): string {
   const subHtml = (color: string, align = "right") => params.preheader
     ? `<p style="margin:12px 0 0;font-family:${BODY_FONT};font-size:17px;line-height:1.6;color:${color};text-align:${align};">${escapeHtml(params.preheader)}</p>` : "";
   const heroImg = (maxW: number, extra = "") => heroImage
-    ? `<a href="${escapeHtml(heroHref)}" style="text-decoration:none;"><img class="hero-img" src="${escapeHtml(heroImage)}" width="${maxW}" alt="${escapeHtml(heroProduct ? shortProductName(heroProduct.name) : headline)}" style="display:block;width:100%;max-width:${maxW}px;height:auto;border:0;margin:0 auto;${extra}" /></a>` : "";
+    ? `<a href="${escapeHtml(heroHref)}" style="text-decoration:none;"><img class="hero-img" src="${escapeHtml(heroImage)}" width="${maxW}" alt="${escapeHtml(heroProduct ? shortProductName(heroProduct.name) : (params.heroAlt || headline))}" style="display:block;width:100%;max-width:${maxW}px;height:auto;border:0;margin:0 auto;${extra}" /></a>` : "";
   const heroPrice = heroProduct ? priceHtml(heroProduct, t, 18) : "";
   const heroBadge = heroProduct ? badgeFor(heroProduct) : "";
 
@@ -515,6 +517,8 @@ export interface EmailDesign {
   sceneBrief?: string;
   artDirected?: boolean;
   artNote?: string;
+  bannerJob?: string;
+  heroAlt?: string;
   bannerUrl?: string | null;
   productNotes?: Record<string, { note?: string; display_name?: string }>;
 }
@@ -532,7 +536,8 @@ export function designOf(p: EmailParams): EmailDesign {
     style: p.style, kicker: p.kicker, headline: p.headline, heroProductId: p.heroProductId ?? null,
     notes: p.notes, facts: p.facts, tip: p.tip ?? null, offer: p.offer ?? null,
     gridTitle: p.gridTitle, closingText: p.closingText, sceneBrief: p.sceneBrief,
-    ...(p.artDirected ? { artDirected: true, artNote: p.artNote || undefined } : {}), bannerUrl: p.bannerUrl ?? null, productNotes,
+    ...(p.artDirected ? { artDirected: true, artNote: p.artNote || undefined } : {}),
+    ...(p.bannerJob ? { bannerJob: p.bannerJob } : {}), ...(p.heroAlt ? { heroAlt: p.heroAlt } : {}), bannerUrl: p.bannerUrl ?? null, productNotes,
   };
 }
 
