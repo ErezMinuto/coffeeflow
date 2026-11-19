@@ -15,9 +15,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
-import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE, isSpecialEdition, shortProductName } from "./email_template.ts";
+import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE, isSpecialEdition, shortProductName, type EmailParams } from "./email_template.ts";
 import { generateSceneImage } from "./scene_image.ts";
-import { artDirectEmailHero } from "./email_art_director.ts";
+import { designBanner } from "./email_banner.ts";
 import { resolveCoffee } from "./resolve_products.ts";
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -1304,7 +1304,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   let bannerUrl: string | null = null;
   let scene: { attempts: number; issues: string[]; used: boolean } | null = null;
   let art: Record<string, unknown> | null = null;
-  let artConcept = "";
+  const bannerJob = artDirect ? crypto.randomUUID() : "";
   if (givenBanner) {
     const head = await fetch(givenBanner, { method: "HEAD" }).catch(() => null);
     if (!head?.ok || !/^image\//.test(head.headers.get("content-type") ?? "")) {
@@ -1313,33 +1313,10 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     bannerUrl = givenBanner;
     if (sceneBrief) scene = { attempts: 0, issues: ["banner_url given: the approved image is the hero, no scene was generated"], used: false };
   } else if (artDirect) {
-    // The art director designs the hero from the approved copy. Its concept is
-    // stored as the sceneBrief so the next email does something different.
-    const { data: recent } = await supabase.from("campaigns")
-      .select("html_content").eq("user_id", p.userId).eq("campaign_type", "brain")
-      .order("created_at", { ascending: false }).limit(8);
-    const recentScenes = (recent ?? []).map((c: any) => decodeDesign(c.html_content).sceneBrief)
-      .filter((x: unknown): x is string => typeof x === "string" && !!x.trim()).map((x: string) => x.slice(0, 200));
-    const res = await artDirectEmailHero({
-      copy: {
-        subject: subjectIn, preheader, headline: sec.s.headline, kicker: sec.s.kicker, body,
-        offerTitle: sec.s.offer?.title ?? "", offerText: sec.s.offer?.text ?? "",
-      },
-      products: products.map((pr: any) => ({
-        woo_id: pr.woo_id, name: pr.name, short: shortProductName(pr.name),
-        description: String(pr.short_description ?? "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim(),
-        image_url: pr.image_url, jar: isSpecialEdition(pr.name),
-      })),
-      recentScenes, artNote, geminiKey: GEMINI_KEY, supabaseUrl: SUPA_URL, supabase,
-      log: (m) => console.log(m),
-    });
-    bannerUrl = res.url;
-    artConcept = res.concept ? `${res.direction?.mode ?? ""}: ${res.concept}`.slice(0, 600) : "";
-    art = {
-      used: !!res.url, mode: res.direction?.mode ?? null, concept: res.concept, why: res.direction?.why ?? "",
-      design: res.design, attempts: res.attempts, notes: res.notes.slice(0, 6), issues: res.issues.slice(-4),
-    };
-    console.log("render-draft art:", JSON.stringify({ ...art, prompt: res.direction?.prompt }));
+    // The banner is designed in the background after the draft is saved (see
+    // below): concept, image and checks take 2-4 minutes, longer than the
+    // chat's 150 s request idle timeout. Until then the product photo is the hero.
+    art = { status: "designing" };
   } else if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
     // Scene image around the real bags. A render only counts if it passes the
     // label check; otherwise the first product's real photo is the hero.
@@ -1365,7 +1342,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
 
   // The template escapes the body itself and applies **bold** and line
   // breaks, so the copy goes in exactly as approved.
-  const htmlContent = buildCampaignHtml({
+  const htmlParams: EmailParams = {
     subject,
     preheader,
     greeting:       "",
@@ -1377,9 +1354,10 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
     promoDeadline:  promoDeadline || null,
     heroProductId,
-    sceneBrief:     artConcept || sceneBrief || undefined,
+    sceneBrief:     sceneBrief || undefined,
     artDirected:    artDirect || undefined,
     artNote:        artDirect && artNote ? artNote : undefined,
+    bannerJob:      bannerJob || undefined,
     kicker:         sec.s.kicker || undefined,
     headline:       sec.s.headline || undefined,
     offer:          sec.s.offer,
@@ -1388,7 +1366,8 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     tip:            sec.s.tip,
     gridTitle:      sec.s.gridTitle || undefined,
     closingText:    sec.s.closingText || undefined,
-  });
+  };
+  const htmlContent = buildCampaignHtml(htmlParams);
 
   const { data: inserted, error: insertErr } = await supabase
     .from("campaigns")
@@ -1409,7 +1388,72 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .single();
   if (insertErr) return err(500, insertErr.message);
 
+  if (artDirect) {
+    const job = designDraftBanner(p.userId, inserted.id, bannerJob, htmlParams, {
+      copy: {
+        subject: subjectIn, preheader, headline: sec.s.headline, kicker: sec.s.kicker, body,
+        offerTitle: sec.s.offer?.title ?? "", offerText: sec.s.offer?.text ?? "",
+      },
+      products: products.map((pr: any) => ({
+        woo_id: pr.woo_id, short: shortProductName(pr.name), image_url: pr.image_url, jar: isSpecialEdition(pr.name),
+        description: String(pr.short_description ?? "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim(),
+      })),
+      artNote,
+    });
+    // deno-lint-ignore no-explicit-any
+    const rt = (globalThis as any).EdgeRuntime;
+    if (rt?.waitUntil) rt.waitUntil(job); else await job;   // local runs wait for it
+  }
+
   return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent }, scene, art });
+}
+
+// The background half of render-draft: design the banner, then put it on the
+// draft. The update only lands while the draft still carries this job's token,
+// so an edit the owner made in the meantime (update-draft re-renders without
+// it) is never overwritten.
+async function designDraftBanner(
+  userId: string, campaignId: number, token: string, params: EmailParams,
+  // deno-lint-ignore no-explicit-any
+  input: { copy: any; products: any[]; artNote: string },
+): Promise<void> {
+  try {
+    const { data: recent } = await supabase.from("campaigns")
+      .select("html_content").eq("user_id", userId).eq("campaign_type", "brain").neq("id", campaignId)
+      .order("created_at", { ascending: false }).limit(8);
+    const recentConcepts = (recent ?? []).map((c: any) => decodeDesign(c.html_content).sceneBrief)
+      .filter((x: unknown): x is string => typeof x === "string" && !!x.trim()).map((x: string) => x.slice(0, 400));
+    const res = await designBanner({
+      ...input, recent: recentConcepts, geminiKey: GEMINI_KEY, supabaseUrl: SUPA_URL, supabase,
+      log: (m) => console.log(`[banner ${campaignId}] ${m}`),
+    });
+    console.log(`[banner ${campaignId}] result`, JSON.stringify({ ...res, concept: res.concept }));
+    if (!res.concept) return;
+    // Stored with the draft: the next banner reads it to do something new in
+    // idea, layout and typography (owner: never the same banner twice).
+    const ty = res.concept.type;
+    const concept = `${res.concept.idea} [type ${res.concept.text_side}: ${ty.title_font} ${ty.title_weight} / ${ty.support_font} ${ty.support_weight}, ${ty.color}${ty.accent !== "none" ? `, ${ty.accent}` : ""}]`.slice(0, 600);
+    const html = buildCampaignHtml({
+      ...params,
+      bannerUrl: res.url ?? params.bannerUrl ?? null,
+      heroProductId: res.url ? null : params.heroProductId,
+      heroAlt: res.url ? res.concept.alt : undefined,
+      sceneBrief: concept,
+      bannerJob: undefined,
+    });
+    // The token lives inside the base64 design comment, so read it back decoded.
+    const { data: cur } = await supabase.from("campaigns").select("html_content, status").eq("id", campaignId).maybeSingle();
+    if (!cur || cur.status !== "draft" || decodeDesign(cur.html_content).bannerJob !== token) {
+      console.log(`[banner ${campaignId}] draft changed meanwhile; banner not applied`);
+      return;
+    }
+    const { error } = await supabase.from("campaigns")
+      .update({ html_content: html })
+      .eq("id", campaignId).eq("status", "draft");   // the html itself is too long for a URL filter
+    if (error) console.error(`[banner ${campaignId}] update failed: ${error.message}`);
+  } catch (e) {
+    console.error(`[banner ${campaignId}] failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────

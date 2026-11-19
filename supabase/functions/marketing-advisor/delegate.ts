@@ -91,21 +91,22 @@ async function renderEmailDraft(c: Record<string, any>): Promise<DelegateResult>
   }
   const art = out?.art;
   const sceneNote = !art ? ""
-    : art.used ? ` The art director designed the hero (${art.mode}: ${art.concept}). Why: ${art.why}${art.design != null ? ` Design review: ${art.design}/3.` : ""}${(art.notes ?? []).length ? ` Reviewer notes: ${art.notes.slice(0, 3).join(" | ")}.` : ""} Describe the concept to the owner and ask for their verdict on the image.`
-    : ` The art director's image did NOT come through (${(art.issues ?? []).slice(-2).join(" / ") || "no image"}), so the real product photo is the hero instead. Tell the owner.`;
-  const sc = art ? { used: !!art.used } : out?.scene;
+    : art.status === "designing"
+      ? " The hero banner is being designed right now in the background by the email art director (campaign idea, the banner image, the Hebrew typography and visual checks; about 2-4 minutes). Until it passes, the draft shows a product photo as the hero; the banner then replaces it on this same draft. Its concept appears under 'Recent email banner concepts' in your live data on the next turn. Tell the owner to open the draft in a few minutes, and ask for their verdict on the banner then."
+      : "";
+  const sc = out?.scene;
   // Which design slots carry words, so an empty one is visible in the reply.
   const slots: Array<[string, boolean]> = [
     ["preheader", !!str(c.preheader)], ["kicker", !!str(c.kicker)], ["headline", !!str(c.headline)],
     ["offer", obj(c.offer) && !!str(c.offer.title)], ["products", strList(c.products).length > 0],
-    ["hero image", !!str(c.banner_url) || (art?.used ?? false)], ["notes", strList(c.notes).length > 0],
+    ["hero image", !!str(c.banner_url) || art?.status === "designing"], ["notes", strList(c.notes).length > 0],
     ["tip", obj(c.tip) && !!str(c.tip.text)], ["closing_text", !!str(c.closing_text)],
   ];
   const empty = slots.filter(([, on]) => !on).map(([k]) => k);
   const slotNote = empty.length ? ` Empty sections: ${empty.join(", ")}.` : " Every section is filled.";
   return {
     text: `Email DRAFT ${out.existed ? "already existed (same copy, created minutes ago; nothing new was made)" : "created"}: campaign id ${id}, subject "${out.campaign.subject}". The copy is word for word as approved; the only addition is the legal " | פרסומת" subject suffix. It is in Marketing → History.${sceneNote}${slotNote} NOTHING was sent or scheduled: the owner picks the audience and sends it from there.`,
-    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history", scene_used: sc?.used ?? null, art_concept: art?.concept ?? null },
+    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history", scene_used: sc?.used ?? null, banner: art?.status ?? null },
   };
 }
 
