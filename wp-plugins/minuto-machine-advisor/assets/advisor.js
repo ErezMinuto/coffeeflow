@@ -24,7 +24,7 @@
     { id: 'use', title: 'איך מכינים קפה אצלך?', options: [
       ['auto', 'מכונה אוטומטית', 'לחיצה על כפתור והקפה מוכן'],
       ['manual', 'מכונת אספרסו ידנית', 'עם ידית, כמו בבית קפה'],
-      ['lever', 'מכונת ליבר', 'הלחץ נוצר בידית, ביד'],
+      ['lever', 'מכונת מנוף', 'הלחץ נוצר ביד, במשיכת המנוף'],
       ['go', 'בדרכים', 'מכונה ניידת לטיולים ולרכב'],
       ['filter', 'קפה פילטר'],
       ['business', 'לבית קפה או למשרד', 'נמליץ בשיחה בוואטסאפ'],
@@ -109,7 +109,8 @@
     var steps = activeSteps();
     var step = steps[stepIndex];
     var wrap = el('div', 'ma-step');
-    wrap.appendChild(el('p', 'ma-progress', 'שאלה ' + (stepIndex + 1) + ' מתוך ' + steps.length));
+    // No "of N": how many questions follow depends on the answers.
+    wrap.appendChild(el('p', 'ma-progress', 'שאלה ' + (stepIndex + 1)));
     var title = heading(step.title);
     wrap.appendChild(title);
     var list = el('div', 'ma-options');
