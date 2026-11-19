@@ -96,7 +96,7 @@ return [
     'bezzera_duo_de' => ['ids' => [67202], 'brand' => 'Bezzera', 'kind' => 'manual', 'boiler' => 'dual'],
     'bezzera_duo_mn' => ['ids' => [67163], 'brand' => 'Bezzera', 'kind' => 'manual', 'boiler' => 'dual', 'plumb' => true],
     'bezzera_crema' => ['ids' => [82595], 'brand' => 'Bezzera', 'kind' => 'manual', 'boiler' => 'hx'],
-    'ecm_mechanika_iv' => ['ids' => [67347], 'brand' => 'ECM', 'kind' => 'manual', 'boiler' => 'hx'],
+    'ecm_mechanika_iv' => ['ids' => [67347], 'brand' => 'ECM', 'kind' => 'manual', 'boiler' => 'hx', 'plumb' => true],
     'bezzera_magica' => ['ids' => [67169], 'brand' => 'Bezzera', 'kind' => 'manual', 'boiler' => 'hx'],
     'bezzera_aria_top' => ['ids' => [67167], 'brand' => 'Bezzera', 'kind' => 'manual', 'boiler' => 'hx', 'plumb' => true],
     'gaggia_classic_gt' => ['ids' => [79795], 'brand' => 'Gaggia', 'kind' => 'manual', 'boiler' => 'dual'],

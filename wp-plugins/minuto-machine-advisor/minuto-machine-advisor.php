@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Machine Advisor
  * Description: "איזו מכונה מתאימה לי?" advisor. Place [minuto_machine_advisor] on a page.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -20,7 +20,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_ADVISOR_VERSION', '1.0.1');
+define('MINUTO_ADVISOR_VERSION', '1.0.2');
 define('MINUTO_ADVISOR_CACHE_KEY', 'minuto_advisor_catalog');
 define('MINUTO_ADVISOR_WHATSAPP', '972544490486');   // the number on the site
 define('MINUTO_ADVISOR_QUIZ_PATH', '/coffee-quiz/');
