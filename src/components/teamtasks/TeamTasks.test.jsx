@@ -120,6 +120,23 @@ test('ticking a task calls the RPC and notifies the creator', async () => {
   expect(mockInvoke).toHaveBeenCalledWith('employee-bot', { body: { task_id: 1 }, headers: { 'x-action': 'task-done-notify' } });
 });
 
+test('every row says whose task it is, and who sent it', () => {
+  // Admin view: Peleg's tasks show his name.
+  let { el } = setup('user_erez', true);
+  let chips = [...el.querySelectorAll('.teamtasks-who')].map((c) => c.textContent);
+  expect(chips).toEqual(['אחראי/ת: פלג אורג', 'אחראי/ת: פלג אורג']);
+  document.body.innerHTML = '';
+
+  // Peleg's view: his own tasks say "שלי"; the one Erez sent says "מארז".
+  ({ el } = setup('user_peleg', false));
+  const items = [...el.querySelectorAll('.teamtasks-item')];
+  const fromErez = items.find((li) => li.textContent.includes('להזמין חלב'));
+  const selfTask = items.find((li) => li.textContent.includes('לעצמי'));
+  expect(fromErez.querySelector('.teamtasks-who').textContent).toBe('אחראי/ת: שלי');
+  expect(fromErez.textContent).toContain('מארז');
+  expect(selfTask.textContent).not.toContain('מארז');
+});
+
 test('done tab shows finished tasks with re-open', () => {
   const { el } = setup('user_erez', true);
   const doneTab = [...el.querySelectorAll('.teamtasks-tab')].find((b) => b.textContent.includes('בוצעו'));

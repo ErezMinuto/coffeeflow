@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Trash2, Check, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Check, RotateCcw, User } from 'lucide-react';
 import { useApp } from '../../lib/context';
 import { PageHeader } from '../shared/ui';
 import { supabase } from '../../lib/supabase';
@@ -62,7 +62,13 @@ export default function TeamTasks() {
   const [busyId, setBusyId] = useState(null);
   const [filter, setFilter] = useState('open');
 
-  const nameOf = (id) => (employees || []).find((e) => e.id === id)?.name || '—';
+  const nameOf = (id) => (employees || []).find((e) => Number(e.id) === Number(id))?.name || '—';
+  const creatorName = (clerkId) =>
+    (employees || []).find((e) => e.clerk_user_id && e.clerk_user_id === clerkId)?.name || null;
+  // Whose task it is, always visible: "שלי" for the viewer's own, else the name.
+  const isMine = (t) => me && Number(t.assignee_employee_id) === Number(me.id);
+  // Who sent it, when it came from someone else.
+  const sentBy = (t) => (t.created_by && t.created_by !== user?.id ? creatorName(t.created_by) : null);
   const canEdit = (t) => isAdmin || (me && t.assignee_employee_id === me.id && t.created_by === user?.id);
 
   const open = tasks.filter((t) => t.status === 'open')
@@ -239,7 +245,14 @@ export default function TeamTasks() {
                   <div className="teamtasks-title">{t.title}</div>
                   {t.notes && <div className="teamtasks-notes">{t.notes}</div>}
                   <div className="teamtasks-meta">
-                    {isAdmin && <span className="teamtasks-who">{nameOf(t.assignee_employee_id)}</span>}
+                    <span className={`teamtasks-who${isMine(t) ? ' mine' : ''}`}>
+                      <User aria-hidden="true" />
+                      <span className="sr-only">אחראי/ת: </span>
+                      {isMine(t) ? 'שלי' : nameOf(t.assignee_employee_id)}
+                    </span>
+                    {sentBy(t) && isMine(t) && (
+                      <span className="text-muted">מ{sentBy(t).split(' ')[0]}</span>
+                    )}
                     {t.status === 'open' ? (
                       <>
                         <DueTag due={t.due_date} today={today} />

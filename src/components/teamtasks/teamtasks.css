@@ -85,7 +85,19 @@
   margin-top: 6px;
   font-size: 13px;
 }
-.teamtasks-page .teamtasks-who { color: var(--ink-2); font-weight: 500; }
+/* Whose task it is: a chip, so it reads as a label, not loose text. */
+.teamtasks-page .teamtasks-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+}
+.teamtasks-page .teamtasks-who svg { width: 13px; height: 13px; }
+.teamtasks-page .teamtasks-who.mine { background: var(--sunken); color: var(--ink-2); }
 .teamtasks-page .is-done .teamtasks-title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
 
 .teamtasks-page .teamtasks-actions { flex: none; display: flex; align-items: center; gap: 6px; }
