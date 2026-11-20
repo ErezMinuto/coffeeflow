@@ -1,0 +1,100 @@
+/* ── Team tasks (משימות לצוות) ──────────────────────────────────────────── */
+/* Page-scoped: every rule sits under .teamtasks-page. */
+
+.teamtasks-page > .card { margin-bottom: 24px; }
+.teamtasks-page .form-group { margin-bottom: 0; }
+.teamtasks-page .form-group input,
+.teamtasks-page .form-group select { width: 100%; }
+
+/* New task: title + notes full width, then who / when / submit on one row. */
+.teamtasks-page .teamtasks-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 14px 16px;
+  align-items: end;
+}
+.teamtasks-page .teamtasks-form .span-all { grid-column: 1 / -1; }
+.teamtasks-page .teamtasks-submit { display: flex; }
+
+/* Open / done switch in the card head. */
+.teamtasks-page .teamtasks-tabs { display: flex; gap: 4px; }
+.teamtasks-page .teamtasks-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.teamtasks-page .teamtasks-tab .num { color: var(--muted); font-size: 13px; }
+.teamtasks-page .teamtasks-tab.active { background: var(--brand-soft); color: var(--brand); }
+.teamtasks-page .teamtasks-tab.active .num { color: var(--brand); }
+.teamtasks-page .teamtasks-tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+@media (hover: hover) and (pointer: fine) {
+  .teamtasks-page .teamtasks-tab:not(.active):hover { background: var(--sunken); }
+}
+
+/* Task rows */
+.teamtasks-page .teamtasks-list { list-style: none; margin: 0; padding: 0; }
+.teamtasks-page .teamtasks-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+}
+.teamtasks-page .teamtasks-item + .teamtasks-item { border-top: 1px solid var(--line); }
+
+.teamtasks-page .teamtasks-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  color: transparent;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.teamtasks-page .teamtasks-check svg { width: 16px; height: 16px; }
+.teamtasks-page .teamtasks-check:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.teamtasks-page .teamtasks-check:disabled { opacity: 0.5; cursor: wait; }
+.teamtasks-page .teamtasks-check.checked { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); }
+@media (hover: hover) and (pointer: fine) {
+  .teamtasks-page .teamtasks-check:not(.checked):hover { border-color: var(--ok); color: var(--ok); }
+}
+.teamtasks-page .teamtasks-check:active:not(:disabled) { transform: scale(0.94); }
+
+.teamtasks-page .teamtasks-body { flex: 1 1 auto; min-width: 0; }
+.teamtasks-page .teamtasks-title { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.teamtasks-page .teamtasks-notes { margin-top: 2px; color: var(--ink-2); font-size: 13.5px; overflow-wrap: anywhere; }
+.teamtasks-page .teamtasks-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+.teamtasks-page .teamtasks-who { color: var(--ink-2); font-weight: 500; }
+.teamtasks-page .is-done .teamtasks-title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+
+.teamtasks-page .teamtasks-actions { flex: none; display: flex; align-items: center; gap: 6px; }
+.teamtasks-page .teamtasks-date { width: auto; min-height: 32px; padding: 4px 8px; font-size: 13px; }
+
+@media (max-width: 860px) {
+  .teamtasks-page .teamtasks-form { grid-template-columns: minmax(0, 1fr); }
+  .teamtasks-page .teamtasks-submit .btn { width: 100%; }
+  .teamtasks-page .teamtasks-item { flex-wrap: wrap; padding: 14px 16px; }
+  .teamtasks-page .teamtasks-body { flex-basis: calc(100% - 42px); }
+  .teamtasks-page .teamtasks-actions { margin-inline-start: 42px; }
+}

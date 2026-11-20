@@ -3,12 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import {
   LayoutGrid, Sprout, Flame, Coffee, Package, ListChecks, CalendarDays,
-  Clock, Car, Receipt, Settings, ClipboardPen, Menu, X,
+  Clock, Car, Receipt, Settings, ClipboardPen, Menu, X, SquareCheckBig,
 } from 'lucide-react';
 import { useApp } from '../../lib/context';
 
 // Sidebar structure. Visibility flags are unchanged from the old top navbar:
 //   scheduleOnly → admins + schedule_manager   |   adminOnly → admins only   |   else everyone
+//   teamTasks    → admins + staff whose login is linked to an employee row
 const allNavGroups = [
   { items: [
     { path: '/dashboard', icon: LayoutGrid, label: 'סקירה' },
@@ -21,6 +22,7 @@ const allNavGroups = [
   ] },
   { label: 'תפעול', items: [
     { path: '/tasks',       icon: ListChecks,   label: 'משימות',         adminOnly:    true },
+    { path: '/team-tasks',  icon: SquareCheckBig, label: 'משימות לצוות',  teamTasks:    true },
     { path: '/schedule',    icon: CalendarDays, label: 'סידור עבודה',    scheduleOnly: true },
     { path: '/attendance',  icon: Clock,        label: 'נוכחות',         scheduleOnly: true },
     { path: '/vehicle-log', icon: Car,          label: 'יומן רכב',       adminOnly:    true },
@@ -59,8 +61,11 @@ export default function Navigation() {
   const menuButtonRef = useRef(null);
   const closeButtonRef = useRef(null);
 
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jerusalem' });
+  const myEmployee = (data.employees || []).find(e => e.clerk_user_id && e.clerk_user_id === user?.id);
   const canSee = item =>
-    item.scheduleOnly ? canSchedule
+    item.teamTasks    ? (isAdmin || !!myEmployee)
+    : item.scheduleOnly ? canSchedule
     : item.adminOnly  ? isAdmin
     : true;
 
@@ -70,6 +75,10 @@ export default function Navigation() {
   const badges = {};
   if (pendingTasks > 0) badges['/tasks'] = { count: pendingTasks, tone: 'danger' };
   if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, tone: 'warn' };
+  // Team tasks: my own due/overdue ones; admins without their own see everyone's overdue.
+  const dueTasks = (data.managerTasks || []).filter(t => t.status === 'open' && (
+    myEmployee && t.assignee_employee_id === myEmployee.id ? t.due_date <= today : (isAdmin && t.due_date < today)));
+  if (dueTasks.length > 0) badges['/team-tasks'] = { count: dueTasks.length, tone: 'danger' };
 
   // Filter groups by role and drop any group left with nothing visible.
   const groups = isBookkeeper
