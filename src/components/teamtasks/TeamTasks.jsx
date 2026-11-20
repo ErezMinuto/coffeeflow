@@ -36,7 +36,9 @@ const saveLastAssignee = (id) => {
 };
 
 export default function TeamTasks() {
-  const { user, isAdmin, employees, data, managerTasksDb, showToast } = useApp();
+  const { user, isAdmin, data, managerTasksDb, showToast } = useApp();
+  // Context exposes table data under `data` (there is no top-level `employees`).
+  const employees = data.employees;
   const tasks = data.managerTasks;
   const today = todayIL();
 
