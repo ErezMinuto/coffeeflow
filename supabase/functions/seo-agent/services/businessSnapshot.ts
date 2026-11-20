@@ -31,6 +31,7 @@ import { fetchTopOrganicLandingPages, fetchTopKeywords, type Ga4LandingPageSigna
 import { fetchTopOrganicPosts, fetchTopConvertingAds, type OrganicPostSignal, type AdInsightSignal } from './metaApi.ts'
 import { getRecentLearnings } from '../db.ts'
 import { fetchActivePaidCampaigns } from './paidCampaigns.ts'
+import { fetchAutomationActivity } from '../../_shared/email_activity.ts'
 import type { LearningRow } from '../types.ts'
 import type {
   BusinessSnapshot,
@@ -214,6 +215,9 @@ export async function fetchSalesSnapshot(
 // correct denominator for engagement rates (recipients includes bounces and
 // suppressions; using it understated open_rate badly). The recipients-vs-
 // delivered gap is itself surfaced so the brain can flag throttling/sync gaps.
+// Automated lifecycle sends (email_automations) ride along under `automations`,
+// kept apart from the campaign numbers (2026-11-09: reading campaigns alone made
+// the brain call a channel with 73 automated sends "completely dormant").
 
 export async function fetchEmailPerformance(
   supabase: SupabaseClient,
@@ -230,6 +234,10 @@ export async function fetchEmailPerformance(
     .order('sent_at', { ascending: false })
     .limit(limit)
   if (error) throw new Error(`fetchEmailPerformance failed: ${error.message}`)
+  // Automated sends live in a different table; a failed read is reported as
+  // unknown, never as zero, and never hides the campaign numbers.
+  const automationsP = fetchAutomationActivity(supabase, lookbackDays)
+    .catch((e: unknown) => ({ error: `email_automations: ${e instanceof Error ? e.message : String(e)}` }))
 
   const rows = (data ?? []) as Array<{
     id: number
@@ -289,6 +297,9 @@ export async function fetchEmailPerformance(
     avg_open_rate: totalDelivered > 0 ? Math.round((weightedOpen / totalDelivered) * 1000) / 1000 : 0,
     avg_click_rate: totalDelivered > 0 ? Math.round((weightedClick / totalDelivered) * 1000) / 1000 : 0,
     recent: campaigns,
+    automations: await automationsP,
+    note: 'campaigns_sent, total_recipients, total_delivered and the rates count one-off campaigns (campaigns table) only. ' +
+      'automations counts automated lifecycle sends (email_automations) in the same window. Email activity = both.',
   }
 }
 
