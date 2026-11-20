@@ -44,8 +44,9 @@ const tasks = [
 
 function setup(userId, isAdmin) {
   mockApp = {
-    user: { id: userId }, isAdmin, employees,
-    data: { managerTasks: tasks },
+    // Same shape as AppContext: table rows live under `data`, nothing top-level.
+    user: { id: userId }, isAdmin,
+    data: { managerTasks: tasks, employees },
     managerTasksDb: { refresh: jest.fn() },
     showToast: jest.fn(),
   };
