@@ -43,7 +43,9 @@ function StatusCell({ trip }) {
 }
 
 export default function VehicleLog() {
-  const { showToast, employees } = useApp();
+  // Context exposes table rows under `data` (there is no top-level `employees`).
+  const { showToast, data: appData } = useApp();
+  const employees = appData?.employees;
   const [from, setFrom] = useState(daysAgoIL(30));
   const [to, setTo] = useState(isoDayIL());
   const [trips, setTrips] = useState(null);
