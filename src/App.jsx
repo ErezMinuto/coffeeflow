@@ -19,6 +19,7 @@ import Attendance              from './components/attendance/Attendance';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
 import VehicleLog              from './components/vehicle/VehicleLog';
+import TeamTasks               from './components/teamtasks/TeamTasks';
 import SupplierInvoices        from './components/invoices/SupplierInvoices';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
@@ -34,6 +35,15 @@ function ScheduleRoute({ children }) {
   const { canSchedule, roleLoading } = useApp();
   if (roleLoading) return null;
   if (!canSchedule) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// Admins, plus staff whose login is linked to an employee (they see their own tasks).
+function TeamTasksRoute({ children }) {
+  const { isAdmin, user, data, roleLoading, dataLoading } = useApp();
+  if (roleLoading || (!isAdmin && dataLoading)) return null;
+  const linked = (data.employees || []).some(e => e.clerk_user_id && e.clerk_user_id === user?.id);
+  if (!isAdmin && !linked) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -92,6 +102,7 @@ function AppContent() {
               <Route path="/schedule"   element={<ScheduleRoute><Schedule /></ScheduleRoute>} />
               <Route path="/attendance" element={<ScheduleRoute><Attendance /></ScheduleRoute>} />
               <Route path="/vehicle-log"  element={<AdminRoute><VehicleLog /></AdminRoute>} />
+              <Route path="/team-tasks"   element={<TeamTasksRoute><TeamTasks /></TeamTasksRoute>} />
               <Route path="/invoices"   element={<SupplierInvoices />} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />

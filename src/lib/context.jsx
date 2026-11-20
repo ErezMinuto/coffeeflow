@@ -122,6 +122,9 @@ export const AppProvider = ({ children }) => {
   const bagAllocationsDb          = useSupabaseData('bag_allocations',           { filterByUser: false });
   const appSettingsDb             = useSupabaseData('app_settings',              { filterByUser: false });
   const artisanProfilesDb         = useSupabaseData('artisan_profiles',          { filterByUser: false });
+  // Read only: RLS returns all tasks to admins, own tasks to the assignee.
+  // Writes go through TeamTasks (the hook's insert would add a user_id column).
+  const managerTasksDb            = useSupabaseData('manager_tasks',             { filterByUser: false });
   const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
@@ -134,6 +137,7 @@ export const AppProvider = ({ children }) => {
     roastProfileIngredients: roastProfileIngredientsDb.data || [],
     roastComponents:         roastComponentsDb.data         || [],
     waitingCustomers:        waitingCustomersDb.data        || [],
+    managerTasks:            managerTasksDb.data            || [],
     employees:               employeesDb.data               || [],
     availability:            availabilityDb.data            || [],
     schedules:               schedulesDb.data               || [],
@@ -194,11 +198,12 @@ export const AppProvider = ({ children }) => {
     appSettingsDb.refresh();
     artisanProfilesDb.refresh();
     roastChecklistTemplatesDb.refresh();
+    managerTasksDb.refresh();
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
     employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, artisanProfilesDb,
-    roastChecklistTemplatesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
+    roastChecklistTemplatesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb, managerTasksDb,
   ]);
 
   return (
@@ -210,7 +215,7 @@ export const AppProvider = ({ children }) => {
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, roastChecklistTemplatesDb,
-      artisanProfilesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
+      artisanProfilesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb, managerTasksDb,
       costSettings, updateCostSettings,
       showToast,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,

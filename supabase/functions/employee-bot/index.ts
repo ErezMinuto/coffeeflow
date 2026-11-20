@@ -10,11 +10,22 @@
  * ?action=onboard  → post "write your name" message to group
  * ?action=remind   → post weekly availability request to group
  * ?action=publish  → publish approved schedule to group
+ *
+ * Manager tasks (משימות לצוות, table manager_tasks; see manager_tasks.ts):
+ * ?action=task-notify       → DM the assignee a new task with a ✅ button (page, staff)
+ * ?action=task-done-notify  → tell the creator a task was ticked on the page (page, staff)
+ * ?action=task-reminders    → daily cron: re-send every open task that's due/overdue
+ * Private "משימות" → the sender's open tasks; "mtask:<id>" button → mark done
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller } from "../_shared/service_caller.ts";
-import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { forbidden, hasRole, isStaff } from "../_shared/role_caller.ts";
+import {
+  buildTaskMessage, doneNoticeText, dropButton, dueLabel, matchEmployees, needsReminder,
+  parseCancelCallback, parseTaskCallback, parseTaskMessage, stripCandidateName,
+  TASK_CANCEL_PREFIX, TASK_HELP_TEXT, type TaskMessageKind, type TaskRow,
+} from "./manager_tasks.ts";
 import { runLogged } from "../_shared/run_logged.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
@@ -795,6 +806,370 @@ async function handleVehicleCallback(
   return new Response("ok");
 }
 
+// ── Manager tasks (משימות לצוות) ──────────────────────────────────────────────
+// The owner adds a task on the CoffeeFlow page "משימות לצוות" (table
+// manager_tasks). The page calls ?action=task-notify → the assignee gets a DM
+// with a ✅ button. ?action=task-reminders (daily cron) re-sends every open
+// task that is due or overdue. Marking done (button here, or the page, which
+// then calls ?action=task-done-notify) tells the creator. Message text and
+// buttons are built in ./manager_tasks.ts.
+
+const jsonRes = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+const israelDateOfIso = (iso: string) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date(iso));
+
+async function sendTaskMessage(
+  chatId: string, kind: TaskMessageKind, tasks: TaskRow[], name?: string,
+  extraButton?: { text: string; callback_data: string },
+): Promise<boolean> {
+  const { text, reply_markup } = buildTaskMessage(kind, tasks, israelDateStr(0), name);
+  if (extraButton && reply_markup.inline_keyboard[0]) reply_markup.inline_keyboard[0].push(extraButton);
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", reply_markup }),
+  });
+  const tg = await res.json().catch(() => ({ ok: false }));
+  if (!tg.ok) console.error(`manager-task send reject for ${chatId}:`, tg.description);
+  return tg.ok === true;
+}
+
+async function readTaskId(req: Request): Promise<number | null> {
+  const body = await req.json().catch(() => ({}));
+  const id = Number(body?.task_id);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+// Tell whoever created the task that it's done. Claims creator_notified_at
+// first, so a double tap or the page and the button racing send one notice.
+async function notifyTaskCreator(taskId: number): Promise<{ ok: boolean; sent: number; reason?: string }> {
+  const { data: claimed } = await supabase
+    .from("manager_tasks")
+    .update({ creator_notified_at: new Date().toISOString() })
+    .eq("id", taskId)
+    .eq("status", "done")
+    .is("creator_notified_at", null)
+    .select("id, title, created_by, done_via, assignee_employee_id")
+    .maybeSingle();
+  if (!claimed) return { ok: true, sent: 0, reason: "not done or already notified" };
+  if (!claimed.created_by) return { ok: true, sent: 0, reason: "no creator" };
+
+  const [{ data: creator }, { data: assignee }] = await Promise.all([
+    supabase.from("employees").select("id, telegram_id").eq("clerk_user_id", claimed.created_by).maybeSingle(),
+    supabase.from("employees").select("name").eq("id", claimed.assignee_employee_id).maybeSingle(),
+  ]);
+  // A task someone added for themselves: they already know it's done.
+  if (creator?.id === claimed.assignee_employee_id) return { ok: true, sent: 0, reason: "self task" };
+  if (!creator?.telegram_id) return { ok: true, sent: 0, reason: "creator has no telegram" };
+
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: String(creator.telegram_id),
+      text: doneNoticeText(assignee?.name ?? "המשימה", claimed.title, claimed.done_via),
+      parse_mode: "HTML",
+    }),
+  });
+  const tg = await res.json().catch(() => ({ ok: false }));
+  if (!tg.ok) {
+    console.error("manager-task done notice reject:", tg.description);
+    // Let a later call try again.
+    await supabase.from("manager_tasks").update({ creator_notified_at: null }).eq("id", taskId);
+    return { ok: false, sent: 0, reason: "send failed" };
+  }
+  return { ok: true, sent: 1 };
+}
+
+// ?action=task-notify  { task_id } — first DM for a new task (from the page).
+async function handleTaskNotify(req: Request) {
+  const taskId = await readTaskId(req);
+  if (!taskId) return jsonRes({ ok: false, error: "task_id required" }, 400);
+
+  // Claim before sending, so a re-click can't DM twice.
+  const { data: task } = await supabase
+    .from("manager_tasks")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", taskId)
+    .eq("status", "open")
+    .is("notified_at", null)
+    .select("id, title, notes, due_date, assignee_employee_id")
+    .maybeSingle();
+  if (!task) return jsonRes({ ok: true, sent: 0, reason: "already sent or not open" });
+
+  const unclaim = () => supabase.from("manager_tasks").update({ notified_at: null }).eq("id", taskId);
+
+  const { data: emp } = await supabase
+    .from("employees").select("name, telegram_id, active").eq("id", task.assignee_employee_id).maybeSingle();
+  if (!emp?.telegram_id || !emp.active) {
+    await unclaim();
+    return jsonRes({ ok: false, sent: 0, reason: "no telegram" });
+  }
+
+  const ok = await sendTaskMessage(String(emp.telegram_id), "new", [task], emp.name?.split(" ")[0]);
+  if (!ok) {
+    await unclaim();
+    return jsonRes({ ok: false, sent: 0, failed: 1, reason: "send failed" });
+  }
+  return jsonRes({ ok: true, sent: 1 });
+}
+
+// ?action=task-done-notify  { task_id } — the page marked a task done.
+async function handleTaskDoneNotify(req: Request) {
+  const taskId = await readTaskId(req);
+  if (!taskId) return jsonRes({ ok: false, error: "task_id required" }, 400);
+  return jsonRes(await notifyTaskCreator(taskId));
+}
+
+// ?action=task-reminders — daily cron. One DM per assignee listing every open
+// task that is due today or overdue. Skips Saturday (shop closed).
+async function handleTaskReminders() {
+  const today = israelDateStr(0);
+  if (dayCodeOf(today) === "sat") return jsonRes({ ok: true, sent: 0, reason: "saturday" });
+
+  const { data: open, error } = await supabase
+    .from("manager_tasks")
+    .select("id, title, notes, due_date, status, assignee_employee_id, last_reminded_on, notified_at, reminder_count")
+    .eq("status", "open")
+    .lte("due_date", today);
+  if (error) {
+    console.error("task-reminders: load error:", error.message);
+    return jsonRes({ ok: false, sent: 0, failed: 0, reason: "load failed" });
+  }
+
+  const due = (open ?? []).filter((t) => needsReminder(t, today, israelDateOfIso));
+  const byAssignee = new Map<number, typeof due>();
+  for (const t of due) byAssignee.set(t.assignee_employee_id, [...(byAssignee.get(t.assignee_employee_id) ?? []), t]);
+
+  let sent = 0, failed = 0, noTelegram = 0;
+  for (const [empId, tasks] of byAssignee) {
+    const { data: emp } = await supabase
+      .from("employees").select("name, telegram_id, active").eq("id", empId).maybeSingle();
+    if (!emp?.telegram_id || !emp.active) { noTelegram++; continue; }
+
+    const ok = await sendTaskMessage(String(emp.telegram_id), "reminder", tasks, emp.name?.split(" ")[0]);
+    if (!ok) { failed++; continue; }
+    sent++;
+    for (const t of tasks) {
+      await supabase.from("manager_tasks")
+        .update({ last_reminded_on: today, reminder_count: (t.reminder_count ?? 0) + 1 })
+        .eq("id", t.id);
+    }
+  }
+  console.log(`task-reminders: ${today} tasks=${due.length} sent=${sent} failed=${failed} no_telegram=${noTelegram}`);
+  return jsonRes({ ok: true, sent, failed, tasks: due.length, ...(noTelegram ? { reason: "no telegram" } : {}) });
+}
+
+// "✅" button on a task DM: only the assignee can close their own task.
+async function handleTaskCallback(cq: any, taskId: number): Promise<Response> {
+  const chatId    = cq.message.chat.id;
+  const messageId = cq.message.message_id;
+
+  const emp = await activeEmployeeByTelegram(cq.from?.id);
+  if (!emp) {
+    await answerCallback(cq.id, "לא רשום/ה במערכת");
+    return new Response("ok");
+  }
+
+  const { data: done, error } = await supabase
+    .from("manager_tasks")
+    .update({ status: "done", done_at: new Date().toISOString(), done_via: "telegram" })
+    .eq("id", taskId)
+    .eq("status", "open")
+    .eq("assignee_employee_id", emp.id)
+    .select("id, title")
+    .maybeSingle();
+  if (error) {
+    console.error("manager-task done update error:", error.message);
+    await answerCallback(cq.id, "שגיאה, נסו שוב");
+    return new Response("ok");
+  }
+
+  // Drop the pressed button either way, so the message shows only what's left.
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageReplyMarkup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId, message_id: messageId,
+      // Its ❌ ביטול (self-created tasks) goes too: a done task isn't cancelled.
+      reply_markup: {
+        inline_keyboard: dropButton(
+          dropButton(cq.message.reply_markup?.inline_keyboard, cq.data),
+          `${TASK_CANCEL_PREFIX}${taskId}`,
+        ),
+      },
+    }),
+  });
+
+  if (!done) {
+    await answerCallback(cq.id, "המשימה כבר סגורה");
+    return new Response("ok");
+  }
+  await answerCallback(cq.id, "סומן כבוצע, תודה!");
+  await send(chatId, `✅ סומן כבוצע: <b>${escHtml(done.title.trim())}</b>`);
+  await notifyTaskCreator(done.id);
+  return new Response("ok");
+}
+
+// Private "משימה ..." → create a task (parsing in manager_tasks.ts).
+// Senders need a linked CoffeeFlow login (employees.clerk_user_id) — the same
+// people who can use the page. Admins may assign to anyone; everyone else
+// only to themselves. Returns null when the text isn't a "משימה" command.
+async function handleCreateTaskMessage(
+  chatId: string, telegramId: number | undefined, matchText: string,
+): Promise<Response | null> {
+  const today = israelDateStr(0);
+  const parsed = parseTaskMessage(matchText, today);
+  if (!parsed) return null;
+
+  const { data: sender } = await supabase
+    .from("employees")
+    .select("id, name, telegram_id, clerk_user_id")
+    .eq("telegram_id", telegramId ?? -1)
+    .eq("active", true)
+    .maybeSingle();
+  if (!sender?.clerk_user_id) {
+    await send(chatId, "❌ הוספת משימות פתוחה רק לצוות עם חשבון מחובר ב-CoffeeFlow. פנו למנהל.");
+    return new Response("ok");
+  }
+  if ("help" in parsed) { await send(chatId, TASK_HELP_TEXT); return new Response("ok"); }
+  if ("error" in parsed) { await send(chatId, `⚠️ ${parsed.error}\n\n${TASK_HELP_TEXT}`); return new Response("ok"); }
+
+  const { data: roleRow } = await supabase
+    .from("user_roles").select("role").eq("user_id", sender.clerk_user_id).maybeSingle();
+  const isAdmin = roleRow?.role === "admin";
+
+  let assignee: { id: number; name: string; telegram_id: number | null } = sender;
+  let title = parsed.title;
+  if (parsed.assigneeName) {
+    const { data: staff } = await supabase
+      .from("employees").select("id, name, telegram_id").eq("active", true).not("telegram_id", "is", null);
+    const matches = matchEmployees(parsed.assigneeName, staff ?? []);
+    if (parsed.explicitName) {
+      if (matches.length === 0) {
+        await send(chatId, `⚠️ לא מצאתי עובד/ת בשם "${escHtml(parsed.assigneeName)}". אפשר לכתוב שם מלא.`);
+        return new Response("ok");
+      }
+      if (matches.length > 1) {
+        await send(chatId, `🔎 יש כמה עם השם הזה: ${matches.map((e) => escHtml(e.name)).join(", ")}. כתבו שם מלא, למשל:\n<code>משימה ל${escHtml(matches[0].name)}: ...</code>`);
+        return new Response("ok");
+      }
+      assignee = matches[0];
+    } else if (matches.length === 1) {
+      // "משימה לפלג להזמין חלב": ל<name> was a name after all.
+      assignee = matches[0];
+      title = stripCandidateName(title, parsed.assigneeName);
+      if (!title) { await send(chatId, "⚠️ חסר תיאור למשימה"); return new Response("ok"); }
+    }
+  }
+
+  const forSelf = assignee.id === sender.id;
+  if (!forSelf && !isAdmin) {
+    await send(chatId,
+      "⚠️ משימות לאחרים שולחים רק מנהלים. אפשר להוסיף משימה לעצמך:\n<code>משימה: ...</code>");
+    return new Response("ok");
+  }
+
+  const { data: task, error } = await supabase
+    .from("manager_tasks")
+    .insert({
+      title, notes: parsed.notes, due_date: parsed.due,
+      assignee_employee_id: assignee.id, created_by: sender.clerk_user_id,
+      notified_at: new Date().toISOString(),
+    })
+    .select("id, title, notes, due_date")
+    .single();
+  if (error || !task) {
+    console.error("manager-task create from telegram failed:", error?.message);
+    await send(chatId, "❌ שגיאה בשמירת המשימה. נסו שוב.");
+    return new Response("ok");
+  }
+  const cancel = { text: "❌ ביטול", callback_data: `${TASK_CANCEL_PREFIX}${task.id}` };
+
+  if (forSelf) {
+    // One message: the task with its ✅, plus ❌ in case it was misread.
+    await sendTaskMessage(chatId, "new", [task], undefined, cancel);
+    return new Response("ok");
+  }
+
+  const firstName = assignee.name.split(" ")[0];
+  const delivered = assignee.telegram_id
+    ? await sendTaskMessage(String(assignee.telegram_id), "new", [task], firstName)
+    : false;
+  if (!delivered) {
+    // Saved, not delivered: let the morning reminder pick it up.
+    await supabase.from("manager_tasks").update({ notified_at: null }).eq("id", task.id);
+  }
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      parse_mode: "HTML",
+      text: delivered
+        ? `📤 נשלח ל${escHtml(firstName)}: <b>${escHtml(task.title)}</b> · ${dueLabel(task.due_date, today)}\nכשיסמנ/ו בוצע תקבל/י הודעה.`
+        : `⚠️ המשימה נשמרה, אבל לא הצלחתי לשלוח ל${escHtml(firstName)} (אולי לא פתח/ה צ׳אט עם הבוט). התזכורת של הבוקר תנסה שוב.`,
+      reply_markup: { inline_keyboard: [[cancel]] },
+    }),
+  });
+  return new Response("ok");
+}
+
+// "❌ ביטול" under a task just created from Telegram: the creator (or an
+// admin) deletes it; if someone else got it, they're told.
+async function handleTaskCancel(cq: any, taskId: number): Promise<Response> {
+  const chatId = cq.message.chat.id, messageId = cq.message.message_id;
+  const { data: me } = await supabase
+    .from("employees").select("id, clerk_user_id").eq("telegram_id", cq.from?.id ?? -1).eq("active", true).maybeSingle();
+  const { data: task } = await supabase
+    .from("manager_tasks").select("id, title, created_by, assignee_employee_id, notified_at").eq("id", taskId).maybeSingle();
+  if (!task) {
+    await answerCallback(cq.id, "המשימה כבר לא קיימת");
+    await editMessage(chatId, messageId, "🗑️ המשימה בוטלה");
+    return new Response("ok");
+  }
+  const { data: roleRow } = me?.clerk_user_id
+    ? await supabase.from("user_roles").select("role").eq("user_id", me.clerk_user_id).maybeSingle()
+    : { data: null };
+  if (!me?.clerk_user_id || (task.created_by !== me.clerk_user_id && roleRow?.role !== "admin")) {
+    await answerCallback(cq.id, "רק מי שיצר/ה את המשימה יכול/ה לבטל");
+    return new Response("ok");
+  }
+  const { error } = await supabase.from("manager_tasks").delete().eq("id", taskId);
+  if (error) { await answerCallback(cq.id, "שגיאה, נסו שוב"); return new Response("ok"); }
+
+  await answerCallback(cq.id, "בוטל");
+  await editMessage(chatId, messageId, `🗑️ בוטלה: <s>${escHtml(task.title)}</s>`);
+  if (task.assignee_employee_id !== me.id && task.notified_at) {
+    const { data: assignee } = await supabase
+      .from("employees").select("telegram_id").eq("id", task.assignee_employee_id).maybeSingle();
+    if (assignee?.telegram_id) await send(assignee.telegram_id, `🗑️ המשימה בוטלה: ${escHtml(task.title)}`);
+  }
+  return new Response("ok");
+}
+
+// Private "משימות" / "המשימות שלי" → the sender's open tasks with buttons.
+async function handleMyTasks(chatId: string, telegramId: number | undefined): Promise<Response> {
+  const emp = await activeEmployeeByTelegram(telegramId);
+  if (!emp) {
+    await send(chatId, "❌ לא רשום/ה במערכת. פנו למנהל.");
+    return new Response("ok");
+  }
+  const { data: tasks } = await supabase
+    .from("manager_tasks")
+    .select("id, title, notes, due_date")
+    .eq("assignee_employee_id", emp.id)
+    .eq("status", "open");
+  if (!tasks?.length) {
+    await send(chatId, "✅ אין לך משימות פתוחות 🎉");
+    return new Response("ok");
+  }
+  await sendTaskMessage(chatId, "list", tasks);
+  return new Response("ok");
+}
+
 async function handleCallback(cq: any): Promise<Response> {
   const callbackId = cq.id;
   const data       = cq.data ?? "";
@@ -806,6 +1181,12 @@ async function handleCallback(cq: any): Promise<Response> {
     await answerCallback(callbackId);
     return new Response("ok");
   }
+
+  // Manager task done: "mtask:<taskId>".
+  const taskId = parseTaskCallback(data);
+  if (taskId) return await handleTaskCallback(cq, taskId);
+  const cancelId = parseCancelCallback(data);
+  if (cancelId) return await handleTaskCancel(cq, cancelId);
 
   // Vehicle log confirmations: "veh:take:<ms>", "veh:ret:<ms>", "veh:cancel".
   if (data.startsWith("veh:")) {
@@ -978,6 +1359,24 @@ async function handleWebhook(req: Request) {
       `לא בקבוצה: <a href="https://t.me/minuto_team_bot">@minuto_team_bot</a>`,
     );
     return new Response("ok");
+  }
+
+  // ── Manager tasks (private DM only) ─────────────────────────────────────
+  // "משימות" / "המשימות שלי" → list; "משימה ..." → create.
+  if (/^(?:ה?משימות(?:\s+שלי)?|משימות\s+פתוחות)\s*$/.test(matchText) || /^משימה(?![֐-׿])/.test(matchText)) {
+    if (!isPrivate) {
+      await send(chatId,
+        `${firstName || "היי"}, משימות שולחים ומקבלים בצ'אט הפרטי איתי: ` +
+        `<a href="https://t.me/minuto_team_bot">@minuto_team_bot</a>`,
+      );
+      return new Response("ok");
+    }
+    if (/^משימה(?![֐-׿])/.test(matchText)) {
+      const created = await handleCreateTaskMessage(chatId, telegramId, text.replace(/^[^א-ת]+/, ""));
+      if (created) return created;
+    } else {
+      return await handleMyTasks(chatId, telegramId);
+    }
   }
 
   // ── Vehicle log (יומן רכב) ─────────────────────────────────────────────
@@ -1455,15 +1854,25 @@ serve(runLogged("employee-bot", async (req, _log) => {
     // and schedule managers) and remind also from cron; the rest only from
     // cron (service key).
     if (action) {
+      // task-notify and task-done-notify come from the "משימות לצוות" page:
+      // admins add tasks for anyone, staff add tasks for themselves, and the
+      // assignee ticks tasks off. Any staff member may call them: each only
+      // sends the one message its task is due (first DM to the assignee, or
+      // the creator's "done" notice), once, claimed in the row.
       const allowed = action === "remind" || action === "publish"
         ? await hasRole(req, ["admin", "schedule_manager"])
-        : await isServiceCaller(req);
+        : action === "task-notify" || action === "task-done-notify"
+          ? await isStaff(req)
+          : await isServiceCaller(req);
       if (!allowed) return forbidden(corsHeaders);
       if (action === "onboard") return await handleOnboard();
       if (action === "remind")  return await handleRemind();
       if (action === "publish") return await handlePublish(req);
       if (action === "confirm-opening")          return await handleConfirmOpening();
       if (action === "confirm-opening-followup") return await handleConfirmOpeningFollowup();
+      if (action === "task-notify")      return await handleTaskNotify(req);
+      if (action === "task-done-notify") return await handleTaskDoneNotify(req);
+      if (action === "task-reminders")   return await handleTaskReminders();
       if (action === "diagnose") {
         // One-shot diagnostic: ask Telegram what webhook is set, plus a
         // hash-only echo of our local secret so we can spot a mismatch
@@ -1504,10 +1913,10 @@ serve(runLogged("employee-bot", async (req, _log) => {
   }
 }, {
   scope: (req) => {
-    // Only the three cron actions. The Telegram webhook (employee messages),
+    // Only the cron actions. The Telegram webhook (employee messages),
     // publish, onboard and diagnose write no rows.
     const action = new URL(req.url).searchParams.get("action") ?? req.headers.get("x-action")
-    return action === "remind" || action === "confirm-opening" || action === "confirm-opening-followup" ? { action } : null
+    return action === "remind" || action === "confirm-opening" || action === "confirm-opening-followup" || action === "task-reminders" ? { action } : null
   },
   judge: (out, _res, scope) => {
     const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]

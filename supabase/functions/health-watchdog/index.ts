@@ -144,6 +144,9 @@ const EXPECTED_CRONS: Array<{
   // 20260624_employee_availability_reminder_weekly_cron.sql). 8-day window
   // allows for the weekly cadence + DST slack before alarming.
   { jobname: 'employee-availability-reminder-weekly', max_silence_hours: 8 * 24, required: true },
+  // Daily 06:00 UTC manager-task reminders (see 20261120120000_manager_tasks.sql).
+  // Fires every day; employee-bot itself skips Saturday.
+  { jobname: 'manager-tasks-reminder-daily',        max_silence_hours: 30, required: false },
   // Weekly Sun 03:00 UTC storage cleanup (see
   // 20260809_purge_old_media_weekly_cron.sql). 8-day window covers the weekly
   // cadence with slack. Non-critical: a missed purge only wastes storage.
