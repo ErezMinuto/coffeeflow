@@ -74,7 +74,7 @@ function modelSlot(slot: string, fallback: string): string {
 // at 7000 for a ~3500-token plan, and on a THINKING-ONLY Gemini model those
 // tokens are spent before any visible output — a truncated plan fails
 // parseClaudeJson and the cycle emits NOTHING. Prefer a model whose thinking can
-// be disabled (gemini-2.5-flash), or raise the cap first.
+// be disabled (gemini-3.5-flash-lite — gemini-2.5-flash is deprecated), or raise the cap first.
 export const MODEL_ORCHESTRATOR   = modelSlot('ORCHESTRATOR', MODEL_ORCHESTRATOR_DEFAULT)
 export const MODEL_TECHSEO        = modelSlot('TECHSEO',        CLAUDE_DEFAULT_MODEL)
 export const MODEL_SCOUT          = modelSlot('SCOUT',          CLAUDE_DEFAULT_MODEL)
