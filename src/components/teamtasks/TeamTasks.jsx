@@ -6,11 +6,12 @@ import { supabase } from '../../lib/supabase';
 import './teamtasks.css';
 
 // ── Team tasks (משימות לצוות) ────────────────────────────────────────────────
-// The owner assigns a task to a staff member; employee-bot DMs them with a ✅
-// button and reminds every morning while it's due or overdue. Staff with a
-// linked login (employees.clerk_user_id) see their own tasks here, tick them
-// off, and can add tasks for themselves. Table manager_tasks; RLS decides who
-// sees and writes what (20261120120000_manager_tasks.sql).
+// Anyone with a linked login (employees.clerk_user_id) assigns a task to any
+// staff member; employee-bot DMs them with a ✅ button and reminds every
+// morning while it's due or overdue. Each person sees the tasks assigned to
+// them and the ones they sent; the assignee ticks them off. Table
+// manager_tasks; RLS decides who sees and writes what
+// (20261120120000_manager_tasks.sql, 20261122120000_manager_tasks_anyone_to_anyone.sql).
 
 const TZ = 'Asia/Jerusalem';
 const todayIL = () => new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
@@ -28,11 +29,12 @@ function DueTag({ due, today }) {
   return <span className="tag num">עד {ddmm(due)}</span>;
 }
 
-const readLastAssignee = () => {
-  try { return localStorage.getItem(LAST_ASSIGNEE_KEY) || ''; } catch { return ''; }
+// Per login, so people sharing the shop computer keep their own default.
+const readLastAssignee = (userId) => {
+  try { return localStorage.getItem(`${LAST_ASSIGNEE_KEY}.${userId}`) || ''; } catch { return ''; }
 };
-const saveLastAssignee = (id) => {
-  try { localStorage.setItem(LAST_ASSIGNEE_KEY, String(id)); } catch { /* private mode */ }
+const saveLastAssignee = (userId, id) => {
+  try { localStorage.setItem(`${LAST_ASSIGNEE_KEY}.${userId}`, String(id)); } catch { /* private mode */ }
 };
 
 export default function TeamTasks() {
@@ -45,15 +47,16 @@ export default function TeamTasks() {
   // The signed-in user's employee row, if their login is linked.
   const me = (employees || []).find((e) => e.clerk_user_id && e.clerk_user_id === user?.id) || null;
 
-  // Admins can assign to any active employee who has Telegram; default to the
-  // last one used, else the first linked login that isn't the admin.
+  // Everyone can assign to any active employee who has Telegram. Default to
+  // the last one used; else admins get the first other linked login, staff
+  // get themselves.
   const assignable = useMemo(() => (employees || [])
     .filter((e) => e.active !== false && e.telegram_id)
     .sort((a, b) => String(a.name).localeCompare(String(b.name), 'he')), [employees]);
   const defaultAssignee = () => {
-    if (!isAdmin) return me ? String(me.id) : '';
-    const last = readLastAssignee();
+    const last = readLastAssignee(user?.id);
     if (last && assignable.some((e) => String(e.id) === last)) return last;
+    if (!isAdmin) return me && assignable.some((e) => e.id === me.id) ? String(me.id) : '';
     const linked = assignable.find((e) => e.clerk_user_id && e.id !== me?.id);
     return linked ? String(linked.id) : '';
   };
@@ -71,7 +74,10 @@ export default function TeamTasks() {
   const isMine = (t) => me && Number(t.assignee_employee_id) === Number(me.id);
   // Who sent it, when it came from someone else.
   const sentBy = (t) => (t.created_by && t.created_by !== user?.id ? creatorName(t.created_by) : null);
-  const canEdit = (t) => isAdmin || (me && t.assignee_employee_id === me.id && t.created_by === user?.id);
+  // Same rules as the database: admins, or whoever created the task.
+  const canEdit = (t) => isAdmin || (me && t.created_by && t.created_by === user?.id);
+  // Only the assignee (or an admin) marks done; the creator just watches.
+  const canTick = (t) => isAdmin || isMine(t);
 
   const open = tasks.filter((t) => t.status === 'open')
     .sort((a, b) => a.due_date.localeCompare(b.due_date) || a.id - b.id);
@@ -109,7 +115,7 @@ export default function TeamTasks() {
         .select()
         .single();
       if (error) throw error;
-      if (isAdmin) saveLastAssignee(assignee);
+      if (user?.id) saveLastAssignee(user.id, assignee);
       setForm({ title: '', notes: '', due: todayIL(), assignee: form.assignee });
       managerTasksDb.refresh();
 
@@ -149,9 +155,9 @@ export default function TeamTasks() {
 
   async function changeDue(t, due) {
     if (!due || due === t.due_date) return;
-    // Moving the date makes the task "new" for reminders again.
+    // A database trigger resets the daily reminder when the date moves.
     const { error } = await supabase.from('manager_tasks')
-      .update({ due_date: due, last_reminded_on: null }).eq('id', t.id);
+      .update({ due_date: due }).eq('id', t.id);
     if (error) { showToast(error.message, 'error'); return; }
     showToast(`התאריך עודכן ל-${ddmm(due)}`, 'success');
     managerTasksDb.refresh();
@@ -165,16 +171,14 @@ export default function TeamTasks() {
     managerTasksDb.refresh();
   }
 
-  const subtitle = isAdmin
-    ? 'משימות שנשלחות לצוות בטלגרם, עם תזכורת כל בוקר עד שמסמנים בוצע'
-    : 'המשימות שלך. כל בוקר מגיעה תזכורת בטלגרם על מה שעוד פתוח';
+  const subtitle = 'משימות שנשלחות לצוות בטלגרם, עם תזכורת כל בוקר עד שמסמנים בוצע';
 
   return (
     <div className="page teamtasks-page">
       <PageHeader title="משימות לצוות" subtitle={subtitle} />
 
       <section className="card flush">
-        <div className="card-head"><h2>{isAdmin ? 'משימה חדשה' : 'משימה חדשה לעצמי'}</h2></div>
+        <div className="card-head"><h2>משימה חדשה</h2></div>
         <form className="card-body teamtasks-form" onSubmit={addTask}>
           <div className="form-group span-all">
             <label htmlFor="tt-title">מה צריך לעשות</label>
@@ -187,17 +191,15 @@ export default function TeamTasks() {
             <input id="tt-notes" type="text" value={form.notes} maxLength={2000} autoComplete="off"
               onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
-          {isAdmin && (
-            <div className="form-group">
-              <label htmlFor="tt-who">למי</label>
-              <select id="tt-who" value={assignee} onChange={(e) => setForm({ ...form, assignee: e.target.value })}>
-                <option value="">בחירה…</option>
-                {assignable.map((e) => (
-                  <option key={e.id} value={e.id}>{e.id === me?.id ? `${e.name} (אני)` : e.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="tt-who">למי</label>
+            <select id="tt-who" value={assignee} onChange={(e) => setForm({ ...form, assignee: e.target.value })}>
+              <option value="">בחירה…</option>
+              {assignable.map((e) => (
+                <option key={e.id} value={e.id}>{e.id === me?.id ? `${e.name} (אני)` : e.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="form-group">
             <label htmlFor="tt-due">עד מתי</label>
             <input id="tt-due" type="date" value={form.due} min={today}
@@ -236,7 +238,7 @@ export default function TeamTasks() {
               <li key={t.id} className={`teamtasks-item${t.status === 'done' ? ' is-done' : ''}`}>
                 <button type="button"
                   className={`teamtasks-check${t.status === 'done' ? ' checked' : ''}`}
-                  disabled={busyId === t.id}
+                  disabled={busyId === t.id || !canTick(t)}
                   aria-label={t.status === 'done' ? `החזרת "${t.title}" לפתוחות` : `סימון "${t.title}" כבוצע`}
                   title={t.status === 'done' ? 'החזרה לפתוחות' : 'סימון כבוצע'}
                   onClick={() => setDone(t, t.status !== 'done')}>

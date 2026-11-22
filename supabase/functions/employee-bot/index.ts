@@ -807,8 +807,8 @@ async function handleVehicleCallback(
 }
 
 // ── Manager tasks (משימות לצוות) ──────────────────────────────────────────────
-// The owner adds a task on the CoffeeFlow page "משימות לצוות" (table
-// manager_tasks). The page calls ?action=task-notify → the assignee gets a DM
+// Any linked staff member adds a task for anyone on the CoffeeFlow page
+// "משימות לצוות" (table manager_tasks) or by messaging the bot. The page calls ?action=task-notify → the assignee gets a DM
 // with a ✅ button. ?action=task-reminders (daily cron) re-sends every open
 // task that is due or overdue. Marking done (button here, or the page, which
 // then calls ?action=task-done-notify) tells the creator. Message text and
@@ -1015,8 +1015,8 @@ async function handleTaskCallback(cq: any, taskId: number): Promise<Response> {
 
 // Private "משימה ..." → create a task (parsing in manager_tasks.ts).
 // Senders need a linked CoffeeFlow login (employees.clerk_user_id) — the same
-// people who can use the page. Admins may assign to anyone; everyone else
-// only to themselves. Returns null when the text isn't a "משימה" command.
+// people who can use the page. Anyone linked may assign to anyone (themselves
+// included). Returns null when the text isn't a "משימה" command.
 async function handleCreateTaskMessage(
   chatId: string, telegramId: number | undefined, matchText: string,
 ): Promise<Response | null> {
@@ -1036,10 +1036,6 @@ async function handleCreateTaskMessage(
   }
   if ("help" in parsed) { await send(chatId, TASK_HELP_TEXT); return new Response("ok"); }
   if ("error" in parsed) { await send(chatId, `⚠️ ${parsed.error}\n\n${TASK_HELP_TEXT}`); return new Response("ok"); }
-
-  const { data: roleRow } = await supabase
-    .from("user_roles").select("role").eq("user_id", sender.clerk_user_id).maybeSingle();
-  const isAdmin = roleRow?.role === "admin";
 
   let assignee: { id: number; name: string; telegram_id: number | null } = sender;
   let title = parsed.title;
@@ -1066,11 +1062,6 @@ async function handleCreateTaskMessage(
   }
 
   const forSelf = assignee.id === sender.id;
-  if (!forSelf && !isAdmin) {
-    await send(chatId,
-      "⚠️ משימות לאחרים שולחים רק מנהלים. אפשר להוסיף משימה לעצמך:\n<code>משימה: ...</code>");
-    return new Response("ok");
-  }
 
   const { data: task, error } = await supabase
     .from("manager_tasks")

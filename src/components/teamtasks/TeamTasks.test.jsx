@@ -42,11 +42,11 @@ const tasks = [
   { id: 3, title: 'סגור', assignee_employee_id: 19, due_date: yesterday, status: 'done', done_at: new Date().toISOString(), done_via: 'telegram', created_by: 'user_erez' },
 ];
 
-function setup(userId, isAdmin) {
+function setup(userId, isAdmin, extraTasks = []) {
   mockApp = {
     // Same shape as AppContext: table rows live under `data`, nothing top-level.
     user: { id: userId }, isAdmin,
-    data: { managerTasks: tasks, employees },
+    data: { managerTasks: [...tasks, ...extraTasks], employees },
     managerTasksDb: { refresh: jest.fn() },
     showToast: jest.fn(),
   };
@@ -63,7 +63,7 @@ function setInput(input, value) {
   input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
 }
 
-beforeEach(() => { mockInsert.mockClear(); mockRpc.mockClear(); mockInvoke.mockClear(); });
+beforeEach(() => { localStorage.clear(); mockInsert.mockClear(); mockRpc.mockClear(); mockInvoke.mockClear(); });
 afterEach(() => { document.body.innerHTML = ''; });
 
 test('admin: assignee picker defaults to Peleg, lists only Telegram-linked staff', () => {
@@ -94,23 +94,43 @@ test('admin: adding a task inserts it and sends the Telegram DM', async () => {
   expect(mockApp.showToast).toHaveBeenCalledWith('המשימה נוספה ונשלחה לפלג בטלגרם', 'success');
 });
 
-test('Peleg: no assignee picker, his task goes to himself', async () => {
+test('Peleg: picker defaults to himself, and he can send a task to Erez', async () => {
   const { el } = setup('user_peleg', false);
-  expect(el.querySelector('#tt-who')).toBeNull();
-  expect(el.textContent).toContain('משימה חדשה לעצמי');
+  const select = el.querySelector('#tt-who');
+  expect(select).not.toBeNull();
+  expect(select.value).toBe('19');
+  expect(el.textContent).not.toContain('לעצמי ');
+  act(() => { setInput(select, '27'); });
+  act(() => { setInput(el.querySelector('#tt-title'), 'לאשר הזמנה'); });
+  await act(async () => { el.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+  expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ assignee_employee_id: 27, created_by: 'user_peleg' }));
+  expect(mockApp.showToast).toHaveBeenCalledWith('המשימה נוספה ונשלחה לארז בטלגרם', 'success');
+});
+
+test('Peleg: a self task goes to himself', async () => {
+  const { el } = setup('user_peleg', false);
   act(() => { setInput(el.querySelector('#tt-title'), 'להתקשר לספק'); });
   await act(async () => { el.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
   expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ assignee_employee_id: 19, created_by: 'user_peleg' }));
   expect(mockApp.showToast).toHaveBeenCalledWith('המשימה נוספה ונשלחה אליך בטלגרם', 'success');
 });
 
-test('Peleg: can edit/delete only his own self-created task', () => {
-  const { el } = setup('user_peleg', false);
+test('Peleg: edits what he created, ticks only what is his', () => {
+  const sentToErez = { id: 4, title: 'לאשר הזמנה', assignee_employee_id: 27, due_date: today, status: 'open', created_by: 'user_peleg', reminder_count: 0 };
+  const { el } = setup('user_peleg', false, [sentToErez]);
   const items = [...el.querySelectorAll('.teamtasks-item')];
-  const ownerTask = items.find((li) => li.textContent.includes('להזמין חלב'));
+  const fromErez = items.find((li) => li.textContent.includes('להזמין חלב'));
   const selfTask = items.find((li) => li.textContent.includes('לעצמי'));
-  expect(ownerTask.querySelector('.teamtasks-actions')).toBeNull();
+  const toErez = items.find((li) => li.textContent.includes('לאשר הזמנה'));
+  // Erez's task to Peleg: Peleg ticks it, can't edit or delete it.
+  expect(fromErez.querySelector('.teamtasks-actions')).toBeNull();
+  expect(fromErez.querySelector('.teamtasks-check').disabled).toBe(false);
+  // His own and the one he sent to Erez: he can edit and delete them.
   expect(selfTask.querySelector('.teamtasks-actions')).not.toBeNull();
+  expect(toErez.querySelector('.teamtasks-actions')).not.toBeNull();
+  // Only Erez marks Erez's task done; the chip says whose it is.
+  expect(toErez.querySelector('.teamtasks-check').disabled).toBe(true);
+  expect(toErez.querySelector('.teamtasks-who').textContent).toBe('אחראי/ת: ארז אלבז');
 });
 
 test('ticking a task calls the RPC and notifies the creator', async () => {
