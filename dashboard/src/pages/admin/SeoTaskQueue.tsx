@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, AlertTriangle, Check, ChevronLeft, ExternalLink, FlaskConical } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { publishIgWithRestage } from '../../lib/igPublish'
 import { PanelHead, RefreshButton, LoadingRows, Empty, Tag, Status, stamp, type Tone } from './seoUi'
 
 // Left-panel: live pending-task queue.
@@ -208,13 +209,23 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     if (!window.confirm('לפרסם את הפוסט עכשיו ב-@minuto_cafe? הוא עולה לאוויר מיד.')) return
     setBusy(t.id)
     try {
-      const { data, error } = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish', creation_id: creationId },
-      })
-      if (error) throw error
-      if (data && data.success === false) throw new Error(data.error ?? 'meta-publish returned success:false')
+      // A container older than ~24h has expired on Meta's side; this re-stages
+      // the same content and publishes it (see lib/igPublish.ts).
+      let published: Awaited<ReturnType<typeof publishIgWithRestage>>
+      try {
+        published = await publishIgWithRestage(rd)
+      } catch (e: any) {
+        if (e?.patch) {
+          const restaged = { ...rd, ...e.patch }
+          await supabase.from('seo_tasks').update({ result_data: restaged }).eq('id', t.id)
+          setViewing(v => (v && v.id === t.id ? { ...v, result_data: restaged } : v))
+        }
+        throw e
+      }
+      const { data, patch } = published
       const updated = {
         ...rd,
+        ...patch,
         review_required:      false,
         published_via_ui_at:  new Date().toISOString(),
         ig_media_id:          (data?.media_id as string | undefined) ?? rd.ig_media_id ?? null,
