@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Send } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { publishIgWithRestage } from '../../lib/igPublish'
 import { PanelHead, RefreshButton, LoadingRows, Empty, Tag } from './seoUi'
 import { ImageLightbox } from '../../components/shared/ImageLightbox'
 
@@ -162,7 +163,6 @@ function acceptNote(it: InboxItem): string | null {
 }
 
 const DAY = 86_400_000
-const IG_CONTAINER_TTL_MS = 23 * 3600 * 1000   // Meta expires prepared containers after ~24h
 
 function ageLabel(iso: string): string {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / DAY)
@@ -257,10 +257,16 @@ async function approveItem(it: InboxItem): Promise<void> {
     const rd = await freshResultData(it.id)
     if (it.raw.task_type === 'instagram_post') {
       if (!rd.ig_creation_id) throw new Error('אין לפוסט הזה פוסט מוכן באינסטגרם, אז אין מה לפרסם.')
-      const { data, error } = await supabase.functions.invoke('meta-publish', { body: { action: 'publish', creation_id: rd.ig_creation_id } })
-      if (error) throw error
-      if (data && data.success === false) throw new Error(data.error ?? 'meta-publish returned success:false')
-      const { error: upErr } = await supabase.from('seo_tasks').update({ result_data: { ...rd, review_required: false, published_via_ui_at: now,
+      // Re-stages an expired (>24h) container with the same content first (lib/igPublish.ts).
+      let published: Awaited<ReturnType<typeof publishIgWithRestage>>
+      try {
+        published = await publishIgWithRestage(rd)
+      } catch (e: any) {
+        if (e?.patch) await supabase.from('seo_tasks').update({ result_data: { ...rd, ...e.patch } }).eq('id', it.id)
+        throw e
+      }
+      const { data, patch } = published
+      const { error: upErr } = await supabase.from('seo_tasks').update({ result_data: { ...rd, ...patch, review_required: false, published_via_ui_at: now,
         ig_media_id: data?.media_id ?? rd.ig_media_id ?? null, ig_permalink: data?.permalink ?? rd.ig_permalink ?? null } }).eq('id', it.id)
       if (upErr) throw upErr
     } else {
@@ -274,8 +280,8 @@ function approveLabel(it: InboxItem): string | null {
   if (it.kind === 'campaign') return null            // reviewed and sent from Marketing
   if (it.kind === 'rec') return it.status === 'proposed' ? 'אישור' : it.status === 'ready_for_review' ? 'טופל' : 'ליצור טיוטה בכל זאת'
   if (it.kind === 'task' && it.raw.task_type === 'instagram_post') {
-    const fresh = Date.now() - new Date(it.raw.result_data?.prepared_at ?? it.created).getTime() < IG_CONTAINER_TTL_MS
-    return it.raw.result_data?.ig_creation_id && fresh ? 'פרסום' : null   // expired container: only reject makes sense
+    // An expired container is re-staged with the same content on publish (lib/igPublish.ts).
+    return it.raw.result_data?.ig_creation_id ? 'פרסום' : null
   }
   // These only clear the review flag; the label must not suggest a fix is applied.
   if (it.kind === 'task' && (it.raw.task_type === 'technical_seo' || it.raw.task_type === 'visual_generation')) return 'סימון כנבדק'
