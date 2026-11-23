@@ -138,8 +138,9 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
 }
 
 /** Search clicks/impressions per page, computed once per Search Console window. */
-const clicksCache = new WeakMap<QpRow[], Map<string, { clicks: number; impressions: number }>>()
-function clicksByPage(rows: QpRow[]): Map<string, { clicks: number; impressions: number }> {
+type PageClicks = ReadonlyMap<string, { readonly clicks: number; readonly impressions: number }>
+const clicksCache = new WeakMap<readonly QpRow[], PageClicks>()
+export function clicksByPage(rows: readonly QpRow[]): PageClicks {
   const hit = clicksCache.get(rows)
   if (hit) return hit
   const m = new Map<string, { clicks: number; impressions: number }>()

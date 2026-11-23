@@ -1,8 +1,9 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
 import {
   AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
-  searchTotals, searchView, valuePerSession, type CrawlPage, type QpRow,
+  searchTotals, searchView, valuePerSession, issueCtx, type CrawlPage, type QpRow,
 } from './seo_audit_analysis.ts'
+import { clicksByPage } from './seo_audit_tools.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -173,6 +174,35 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('unknown signal id ignored, not refused', bogus.ok)
   const blindFinding = normaliseSeoAudit({ findings: [finding, { ...finding, area: 'authority', title: 'Backlinks', signals: [] }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
   check('a finding in a blind area is refused with a clear message', !blindFinding.ok && blindFinding.problems.some((p) => p.includes('cannot have findings')))
+}
+
+// ── Memoized crawl-check inputs (one strategist step can ask for a dozen issue lists) ──
+{
+  check('issueCtx: same pages array → same cached object', issueCtx(pages) === issueCtx(pages))
+  const copy = pages.map((p) => ({ ...p }))
+  check('issueCtx: a different array is computed afresh', issueCtx(copy) !== issueCtx(pages))
+  const ids = ['orphan', 'missing_h1', 'duplicate_title', 'duplicate_description', 'missing_product_schema']
+  const urls = (ps: CrawlPage[], id: string) => pagesWithIssue(ps, id).map((p) => p.url).join('|')
+  check('cached and fresh inputs give identical issue lists', ids.every((id) => urls(pages, id) === urls(copy, id)))
+  check('repeated calls give identical results', ids.every((id) => urls(pages, id) === urls(pages, id)) && JSON.stringify(crawlIssues(pages)) === JSON.stringify(crawlIssues(pages)))
+  // A changed site is a new array: the cache must not leak the old answer.
+  const linked = [...copy, { ...copy[0], url: 'https://minuto.co.il/linker/', page_type: 'other', internal_links: [...copy.map((p) => p.url)] } as CrawlPage]
+  check('new array with a link to the orphan → it is no longer an orphan', urls(pages, 'orphan').includes('/blog/x/') && !urls(linked, 'orphan').includes('/blog/x/'))
+  const big = Array.from({ length: 3000 }, (_, i) => ({ ...pages[0], url: `https://minuto.co.il/p/${i}/`, title: `t${i % 50}`, internal_links: [`https://minuto.co.il/p/${(i + 1) % 3000}/`] }) as CrawlPage)
+  pagesWithIssue(big, 'orphan')
+  const t0 = performance.now(); for (const id of ids.concat(ids, ids)) pagesWithIssue(big, id)
+  const ms = performance.now() - t0
+  check('15 issue lists on 3,000 pages after the first stay cheap (< 300 ms)', ms < 300, `${Math.round(ms)} ms`)
+
+  const rows: QpRow[] = [
+    { query: 'a', page: 'https://minuto.co.il/x/', clicks: 2, impressions: 10, position: 3 },
+    { query: 'b', page: 'https://minuto.co.il/x', clicks: 3, impressions: 5, position: 4 },
+    { query: 'c', page: 'https://minuto.co.il/y/', clicks: 1, impressions: 1, position: 9 },
+  ]
+  const m = clicksByPage(rows)
+  check('clicksByPage sums all searches of one page', m.get(pageKey('https://minuto.co.il/x/'))?.clicks === 5 && m.get(pageKey('https://minuto.co.il/x/'))?.impressions === 15)
+  check('clicksByPage: same rows → same cached map', clicksByPage(rows) === m)
+  check('clicksByPage: other rows → computed afresh', clicksByPage(rows.slice(0, 1)).get(pageKey('https://minuto.co.il/x/'))?.clicks === 2)
 }
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }

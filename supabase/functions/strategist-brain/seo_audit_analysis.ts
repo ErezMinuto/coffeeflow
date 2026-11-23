@@ -74,7 +74,7 @@ export interface CrawlPage {
 }
 
 /** How many OTHER crawled pages link to each page. */
-export function inlinkCounts(pages: CrawlPage[]): Map<string, number> {
+export function inlinkCounts(pages: readonly CrawlPage[]): Map<string, number> {
   const counts = new Map<string, number>()
   for (const p of pages) {
     const self = pageKey(p.final_url ?? p.url)
@@ -95,7 +95,7 @@ const noindex = (p: CrawlPage) => /noindex/i.test(`${p.robots_meta ?? ''} ${p.x_
 const has = (p: CrawlPage, ...types: string[]) => (p.schema_types ?? []).some((t) => types.includes(t))
 const THIN_WORDS = 250
 
-interface IssueDef { id: string; area: AuditArea; label: string; test: (p: CrawlPage, ctx: { inlinks: Map<string, number>; dupTitles: Set<string>; dupDescs: Set<string> }) => boolean }
+interface IssueDef { id: string; area: AuditArea; label: string; test: (p: CrawlPage, ctx: IssueCtx) => boolean }
 
 export const CRAWL_ISSUES: IssueDef[] = [
   { id: 'http_error',            area: 'site_health',     label: 'listed in the sitemap but does not answer 200',            test: (p) => p.status !== 200 },
@@ -134,9 +134,11 @@ function duplicates(values: Array<string | null>): Set<string> {
 // descriptions) cost ~0.2 s of CPU on the full site. A strategist step can ask
 // for a dozen issue lists at once, and edge functions have only a couple of
 // seconds of CPU per call, so they are computed once per pages array.
-type IssueCtx = { inlinks: Map<string, number>; dupTitles: Set<string>; dupDescs: Set<string> }
-const issueCtxCache = new WeakMap<CrawlPage[], IssueCtx>()
-function issueCtx(pages: CrawlPage[]): IssueCtx {
+// Keyed by array identity: callers must not mutate a pages array once checked
+// (the audit data is loaded once per tick and only read).
+export type IssueCtx = { readonly inlinks: ReadonlyMap<string, number>; readonly dupTitles: ReadonlySet<string>; readonly dupDescs: ReadonlySet<string> }
+const issueCtxCache = new WeakMap<readonly CrawlPage[], IssueCtx>()
+export function issueCtx(pages: readonly CrawlPage[]): IssueCtx {
   const hit = issueCtxCache.get(pages)
   if (hit) return hit
   const live = pages.filter(ok)
@@ -147,7 +149,7 @@ function issueCtx(pages: CrawlPage[]): IssueCtx {
 
 export interface CrawlIssueSummary { id: string; area: AuditArea; label: string; count: number; by_type: Record<string, number>; examples: string[] }
 
-export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: CrawlIssueSummary[]; pages_by_type: Record<string, number>; status_counts: Record<string, number> } {
+export function crawlIssues(pages: readonly CrawlPage[], examples = 5): { by_issue: CrawlIssueSummary[]; pages_by_type: Record<string, number>; status_counts: Record<string, number> } {
   const ctx = issueCtx(pages)
   const by_issue: CrawlIssueSummary[] = []
   for (const def of CRAWL_ISSUES) {
@@ -167,7 +169,7 @@ export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: Crawl
 }
 
 /** Pages hit by one crawl issue (all of them, for get_seo_issue_pages). */
-export function pagesWithIssue(pages: CrawlPage[], issueId: string): CrawlPage[] {
+export function pagesWithIssue(pages: readonly CrawlPage[], issueId: string): CrawlPage[] {
   const def = CRAWL_ISSUES.find((d) => d.id === issueId)
   if (!def) return []
   const ctx = issueCtx(pages)
