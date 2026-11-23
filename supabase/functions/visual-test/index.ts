@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
@@ -21,6 +21,8 @@ import { AD_PROMPT_VERSION, referenceCandidates } from '../_shared/art_director.
 // The label check the email scene images use, so an IG bag scene passes the
 // same bar (2026-11-07).
 import { checkPrompt as bagLabelCheckPrompt, parseCheck as parseBagLabelCheck } from '../generate-campaign/scene_image.ts'
+import { distinctiveTokens, pickProductByName, type ProductRow } from '../_shared/product_name_match.ts'
+import { classifyByName } from '../seo-agent/services/brandGuard.ts'
 // pickFallbackBagUrl intentionally NOT imported — caller must specify
 // which bag to use via reference_image_url / product_id / product_name.
 // Random pool selection was removed 2026-05-16 so the rendered bag
@@ -29,6 +31,37 @@ import { checkPrompt as bagLabelCheckPrompt, parseCheck as parseBagLabelCheck } 
 // in the default render path. The architecture pivoted to "Gemini renders
 // from bag + style-ref references + bullet-structured prompt" because
 // composited PNGs read as 2D-pasted in 3D scenes.
+
+// Word-order-independent fallback for a product_name that no row contains
+// as a substring. Runs only on a miss, so it reads the whole catalogue
+// (~1,250 rows, paginated past PostgREST's 1000-row cap) rather than
+// pre-filtering in SQL: a short word such as "la" substring-matches hundreds
+// of rows and a capped pre-filter could drop the right one. Green coffee,
+// Veneto and Toddy are removed before scoring: none of them is a Minuto bag,
+// and the green sack of a farm otherwise ties with the roast of that farm.
+async function resolveProductByWords(
+  // deno-lint-ignore no-explicit-any
+  supabase: SupabaseClient<any, any, any>,
+  needle: string,
+): Promise<{ row: ProductRow | null } | { error: string }> {
+  if (distinctiveTokens(needle).length === 0) return { row: null }
+  const rows: ProductRow[] = []
+  const PAGE = 1000
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('woo_products')
+      .select('woo_id, name, image_url')
+      .not('image_url', 'is', null)
+      .order('woo_id')
+      .range(from, from + PAGE - 1)
+    if (error) return { error: error.message }
+    const page = (data ?? []) as ProductRow[]
+    rows.push(...page)
+    if (page.length < PAGE) break
+  }
+  const bags = rows.filter(r => classifyByName(r.name) === 'neutral')
+  return { row: pickProductByName(needle, bags) }
+}
 
 // Pick a random asset URL from a subfolder of upload_images/. The folder
 // must already be populated with photos shot on white/uniform backgrounds
@@ -902,13 +935,24 @@ serve(async (req) => {
         if (error) {
           return jsonResponse({ error: `woo_products lookup failed for product_name="${needle}": ${error.message}` }, 500, corsHeaders)
         }
-        if (!data?.image_url) {
+        // The planner paraphrases names, so a substring miss falls back to a
+        // word match in any order (_shared/product_name_match.ts).
+        let match = data?.image_url ? data : null
+        if (!match) {
+          const words = await resolveProductByWords(supabase, needle)
+          if ('error' in words) {
+            return jsonResponse({ error: `woo_products lookup failed for product_name="${needle}": ${words.error}` }, 500, corsHeaders)
+          }
+          match = words.row
+          if (match) console.log(`[visual-test] product_name="${needle}" had no substring match; word match → "${match.name}"`)
+        }
+        if (!match?.image_url) {
           return jsonResponse({ error: `no woo_products name match for "${needle}" with a non-null image_url` }, 400, corsHeaders)
         }
-        bagUrl = data.image_url as string
-        bagWooId = data.woo_id as number
+        bagUrl = match.image_url as string
+        bagWooId = match.woo_id as number
         bagSource = 'product_name'
-        console.log(`[visual-test] resolved product_name="${needle}" → "${data.name}" → ${bagUrl}`)
+        console.log(`[visual-test] resolved product_name="${needle}" → "${match.name}" → ${bagUrl}`)
       } else {
         return jsonResponse({
           error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
