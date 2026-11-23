@@ -171,6 +171,9 @@ function addDays(date: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// "26/11", "עד 26/11", "ב-26/11/2026" — an explicit day/month date.
+const DAY_MONTH_RE = /(?<![\d/])(?:עד\s+)?(?:ב-?|ל-?)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?(?![\d/])/;
+
 const tidy = (s: string) =>
   s.replace(/\s{2,}/g, " ").replace(/\s+([,.!?])/g, "$1").replace(/^[\s,–-]+|[\s,–-]+$/g, "").trim();
 
@@ -182,7 +185,7 @@ export function extractDue(text: string, today: string): { due: string; rest: st
   const notHebBefore = `(?<![${HEB}\\w])`;
   const notHebAfter = `(?![${HEB}\\w])`;
 
-  const dm = /(?<![\d/])(?:עד\s+)?(?:ב-?|ל-?)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?(?![\d/])/.exec(text);
+  const dm = DAY_MONTH_RE.exec(text);
   if (dm) {
     const day = Number(dm[1]), month = Number(dm[2]);
     let year = dm[3] ? Number(dm[3].length === 2 ? `20${dm[3]}` : dm[3]) : Number(today.slice(0, 4));
@@ -220,9 +223,17 @@ export function parseTaskMessage(
 ): ParsedTaskMessage | { error: string } | { help: true } | null {
   const m = new RegExp(`^משימה(?![${HEB}])\\s*([\\s\\S]*)$`).exec(text.trim());
   if (!m) return null;
-  const [firstLine, ...more] = m[1].split("\n");
-  const notesRaw = more.join("\n").trim();
-  let line = firstLine.trim();
+  let [firstLine, ...more] = m[1].split("\n");
+  // Pull the next non-empty line up when the current one has no task text:
+  // "משימה לפלג:" with the task written on the line below.
+  const nextLine = (): string => {
+    const i = more.findIndex((l) => l.trim());
+    if (i < 0) return "";
+    const l = more[i].trim();
+    more = more.slice(i + 1);
+    return l;
+  };
+  let line = firstLine.trim() || nextLine();
   if (!line) return { help: true };
 
   let assigneeName: string | null = null;
@@ -230,7 +241,7 @@ export function parseTaskMessage(
   const colon = line.search(/[:：]/);
   if (colon >= 0 && colon <= 40) {
     const head = line.slice(0, colon).trim();
-    line = line.slice(colon + 1).trim();
+    line = line.slice(colon + 1).trim() || nextLine();
     if (head) {
       const name = head.startsWith("ל") ? head.slice(1).trim() : head;
       if (!SELF_WORDS.has(head) && !SELF_WORDS.has(name)) { assigneeName = name; explicitName = true; }
@@ -245,10 +256,23 @@ export function parseTaskMessage(
   }
 
   if (!line) return { error: "חסר תיאור למשימה" };
-  const due = extractDue(line, today);
+  let due = extractDue(line, today);
   if ("error" in due) return due;
+  // No date in the title: an explicit dd/mm on a details line counts too
+  // ("...נוזל ניקוי חלב 26/11" wrapped onto the second line). It's removed
+  // from that line; the other lines keep their breaks.
+  if (due.due === today && due.rest === tidy(line)) {
+    const i = more.findIndex((l) => DAY_MONTH_RE.test(l));
+    if (i >= 0) {
+      const fromNotes = extractDue(more[i], today);
+      if ("error" in fromNotes) return fromNotes;
+      due = { due: fromNotes.due, rest: due.rest };
+      more = [...more.slice(0, i), ...(fromNotes.rest ? [fromNotes.rest] : []), ...more.slice(i + 1)];
+    }
+  }
   if (!due.rest) return { error: "חסר תיאור למשימה" };
   if (due.rest.length > 300) return { error: "המשימה ארוכה מדי (עד 300 תווים). פרטים אפשר לכתוב בשורה נפרדת" };
+  const notesRaw = more.join("\n").trim();
   return { assigneeName, explicitName, title: due.rest, notes: notesRaw ? notesRaw.slice(0, 2000) : null, due: due.due };
 }
 
