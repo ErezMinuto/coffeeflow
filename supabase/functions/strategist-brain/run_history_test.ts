@@ -19,6 +19,8 @@ check('every tool call listed in order', toolCallsIn(messages).map((c) => c.name
 check('tool inputs kept', toolCallsIn(messages)[1].input.issue === 'orphan')
 const ov = latestToolResult(messages, 'get_seo_audit_overview')
 check('latest overview result is the second call', Array.isArray(ov?.coverage) && (ov!.coverage as unknown[]).length === 2)
+check('two results in one turn → the later one', (latestToolResult([{ role: 'assistant', content: [{ type: 'tool_use', id: 'a', name: 'o' }, { type: 'tool_use', id: 'b', name: 'o' }] }, { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'a', content: '{"n":1}' }, { type: 'tool_result', tool_use_id: 'b', content: '{"n":2}' }] }], 'o') as { n?: number } | null)?.n === 2)
+check('result stored as an object is returned as is', (latestToolResult([{ role: 'assistant', content: [{ type: 'tool_use', id: 'a', name: 'o' }] }, { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'a', content: { n: 3 } }] }], 'o') as { n?: number } | null)?.n === 3)
 check('never-called tool → null', latestToolResult(messages, 'get_page_report') === null)
 check('call without a result yet → null', latestToolResult(messages, 'conclude_brief') === null)
 check('unreadable result → null', latestToolResult([{ role: 'assistant', content: [{ type: 'tool_use', id: 'x', name: 'n' }] }, { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'x', content: 'not json' }] }], 'n') === null)

@@ -20,8 +20,11 @@ export function latestToolResult(messages: Message[], toolName: string): Record<
   const ids = new Set<string>()
   for (const m of messages) for (const b of blocks(m)) if (b?.type === 'tool_use' && b.name === toolName && b.id) ids.add(b.id)
   for (let i = messages.length - 1; i >= 0; i--) {
-    for (const b of blocks(messages[i])) {
+    const bs = blocks(messages[i])
+    for (let j = bs.length - 1; j >= 0; j--) {   // latest first, also within one turn
+      const b = bs[j]
       if (b?.type === 'tool_result' && b.tool_use_id && ids.has(b.tool_use_id)) {
+        if (b.content && typeof b.content === 'object' && !Array.isArray(b.content)) return b.content as Record<string, unknown>
         try { return JSON.parse(String(b.content)) as Record<string, unknown> } catch { return null }
       }
     }
