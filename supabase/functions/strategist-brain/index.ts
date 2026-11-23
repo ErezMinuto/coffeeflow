@@ -19,6 +19,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, getMonthToDateSpendUsd } from '../seo-agent/db.ts'
 import { callClaude, type ChatMessage, type MessageContentBlock } from '../seo-agent/claude.ts'
 import { latestToolResult, toolCallsIn } from './run_history.ts'
+import { clearAuditCache } from './seo_audit_tools.ts'
 import { STRATEGIST_BRAIN_SYSTEM_PROMPT } from '../seo-agent/prompts/strategistBrain.ts'
 import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot.ts'
 import {
@@ -300,6 +301,9 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
   if (!concluded && steps >= run.max_steps && !failure) {
     failure = `reached max_steps (${run.max_steps}) without concluding`
   }
+
+  // The shared audit data is only for this tick's tool calls; free it.
+  clearAuditCache(supabase)
 
   // Checkpoint. Release the lock either way: a still-thinking run resumes next
   // tick; a concluded/failed run is terminal.
