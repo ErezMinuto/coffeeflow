@@ -148,7 +148,9 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   const unpricedOk = normaliseSeoAudit({ findings: [{ ...finding, est_monthly_value_ils: undefined, value_method: '', no_value_reason: 'no traffic data for these pages' }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
   check('unpriced finding with a reason accepted', unpricedOk.ok)
   const bogus = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: [...rest, { id: 'made-up', reason: 'x' }] }, ctx)
-  check('unknown signal id refused', !bogus.ok && bogus.problems.some((p) => p.includes('unknown signal')))
+  check('unknown signal id ignored, not refused', bogus.ok)
+  const blindFinding = normaliseSeoAudit({ findings: [finding, { ...finding, area: 'authority', title: 'Backlinks', signals: [] }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
+  check('a finding in a blind area is refused with a clear message', !blindFinding.ok && blindFinding.problems.some((p) => p.includes('cannot have findings')))
 }
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }

@@ -483,7 +483,8 @@ export function normaliseSeoAudit(
     }
     for (const f of findings) {
       const v = verdicts.find((x) => x.area === f.area)
-      if (v && v.verdict !== 'problem') problems.push(`finding "${f.title}" is in ${f.area}, but that area's verdict is '${v.verdict}' (make it 'problem')`)
+      if (v && v.verdict === 'blind') problems.push(`finding "${f.title}" is in ${f.area}, which is blind (no data): an area you cannot see cannot have findings — remove the finding or move it to the area its evidence comes from`)
+      else if (v && v.verdict !== 'problem') problems.push(`finding "${f.title}" is in ${f.area}, but that area's verdict is '${v.verdict}' (make it 'problem')`)
     }
   }
 
@@ -501,8 +502,10 @@ export function normaliseSeoAudit(
     if (open.length) {
       problems.push(`${open.length} material signal(s) are not answered. Each must be in a finding's signals[] or in dismissed_signals with a reason: ${open.map((s) => `${s.id} (${s.summary})`).join(' | ')}`)
     }
-    const unknown = [...answered].filter((id) => !known.has(id))
-    if (unknown.length) problems.push(`unknown signal id(s), use the ids from signals_to_address exactly: ${unknown.slice(0, 10).join(', ')}`)
+    // Ids that are not in today's list are ignored rather than refused: they
+    // answer nothing, and refusing them would block a brief if the weekly data
+    // refreshed mid-run. Every real signal still has to be answered above.
+    void known
   }
 
   if (problems.length) return { ok: false, problems }
