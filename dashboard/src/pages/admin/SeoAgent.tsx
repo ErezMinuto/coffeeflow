@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { LayoutGrid, Compass, Inbox, MessageSquare, ListChecks, BarChart3 } from 'lucide-react'
+import { LayoutGrid, Compass, Inbox, MessageSquare, ListChecks, BarChart3, ScanSearch } from 'lucide-react'
 import SeoAgentLayout from './SeoAgentLayout'
 import SeoTaskQueue from './SeoTaskQueue'
 import SeoChatThread from './SeoChatThread'
 import SeoMetricsPanel from './SeoMetricsPanel'
 import StrategicBriefPanel from './StrategicBriefPanel'
 import ApprovalInbox from './ApprovalInbox'
+import SeoAuditPanel from './SeoAuditPanel'
 import { supabase } from '../../lib/supabase'
 
 const SESSION_STORAGE_KEY = 'seo_agent_session_id'
@@ -49,7 +50,7 @@ type MobilePanel = 'tasks' | 'chat' | 'metrics'
 // Top-level view: the existing 3-panel content workspace, or the full-width
 // strategist "State of Minuto" brief (a reading surface that wants width, so
 // it gets its own view rather than a cramped 4th grid column).
-type View = 'workspace' | 'brief' | 'inbox'
+type View = 'workspace' | 'brief' | 'inbox' | 'audit'
 
 export default function SeoAgent() {
   const [sessionId, setSessionId] = useState<string>('')
@@ -62,7 +63,7 @@ export default function SeoAgent() {
   const [view, setView] = useState<View>(
     (() => {
       const v = new URLSearchParams(window.location.search).get('view')
-      return v === 'brief' || v === 'inbox' ? v : 'workspace'
+      return v === 'brief' || v === 'inbox' || v === 'audit' ? v : 'workspace'
     })()
   )
   // "Guide the agent" from the Approvals inbox → prefill the chat composer.
@@ -127,6 +128,7 @@ export default function SeoAgent() {
     { key: 'inbox',     label: 'אישורים',      icon: Inbox },
     { key: 'workspace', label: 'סביבת עבודה', icon: LayoutGrid },
     { key: 'brief',     label: 'מצב מינוטו',  icon: Compass },
+    { key: 'audit',     label: 'ביקורת SEO',   icon: ScanSearch },
   ]
 
   // Each panel is a white hairline card on the paper ground.
@@ -165,6 +167,12 @@ export default function SeoAgent() {
             </div>
             <div className={`hidden lg:block ${panel}`}>
               <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} prefill={chatPrefill} />
+            </div>
+          </div>
+        ) : view === 'audit' ? (
+          <div className="flex-1 min-h-0 p-3 lg:p-4">
+            <div className={panel}>
+              <SeoAuditPanel />
             </div>
           </div>
         ) : view === 'brief' ? (

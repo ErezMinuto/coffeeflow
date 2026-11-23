@@ -34,7 +34,7 @@ import { appendChatMessage } from '../seo-agent/db.ts'
 import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
-import { SEO_AUDIT_TOOL_DEFS, dispatchSeoAuditTool } from './seo_audit_tools.ts'
+import { SEO_AUDIT_TOOL_DEFS, auditContext, dispatchSeoAuditTool } from './seo_audit_tools.ts'
 import { AUDIT_AREAS, AUDIT_AREA_KEYS, normaliseSeoAudit, type SeoAudit } from './seo_audit_analysis.ts'
 
 export type BrainToolDefinition = ToolDefinition
@@ -491,8 +491,13 @@ async function handleConcludeBrief(
   if (!input.summary || !Array.isArray(input.diagnosis)) {
     return { result: { error: 'summary and diagnosis[] are required' } }
   }
-  // The weekly SEO audit is part of every brief (SEO agent build plan, Phase 1).
-  const audit = normaliseSeoAudit(input.seo_audit)
+  // The weekly SEO audit is part of every brief (SEO agent build plan, Phase 1),
+  // checked against the coverage map and the material signals in the data.
+  let auditCtx: Awaited<ReturnType<typeof auditContext>> | undefined
+  try { auditCtx = await auditContext(supabase) } catch (e) {
+    return { result: { error: `conclude_brief NOT saved — could not load the audit data to check seo_audit against (${e instanceof Error ? e.message : String(e)}). Try conclude_brief again.` } }
+  }
+  const audit = normaliseSeoAudit(input.seo_audit, auditCtx)
   if (!audit.ok) {
     return { result: { error: `conclude_brief NOT saved — seo_audit: ${audit.problems.join(' ; ')}. Fix and call conclude_brief again.`, areas: AUDIT_AREAS } }
   }
@@ -685,6 +690,7 @@ function renderBriefHtml(
     ${recs ? `<h3 style="margin:16px 0 6px;font-size:15px">Recommended (for your approval)</h3><ul style="padding-left:18px;margin:0">${recs}</ul>` : ''}
     ${ooh ? `<h3 style="margin:16px 0 6px;font-size:15px">For you to weigh (outside the agent's hands)</h3><ul style="padding-left:18px;margin:0">${ooh}</ul>` : ''}
     <h3 style="margin:16px 0 6px;font-size:15px">SEO audit: biggest weaknesses by money${(audit.findings ?? []).length > 10 ? ` (top 10 of ${audit.findings.length})` : ''}</h3>
+    ${(audit.area_verdicts ?? []).length ? `<p style="color:#6b7280;margin:0 0 6px;font-size:13px">${(audit.area_verdicts ?? []).filter(v => v.verdict === 'problem').length} areas with problems · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'ok').length} checked and fine · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'blind').length} blind · ${audit.signals_checked ?? 0} data signals answered</p>` : ''}
     ${findings ? `<table style="border-collapse:collapse;width:100%;font-size:14px">${findings}</table>` : '<p style="color:#6b7280;margin:0">No SEO weaknesses found this week.</p>'}
     ${blind ? `<h3 style="margin:16px 0 6px;font-size:15px">Blind spots (what the audit could not check)</h3><ul style="padding-left:18px;margin:0">${blind}</ul>` : ''}
     <p style="margin-top:20px"><a href="${dashboardUrl}/admin/seo-agent" style="display:inline-block;background:#6A7D45;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600">Open the full brief →</a></p>
@@ -835,6 +841,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
                   // A plain number, left out when it cannot be estimated: Gemini (which
                   // runs the strategist in production) rejects type unions like ['number','null'].
                   est_monthly_value_ils: { type: 'number', description: 'estimated ILS per month; leave out when it cannot be defended from the data' },
+                  no_value_reason:       { type: 'string', description: 'required when est_monthly_value_ils is left out: why it cannot be estimated' },
+                  signals:               { type: 'array', items: { type: 'string' }, description: 'ids from signals_to_address that this finding answers' },
                   value_method:          { type: 'string' },
                   effort:                { type: 'string', enum: ['low', 'medium', 'high'] },
                   fix:                   { type: 'string' },
@@ -844,10 +852,21 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
             },
             blind_spots: {
               type: 'array',
+              description: 'blind areas are added from the coverage map automatically; add any others you found',
               items: { type: 'object', properties: { area: { type: 'string', enum: AUDIT_AREA_KEYS }, why: { type: 'string' }, needed: { type: 'string' } }, required: ['area', 'why', 'needed'] },
             },
+            area_verdicts: {
+              type: 'array',
+              description: `exactly one entry for EACH of the ${AUDIT_AREA_KEYS.length} areas: problem (has at least one finding), ok (checked in the data, nothing worth fixing — say what you checked), or blind (the data cannot see it). An area the coverage map marks blind can only be blind.`,
+              items: { type: 'object', properties: { area: { type: 'string', enum: AUDIT_AREA_KEYS }, verdict: { type: 'string', enum: ['problem', 'ok', 'blind'] }, note: { type: 'string' } }, required: ['area', 'verdict', 'note'] },
+            },
+            dismissed_signals: {
+              type: 'array',
+              description: 'signals from signals_to_address that are not worth a finding, each with the reason (e.g. seasonal, already fixed, too small to matter — with the number)',
+              items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'reason'] },
+            },
           },
-          required: ['findings', 'blind_spots'],
+          required: ['findings', 'blind_spots', 'area_verdicts', 'dismissed_signals'],
         },
       },
       required: ['summary', 'diagnosis', 'seo_audit'],
