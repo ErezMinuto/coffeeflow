@@ -336,7 +336,48 @@ export function coverage(s: DataState, now = Date.now()): CoverageRow[] {
 // dismissed with a reason. Thresholds decide what is big enough to answer;
 // they never decide what it means.
 
-export interface Signal { id: string; kind: string; area: AuditArea; summary: string; size: number }
+export interface Signal {
+  id: string; kind: string; area: AuditArea; summary: string; size: number
+  /** Set when the signal may NOT be dismissed: it can only be answered by a finding. */
+  must_address?: string
+}
+
+// ── Priority: coffee beans (owner decision, 2026-11-23) ─────────────────────
+// The third audit dismissed "פולי קפה" (2,533 impressions, a blog post at
+// position 10.4, the beans category at 33) on a corrupted Google Ads number.
+// A search about coffee beans, or a coffee-beans page losing clicks, can only
+// be dismissed once our coffee-beans category already ranks in the top 3 for
+// that search. Until then it must become a finding.
+export const PRIORITY_TERMS = ['פולי קפה', 'coffee beans', 'coffee bean']
+export const PRIORITY_CATEGORY_TOP = 3
+/** Our coffee-beans category; its sub-categories live under the same path. */
+export const PRIORITY_CATEGORY_PATH = '/product-category/פולי-קפה/'
+const norm = (t: string) => t.toLowerCase().replace(/[-_/]+/g, ' ').replace(/\s+/g, ' ').trim()
+export const isPriorityText = (t: string | null | undefined): boolean => !!t && PRIORITY_TERMS.some((k) => norm(t).includes(norm(k)))
+/** The coffee-beans category or one of its sub-categories (by path; the crawl may not have every sub-category). */
+const isPriorityCategory = (key: string): boolean => key.startsWith(PRIORITY_CATEGORY_PATH)
+
+/** Best position a coffee-beans category page holds for each query (lower is better). */
+function priorityCategoryRank(cur: readonly QpRow[]): Map<string, number> {
+  const best = new Map<string, number>()
+  for (const r of cur) {
+    if (!isPriorityCategory(pageKey(r.page))) continue
+    const q = norm(r.query)
+    best.set(q, Math.min(best.get(q) ?? Infinity, r.position))
+  }
+  return best
+}
+
+function priorityLock(query: string | null, page: string | null, rank: Map<string, number>): string | undefined {
+  if (query != null) {
+    if (!isPriorityText(query)) return undefined
+    const pos = rank.get(norm(query))
+    if (pos != null && pos <= PRIORITY_CATEGORY_TOP) return undefined
+    return `coffee-beans search; our coffee-beans category ${pos == null ? 'does not rank for it' : `ranks ${Math.round(pos * 10) / 10}`} (needs top ${PRIORITY_CATEGORY_TOP} before this can be dismissed)`
+  }
+  if (page != null && isPriorityText(page)) return 'coffee-beans page losing search clicks (coffee beans are the priority: cannot be dismissed)'
+  return undefined
+}
 
 const TYPE_AREA: Record<string, AuditArea> = { category: 'category_pages', product: 'product_pages', post: 'content', home: 'brand', page: 'on_page' }
 const areaOfType = (t: string | null | undefined): AuditArea => TYPE_AREA[t ?? ''] ?? 'keyword_map'
@@ -344,6 +385,7 @@ const areaOfType = (t: string | null | undefined): AuditArea => TYPE_AREA[t ?? '
 export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[]): Signal[] {
   const out: Signal[] = []
   const typeOf = new Map(pages.map((p) => [pageKey(p.final_url ?? p.url), p.page_type ?? 'other']))
+  const rank = priorityCategoryRank(cur)
 
   // 1. A whole page type losing search clicks.
   const byType = new Map<string, { now: number; before: number }>()
@@ -363,19 +405,19 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   }
   // 2. Single pages losing clicks.
   for (const r of (searchView('page_losses', cur, prev, 8) as Array<{ page: string; clicks: number; clicks_prev: number; change: number }>)) {
-    if (r.change <= -20) out.push({ id: `page_loss:${r.page}`, kind: 'page_loss', area: areaOfType(typeOf.get(r.page)), size: -r.change, summary: `${r.page}: ${r.clicks_prev} → ${r.clicks} search clicks` })
+    if (r.change <= -20) out.push({ id: `page_loss:${r.page}`, kind: 'page_loss', area: areaOfType(typeOf.get(r.page)), size: -r.change, summary: `${r.page}: ${r.clicks_prev} → ${r.clicks} search clicks`, must_address: priorityLock(null, r.page, rank) })
   }
   // 3. First-page positions earning far fewer clicks than they should.
   for (const r of (searchView('ctr_gaps', cur, prev, 8) as Array<{ query: string; page: string; position: number; clicks: number; expected_clicks: number; click_gap: number }>)) {
-    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected` })
+    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected`, must_address: priorityLock(r.query, null, rank) })
   }
   // 4. One search split across several of our pages.
   for (const r of (searchView('cannibalization', cur, prev, 5) as Array<{ query: string; impressions: number; pages: unknown[] }>)) {
-    if (r.impressions >= 300) out.push({ id: `cannibal:${r.query}`, kind: 'cannibalization', area: 'content', size: r.impressions, summary: `"${r.query}" (${r.impressions} impressions) split across ${r.pages.length} of our pages` })
+    if (r.impressions >= 300) out.push({ id: `cannibal:${r.query}`, kind: 'cannibalization', area: 'content', size: r.impressions, summary: `"${r.query}" (${r.impressions} impressions) split across ${r.pages.length} of our pages`, must_address: priorityLock(r.query, null, rank) })
   }
   // 5. Near the first page with real demand.
   for (const r of (searchView('striking_distance', cur, prev, 5) as Array<{ query: string; page: string; position: number; impressions: number }>)) {
-    if (r.impressions >= 500) out.push({ id: `striking:${r.query}|${r.page}`, kind: 'striking_distance', area: 'keyword_map', size: r.impressions, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.impressions} impressions` })
+    if (r.impressions >= 500) out.push({ id: `striking:${r.query}|${r.page}`, kind: 'striking_distance', area: 'keyword_map', size: r.impressions, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.impressions} impressions`, must_address: priorityLock(r.query, null, rank) })
   }
   // 6. Crawl issues on many pages.
   for (const i of crawlIssues(pages).by_issue) {
@@ -385,7 +427,96 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
     const mix = Object.entries(i.by_type).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${n} ${t}`).join(', ')
     out.push({ id: `crawl:${i.id}`, kind: 'crawl_issue', area: i.area, size: i.count, summary: `${i.count} pages: ${i.label} (${mix})` })
   }
-  return out.slice(0, 50)
+  // Undefined fields are dropped so the overview stays compact.
+  for (const o of out) if (o.must_address === undefined) delete o.must_address
+  // Locked signals first, so the 50-signal cap never drops one.
+  return [...out.filter((o) => o.must_address), ...out.filter((o) => !o.must_address)].slice(0, 50)
+}
+
+// ── Numbers a dismissal cites must come from the data ───────────────────────
+// The third audit dismissed signals with reasons like "standard bloat" (no
+// number) and "4+ million ad impressions" (a corrupted figure). A dismissal
+// must cite at least one number, and every number it cites must match one the
+// run actually received (snapshot + tool results), allowing for rounding:
+// "1000+" matches 1,051, "pos 9" matches 9.1, "4 million" needs 3.5M–4.5M.
+
+/** percent: a share (not checked, can be derived); period: a time window like "28 days" (not a claim about the data). */
+export interface CitedNumber { text: string; value: number; lo: number; hi: number; percent: boolean; period: boolean }
+
+const SCALE: Record<string, number> = { k: 1e3, thousand: 1e3, m: 1e6, mn: 1e6, million: 1e6, millions: 1e6, b: 1e9, bn: 1e9, billion: 1e9 }
+
+export function citedNumbers(text: string): CitedNumber[] {
+  const out: CitedNumber[] = []
+  // A digit glued to letters is part of a name (Oak8, PL62X), not a cited number.
+  const re = /(?<![\p{L}\d.,])(\d[\d,]*(?:\.\d+)?)(?!\d)(?!(?!(?:k|m|mn|b|bn|d)\b)\p{L})(\+)?\s*(%|k\b|thousand\b|m\b|mn\b|millions?\b|b\b|bn\b|billion\b|days?\b|d\b|weeks?\b|months?\b|years?\b|hours?\b)?/giu
+  for (const m of text.matchAll(re)) {
+    const raw = m[1].replace(/,/g, '')
+    if (!raw || raw === '.') continue
+    const unit = (m[3] ?? '').toLowerCase()
+    const percent = unit === '%'
+    const period = /^(days?|d|weeks?|months?|years?|hours?)$/.test(unit)
+    const mult = percent || period ? 1 : (SCALE[unit] ?? 1)
+    const dec = raw.includes('.') ? raw.split('.')[1].length : 0
+    const trailing = dec ? 0 : (raw.match(/0+$/)?.[0].length ?? 0)
+    // Precision of what was written: 10.6 → 0.1, 29 → 1, 1000 → 1000, 4 million → 1 million.
+    const step = (dec ? 10 ** -dec : 10 ** Math.min(trailing, Math.max(raw.length - 1, 0))) * mult
+    const value = Number(raw) * mult
+    const plus = !!m[2]
+    out.push({ text: m[0].trim(), value, percent, period, lo: plus ? value : value - step / 2, hi: plus ? value + step : value + step / 2 })
+  }
+  return out
+}
+
+// Fields whose numbers are identifiers or raw units, not facts a reason could cite
+// (a UUID fragment once "proved" a 4-million claim).
+const NOT_EVIDENCE_KEY = /(^|_)(id|ids|uuid|key|hash|sku|phone|ts)$|_micros$|_at$|(^|_)(date|time)(_|$)/i
+const STRIP = [
+  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,   // UUIDs
+  /https?:\/\/\S+/g,                                                    // URLs
+  /%[0-9a-f]{2}/gi,                                                      // URL-encoded bytes
+  /\d{4}-\d{2}-\d{2}(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?/g,           // dates and timestamps
+]
+
+/** Every number the run's data states (absolute values), sorted, for range lookups.
+ *  Walks the parsed values: number fields (minus ids, micros, timestamps) and
+ *  numbers written in text (minus UUIDs, URLs and dates). A string that is
+ *  itself JSON (a tool result) is parsed first. */
+export function evidenceIndex(...values: unknown[]): Float64Array {
+  const nums: number[] = []
+  const fromText = (t: string) => {
+    let x = t
+    for (const re of STRIP) x = x.replace(re, ' ')
+    for (const m of x.matchAll(/\d[\d,]*(?:\.\d+)?/g)) { const n = Number(m[0].replace(/,/g, '')); if (Number.isFinite(n)) nums.push(n) }
+  }
+  const walk = (v: unknown, key: string, depth: number) => {
+    if (depth > 40 || v == null) return
+    if (typeof v === 'number') { if (Number.isFinite(v) && !NOT_EVIDENCE_KEY.test(key)) nums.push(Math.abs(v)); return }
+    if (typeof v === 'string') {
+      if (NOT_EVIDENCE_KEY.test(key)) return
+      const t = v.trim()
+      if ((t.startsWith('{') || t.startsWith('[')) && t.length > 1) { try { walk(JSON.parse(t), key, depth + 1); return } catch { /* plain text */ } }
+      fromText(t); return
+    }
+    if (Array.isArray(v)) { for (const x of v) walk(x, key, depth + 1); return }
+    if (typeof v === 'object') for (const [k, x] of Object.entries(v as Record<string, unknown>)) walk(x, k, depth + 1)
+  }
+  for (const v of values) walk(v, '', 0)
+  return Float64Array.from(nums).sort()
+}
+
+/** Is any evidence number within [lo, hi]? (binary search) */
+export function inEvidence(idx: Float64Array, lo: number, hi: number): boolean {
+  let a = 0, b = idx.length
+  while (a < b) { const mid = (a + b) >> 1; if (idx[mid] < lo) a = mid + 1; else b = mid }
+  return a < idx.length && idx[a] <= hi
+}
+
+/** Problems with one dismissal reason, or [] when every number it cites is in the data. */
+export function dismissalNumberProblems(reason: string, idx: Float64Array): string[] {
+  const cited = citedNumbers(reason).filter((c) => !c.percent && !c.period)
+  if (!cited.length) return ['cites no number from the data (say how many pages, clicks, impressions or ₪ it involves, as read in this run)']
+  const unsupported = cited.filter((c) => !inEvidence(idx, c.lo, c.hi))
+  return unsupported.length ? [`cites ${unsupported.map((c) => `"${c.text}"`).join(', ')}, which no data in this run shows (quote the numbers exactly as the tools returned them)`] : []
 }
 
 // ── The audit the strategist hands in (conclude_brief.seo_audit) ────────────
@@ -430,7 +561,11 @@ const VERDICTS = new Set(['problem', 'ok', 'partial', 'blind'])
  */
 export function normaliseSeoAudit(
   raw: unknown,
-  ctx?: { coverage: CoverageRow[]; signals: Signal[]; toolCalls?: Array<{ name: string; input: Record<string, unknown> }> },
+  ctx?: {
+    coverage: CoverageRow[]; signals: Signal[]; toolCalls?: Array<{ name: string; input: Record<string, unknown> }>
+    /** Every number the run received (evidenceIndex of snapshot + tool results); enables the cited-number check. */
+    evidence?: Float64Array
+  },
 ): { ok: true; audit: SeoAudit } | { ok: false; problems: string[] } {
   const problems: string[] = []
   if (!raw || typeof raw !== 'object') return { ok: false, problems: ['seo_audit is required: { findings, blind_spots, area_verdicts, dismissed_signals }'] }
@@ -540,6 +675,18 @@ export function normaliseSeoAudit(
       const looked = new Set(ctx.toolCalls.filter((c) => c.name === 'get_seo_issue_pages').map((c) => String(c.input?.issue ?? '')))
       const unseen = dismissed.filter((d) => d.id.startsWith('crawl:') && known.has(d.id) && !looked.has(d.id.slice('crawl:'.length)))
       if (unseen.length) problems.push(`dismissed crawl signal(s) without looking at the pages: call get_seo_issue_pages for ${unseen.map((d) => d.id.slice('crawl:'.length)).join(', ')} first, then keep the dismissal only if the pages support it`)
+    }
+    // Priority signals can only be answered by a finding.
+    const byId = new Map(ctx.signals.map((s) => [s.id, s]))
+    const locked = dismissed.filter((d) => byId.get(d.id)?.must_address)
+    if (locked.length) problems.push(`signal(s) that cannot be dismissed — make each part of a finding (put its id in that finding's signals[]): ${locked.map((d) => `${d.id} (${byId.get(d.id)!.must_address})`).join(' | ')}`)
+    // A dismissal stands on numbers the run actually read.
+    if (ctx.evidence) {
+      for (const d of dismissed) {
+        if (!known.has(d.id) || byId.get(d.id)?.must_address) continue
+        const why = dismissalNumberProblems(d.reason, ctx.evidence)
+        if (why.length) problems.push(`dismissal of ${d.id} ${why.join('; ')}`)
+      }
     }
     // Ids that are not in today's list are ignored rather than refused: they
     // answer nothing, and refusing them would block a brief if the weekly data

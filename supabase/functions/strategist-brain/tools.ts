@@ -51,6 +51,8 @@ export interface ToolContext {
   toolCalls?:   () => Array<{ name: string; input: Record<string, unknown> }>
   /** The latest get_seo_audit_overview result in this run, parsed (null if never called). */
   auditOverview?: () => Record<string, unknown> | null
+  /** Every number the run received (snapshot + tool results), indexed; conclude_brief checks dismissal reasons against it. */
+  evidenceNumbers?: () => Float64Array
 }
 
 const REVENUE_ORDER_STATUSES = ['completed', 'processing']
@@ -509,7 +511,7 @@ async function handleConcludeBrief(
   if (!auditCtx) {
     return { result: { error: 'conclude_brief NOT saved — call get_seo_audit_overview first: seo_audit is checked against its coverage map and signals_to_address.' } }
   }
-  const audit = normaliseSeoAudit(input.seo_audit, { ...auditCtx, toolCalls: ctx.toolCalls?.() ?? [] })
+  const audit = normaliseSeoAudit(input.seo_audit, { ...auditCtx, toolCalls: ctx.toolCalls?.() ?? [], evidence: ctx.evidenceNumbers?.() })
   if (!audit.ok) {
     return { result: { error: `conclude_brief NOT saved — seo_audit: ${audit.problems.join(' ; ')}. Fix and call conclude_brief again.`, areas: AUDIT_AREAS } }
   }
@@ -874,7 +876,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
             },
             dismissed_signals: {
               type: 'array',
-              description: 'signals from signals_to_address that are not worth a finding, each with the reason and the number behind it. A crawl signal can only be dismissed after get_seo_issue_pages for that issue in this run.',
+              description: 'signals from signals_to_address that are not worth a finding, each with the reason and the numbers behind it. The reason must cite at least one number, and every number it cites must match one the tools returned in this run (checked in code; rounding allowed). A signal with must_address cannot be dismissed: it goes in a finding. A crawl signal can only be dismissed after get_seo_issue_pages for that issue in this run.',
               items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'reason'] },
             },
           },

@@ -18,7 +18,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, getMonthToDateSpendUsd } from '../seo-agent/db.ts'
 import { callClaude, type ChatMessage, type MessageContentBlock } from '../seo-agent/claude.ts'
-import { latestToolResult, toolCallsIn } from './run_history.ts'
+import { latestToolResult, toolCallsIn, toolResultValues } from './run_history.ts'
+import { evidenceIndex } from './seo_audit_analysis.ts'
 import { clearAuditCache } from './seo_audit_tools.ts'
 import { STRATEGIST_BRAIN_SYSTEM_PROMPT } from '../seo-agent/prompts/strategistBrain.ts'
 import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot.ts'
@@ -209,6 +210,7 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
     // Read lazily: includes calls made earlier in the same assistant turn.
     toolCalls: () => toolCallsIn(state.messages),
     auditOverview: () => latestToolResult(state.messages, 'get_seo_audit_overview'),
+    evidenceNumbers: () => evidenceIndex(run.snapshot, ...toolResultValues(state.messages)),
   }
 
   const cost: CostTotals = { ...ZERO_COST, ...(run.cost_tokens ?? {}) }
