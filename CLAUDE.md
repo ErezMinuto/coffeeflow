@@ -66,7 +66,7 @@ workflow itself still works and is how migrations reach production (`target: pro
 ### Architecture
 ```
 main branch    →  Vercel PRODUCTION  →  Supabase PROD
-feature branch →  Vercel PREVIEW     →  (no dev database — see below)
+other branches →  no deployment      (preview/** branches → Vercel PREVIEW, see below)
 ```
 
 ### Local Setup (for each developer)
@@ -76,9 +76,14 @@ feature branch →  Vercel PREVIEW     →  (no dev database — see below)
 3. Run `npm start`
 
 ### Vercel Preview Deployments
-- Every push to GitHub, on any branch, starts a Vercel deployment. Vercel limits deployments per
-  day, so finish and test work before pushing, push once per PR where possible, and merge to
-  `main` at most once a day.
+- Two Vercel projects build from this repo: **coffeeflow-thaf** (the CoffeeFlow app, repo root)
+  and **dashboard** (the marketing dashboard, `dashboard/`). A push that builds counts twice
+  toward Vercel's daily deployment limit.
+- So only `main` deploys. Pushes to any other branch build nothing (`git.deploymentEnabled`
+  in `vercel.json` and `dashboard/vercel.json`). To get a preview URL, push to a branch named
+  `preview/<something>`.
+- Finish and test work before pushing, push once per PR where possible, and merge to `main`
+  at most once a day.
 - Preview builds are **not isolated**: their Supabase variables either point at production or at
   the deleted dev project (then the preview cannot load data). Check in Vercel → Project
   Settings → Environment Variables before relying on a preview.
