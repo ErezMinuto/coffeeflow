@@ -24,7 +24,13 @@ export const STRATEGIST_MAX_STEPS = 30   // 12 before the weekly whole-site SEO 
 // 16k, so this is effectively 16k there.) Generous, but still bounded so one step
 // can't run away on latency under the edge wall-clock (the 95s per-call timeout
 // in the runner is the harder stop).
-export const STRATEGIST_MAX_TOKENS = 12000
+// Measured 2026-11-23 on Gemini 3.1 Pro (replays of a real run): the step that
+// writes conclude_brief (~5k visible tokens with the full SEO audit) was cut off
+// at 12k in 2 of 2 tries (thinking shares this budget); at 24k it completed in
+// ~70 s. Typical steps use far less. At the measured ~170 tokens/s a step that
+// used all 24k would pass the 120 s per-call timeout; the runner retries that as
+// a transient error, and retries a cut-off turn instead of recording it.
+export const STRATEGIST_MAX_TOKENS = 24000
 
 // One advance-invocation runs multiple steps in a tight loop (keeps the prompt
 // cache hot within the invocation), then checkpoints and lets the next cron

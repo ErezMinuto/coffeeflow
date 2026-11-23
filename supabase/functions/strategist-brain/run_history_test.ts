@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/strategist-brain/run_history_test.ts
-import { latestToolResult, toolCallsIn } from './run_history.ts'
+import { latestToolResult, toolCallsIn, turnKind } from './run_history.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -24,6 +24,15 @@ check('result stored as an object is returned as is', (latestToolResult([{ role:
 check('never-called tool → null', latestToolResult(messages, 'get_page_report') === null)
 check('call without a result yet → null', latestToolResult(messages, 'conclude_brief') === null)
 check('unreadable result → null', latestToolResult([{ role: 'assistant', content: [{ type: 'tool_use', id: 'x', name: 'n' }] }, { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'x', content: 'not json' }] }], 'n') === null)
+
+// What a model turn amounts to.
+check('tool call → tool', turnKind([{ type: 'tool_use' }], 'tool_use') === 'tool' && turnKind([{ type: 'text', text: 'x' }, { type: 'tool_use' }], 'tool_use') === 'tool')
+check('a tool call cut off at the limit is never run → retry', turnKind([{ type: 'tool_use' }], 'max_tokens') === 'retry')
+check('blank turn (real: 0 tokens in 5 s) → retry', turnKind([], 'end_turn') === 'retry')
+check('cut off at the output limit with no tool → retry', turnKind([], 'max_tokens') === 'retry' && turnKind([{ type: 'text', text: 'partial thou' }], 'max_tokens') === 'retry')
+check('only whitespace text → retry', turnKind([{ type: 'text', text: '  ' }], 'end_turn') === 'retry')
+check('a real text answer without tools → ended (nudge)', turnKind([{ type: 'text', text: 'I think we are done.' }], 'end_turn') === 'ended')
+check('other finish reasons with nothing usable → retry', turnKind([], 'malformed_function_call') === 'retry' && turnKind([], undefined) === 'retry')
 
 // The real run that hit the resource limit (read-only), when credentials are present.
 const url = Deno.env.get('SUPABASE_URL'), key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'), runId = Deno.env.get('CHECK_RUN_ID')

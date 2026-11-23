@@ -38,3 +38,20 @@ export function toolResultValues(messages: Message[]): unknown[] {
   for (const m of messages) for (const b of blocks(m)) if (b?.type === 'tool_result') out.push(b.content ?? null)
   return out
 }
+
+/** What a model turn amounts to, for the runner:
+ *  - 'tool'   : it called tools (dispatch them);
+ *  - 'retry'  : nothing usable — a blank answer, or one cut off at the output
+ *               limit before any tool call. Not a decision by the model: drop
+ *               it and ask again (Gemini, 2026-11-23: a blank turn in 5 s, and
+ *               brief-writing turns cut off at 12k tokens, ended a run as
+ *               "model ended turn twice");
+ *  - 'ended'  : it answered in text and stopped (nudge it to conclude). */
+export function turnKind(content: Array<{ type?: string; text?: string }>, stopReason: string | null | undefined): 'tool' | 'retry' | 'ended' {
+  // Cut off first: a tool call written up to the limit may be truncated (never run it).
+  // (Gemini reports a complete function call as tool_use even at the limit.)
+  if (stopReason === 'max_tokens') return 'retry'
+  if (content.some((b) => b?.type === 'tool_use')) return 'tool'
+  const said = content.some((b) => b?.type === 'text' && typeof b.text === 'string' && b.text.trim() !== '')
+  return said ? 'ended' : 'retry'
+}
