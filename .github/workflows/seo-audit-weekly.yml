@@ -1,0 +1,72 @@
+name: SEO audit data (weekly)
+
+# SEO agent build plan, Phase 1 ("eyes"). Gathers what the strategist needs to
+# audit the whole site, every Monday before its weekly run (07:45 UTC):
+#   1. Search Console per (search, page), current + previous 28 days → gsc_query_page
+#   2. crawl every sitemap URL of minuto.co.il              → site_crawls / site_crawl_pages
+#   3. Google PageSpeed for the busiest page of each type   → page_speed
+#   4. Google index status for the pages that earn money    → gsc_url_inspection
+#
+# Steps 1 and 2 are independent: one failing does not skip the other.
+# The repository is public: steps print counts only, never page content or
+# business numbers.
+#
+# Optional repo secret PAGESPEED_API_KEY (a Google API key with the PageSpeed
+# Insights API enabled). Without it Google may refuse speed checks, and the
+# audit lists page speed as a blind spot.
+#
+# Manual run: Actions → SEO audit data (weekly) → Run workflow.
+
+on:
+  schedule:
+    - cron: '30 1 * * 1'     # Monday 04:30 Israel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-audit-weekly
+  cancel-in-progress: false
+
+jobs:
+  audit-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Search Console per search + page
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets missing"; exit 1; }
+          for window in current previous; do
+            code=$(curl -sS --max-time 180 -o qp.json -w '%{http_code}' -X POST \
+              "$SUPABASE_URL/functions/v1/google-search-sync" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "Content-Type: application/json" \
+              -d "{\"mode\":\"query_page\",\"window\":\"$window\"}" || true)
+            code=${code:-000}
+            if [ "$code" -ge 300 ] || [ "$(jq -r '.success // false' qp.json 2>/dev/null)" != "true" ]; then
+              echo "::error title=query_page $window HTTP $code::$(jq -r '.error // "no error field"' qp.json 2>/dev/null | head -c 200 | tr '\n' ' ' || true)"
+              exit 1
+            fi
+            echo "::notice title=Search Console $window::$(jq -r '.records' qp.json) search+page rows"
+          done
+
+      - uses: actions/setup-node@v4
+        if: ${{ !cancelled() }}
+        with:
+          node-version: '20'
+
+      - name: Crawl the site, page speed, index status
+        if: ${{ !cancelled() }}
+        working-directory: scripts/seo
+        env:
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund --loglevel=error
+          node crawl.mjs
