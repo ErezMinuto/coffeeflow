@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Minuto Product FAQ
  * Description:       Per-product AND per-post FAQ rendering + FAQPage JSON-LD for AI/SEO discoverability.
- * Version:           0.5.0
+ * Version:           0.5.1
  * Author:            Minuto Cafe
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -165,6 +165,13 @@
  *     or written programmatically via post_meta (the set-post-faq function).
  *   - Product render paths (WooCommerce hooks + footer DOM-move fallback) are
  *     untouched — they stay product-only via minuto_faq_resolve_product_id().
+ *
+ * v0.5.1 changes vs 0.5.0: DELETING THE PLUGIN NO LONGER DELETES FAQ DATA.
+ *   - uninstall.php used to delete every `_minuto_faq_published` row. On
+ *     2026-11-23 an update done as delete-then-upload wiped every FAQ on the
+ *     site. It now keeps the data unless wp-config.php defines
+ *     MINUTO_FAQ_DELETE_DATA_ON_UNINSTALL as true. No other change.
+ *   - Update by Plugins → Add New → Upload → "Replace current with uploaded".
  *
  * v0.5.0 changes vs 0.4.0: READ ROUTE for backups. CoffeeFlow saves the old
  * FAQ before every change so it can be undone.
