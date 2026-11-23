@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Minuto Product FAQ
  * Description:       Per-product AND per-post FAQ rendering + FAQPage JSON-LD for AI/SEO discoverability.
- * Version:           0.4.0
+ * Version:           0.5.0
  * Author:            Minuto Cafe
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -165,6 +165,11 @@
  *     or written programmatically via post_meta (the set-post-faq function).
  *   - Product render paths (WooCommerce hooks + footer DOM-move fallback) are
  *     untouched — they stay product-only via minuto_faq_resolve_product_id().
+ *
+ * v0.5.0 changes vs 0.4.0: READ ROUTE for backups. CoffeeFlow saves the old
+ * FAQ before every change so it can be undone.
+ *   - GET /wp-json/minuto-faq/v1/get/<id>  → { success, post_id, post_type, faq }
+ *   - Same auth and capability checks as the set route. Read-only.
  *
  * v0.4.0 changes vs 0.3.0: PROGRAMMATIC WRITE API. Adds an authenticated
  * REST route so the SEO agent (via the set-post-faq edge function) can write
@@ -594,8 +599,48 @@ function minuto_faq_register_rest_routes() {
 			'callback'            => 'minuto_faq_rest_set',
 		)
 	);
+	// v0.5.0: read the stored FAQ (the value set/ writes), so CoffeeFlow can
+	// back it up before changing it. The public page only shows a cached
+	// render; this returns what is actually saved.
+	register_rest_route(
+		'minuto-faq/v1',
+		'/get/(?P<id>\d+)',
+		array(
+			'methods'             => 'GET',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'id' => array(
+					'validate_callback' => function ( $param ) {
+						return is_numeric( $param );
+					},
+				),
+			),
+			'callback'            => 'minuto_faq_rest_get',
+		)
+	);
 }
 add_action( 'rest_api_init', 'minuto_faq_register_rest_routes' );
+
+function minuto_faq_rest_get( WP_REST_Request $request ) {
+	$post_id = (int) $request['id'];
+	$post    = get_post( $post_id );
+	if ( ! $post ) {
+		return new WP_Error( 'minuto_faq_not_found', 'Post not found', array( 'status' => 404 ) );
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		return new WP_Error( 'minuto_faq_forbidden', 'Insufficient permission to read this post', array( 'status' => 403 ) );
+	}
+	$raw     = get_post_meta( $post_id, MINUTO_FAQ_META_KEY, true );
+	$decoded = ( is_string( $raw ) && '' !== $raw ) ? json_decode( $raw, true ) : array();
+	return rest_ensure_response( array(
+		'success'   => true,
+		'post_id'   => $post_id,
+		'post_type' => get_post_type( $post_id ),
+		'faq'       => is_array( $decoded ) ? $decoded : array(),
+	) );
+}
 
 function minuto_faq_rest_set( WP_REST_Request $request ) {
 	$post_id = (int) $request['id'];

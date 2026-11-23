@@ -16,9 +16,14 @@
  *   { "post_id": 80740, "faq": [{ "q": "...", "a": "..." }, ...] }
  *   { "post_url": "https://www.minuto.co.il/blog/.../", "faq": [...] }
  *
+ * Optional "change": { change_id?, requested_by?, reason?, approved_by?, undo_of? }
+ *   (see _shared/site_change_log.ts). Every write saves the FAQ it replaces
+ *   in public.site_change_log first; if that backup can't be saved, nothing
+ *   is written.
+ *
  * Response on success:
  *   { "success": true, "post_id": 80740, "post_type": "post",
- *     "post_title": "...", "faq_count": 5 }
+ *     "post_title": "...", "faq_count": 5, "change_id": "<uuid>" }
  *
  * Auth: WP Application Password via HTTP Basic (same WP_BLOG_POST_USER_NAME +
  * WP_BLOG_POST_PASS secrets blog-publish uses). The user the App Password
@@ -27,6 +32,8 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { beginChange, finishChange, parseChangeContext } from '../_shared/site_change_log.ts'
+import { readPostFaq, siteEnv } from '../_shared/site_io.ts'
 
 const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
 const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''
@@ -90,7 +97,7 @@ serve(async (req) => {
     return json(500, { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS secrets not set in Supabase' })
   }
 
-  let body: { post_id?: unknown; post_url?: unknown; faq?: unknown }
+  let body: { post_id?: unknown; post_url?: unknown; faq?: unknown; change?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -114,6 +121,30 @@ serve(async (req) => {
   const faq = validateFaq(body.faq)
   // Note: empty faq is allowed — the plugin treats it as an explicit clear.
 
+  // Back up the FAQ this write replaces. No backup → no write.
+  const ctx = parseChangeContext(body.change)
+  const env = siteEnv({ wpUrl: WP_URL, wpUser: WP_USERNAME, wpPass: WP_APP_PASSWORD })
+  let changeId: string
+  try {
+    const current = await readPostFaq(env, postId)
+    changeId = await beginChange({
+      target_type:   'post_faq',
+      target_id:     postId,
+      target_url:    typeof body.post_url === 'string' ? body.post_url.trim() : null,
+      before:        current.faq,
+      before_source: current.source,
+      after:         faq,
+      source_fn:     'set-post-faq',
+      ctx,
+    })
+  } catch (e) {
+    return json(502, { error: `Not written: could not back up the current FAQ first (${(e as Error).message})` })
+  }
+  const fail = async (status: number, error: string) => {
+    await finishChange(changeId, { ok: false, error })
+    return json(status, { error, change_id: changeId })
+  }
+
   const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
   const routeUrl = `${WP_URL}/wp-json/minuto-faq/v1/set/${postId}`
 
@@ -127,9 +158,7 @@ serve(async (req) => {
   // A redirect means WOO_URL isn't canonical (www) — body would be stripped.
   if (wpRes.status >= 300 && wpRes.status < 400) {
     const loc = wpRes.headers.get('location') || '(none)'
-    return json(502, {
-      error: `WP returned redirect ${wpRes.status} → ${loc}. WOO_URL must be canonical (https://www.minuto.co.il, with www).`,
-    })
+    return await fail(502, `WP returned redirect ${wpRes.status} → ${loc}. WOO_URL must be canonical (https://www.minuto.co.il, with www).`)
   }
 
   let wpBody: Record<string, unknown>
@@ -137,7 +166,7 @@ serve(async (req) => {
     wpBody = await wpRes.json()
   } catch {
     const text = await wpRes.text().catch(() => '')
-    return json(502, { error: `WP returned non-JSON (status ${wpRes.status}): ${text.slice(0, 300)}` })
+    return await fail(502, `WP returned non-JSON (status ${wpRes.status}): ${text.slice(0, 300)}`)
   }
 
   if (!wpRes.ok || wpBody.success !== true) {
@@ -145,11 +174,23 @@ serve(async (req) => {
     const hint = wpRes.status === 404
       ? ' (route not found — is minuto-product-faq v0.4.0+ active?)'
       : ''
-    return json(502, { error: `WP FAQ write failed (status ${wpRes.status})${hint}: ${JSON.stringify(wpBody).slice(0, 400)}` })
+    return await fail(502, `WP FAQ write failed (status ${wpRes.status})${hint}: ${JSON.stringify(wpBody).slice(0, 400)}`)
   }
+
+  // Record the FAQ as WordPress stored it (the plugin sanitizes text), so a
+  // later undo compares like with like. Only the plugin route returns the
+  // stored value; a cached live page would not, so it is not used here.
+  let stored: unknown = undefined
+  try {
+    const now = await readPostFaq(env, postId)
+    if (now.source === 'wp_plugin') stored = now.faq
+  } catch { /* keep `after` as sent */ }
+  const logged = await finishChange(changeId, { ok: true, after: stored })
 
   return json(200, {
     success:    true,
+    change_id:  changeId,
+    ...(logged.logged ? {} : { change_log_warning: logged.error }),
     post_id:    wpBody.post_id ?? postId,
     post_type:  wpBody.post_type ?? null,
     post_title: wpBody.post_title ?? null,

@@ -41,7 +41,7 @@ async function titlesOf(supabase: Db, statuses: string[]): Promise<{ count: numb
 export async function buildApprovalDigest(supabase: Db): Promise<DigestSection[]> {
   const head = { count: 'exact', head: true } as const
   const recentIso = new Date(Date.now() - RECENT_DAYS * 86_400_000).toISOString()
-  const [proposed, reviewed, stuck, drafts, content, signals] = await Promise.all([
+  const [proposed, reviewed, stuck, drafts, content, signals, siteChanges] = await Promise.all([
     titlesOf(supabase, ['proposed']),
     titlesOf(supabase, ['ready_for_review']),
     titlesOf(supabase, ['needs_human']),
@@ -51,9 +51,12 @@ export async function buildApprovalDigest(supabase: Db): Promise<DigestSection[]
     // to-do list, not a wall. The dashboard still shows everything.
     countOf(supabase.from('seo_tasks').select('*', head).eq('result_data->>review_required', 'true').gte('created_at', recentIso)),
     countOf(supabase.from('strategist_signals').select('*', head).eq('status', 'open').gte('created_at', recentIso)),
+    // Live-site edits filed by the agent chat; nothing changes until approved.
+    countOf(supabase.from('site_change_log').select('*', head).eq('status', 'proposed')),
   ])
   const brief = `${DASHBOARD_URL}/admin/seo-agent?view=inbox`
   return [
+    { key: 'site',     label: 'שינויים באתר החי שממתינים לאישור שלך', count: siteChanges, link: brief, titles: [] },
     { key: 'proposed', label: 'המלצות מהאסטרטג שממתינות לאישור', count: proposed.count, link: brief, titles: proposed.titles },
     { key: 'ready',    label: 'טיוטות שעברו בדיקה ומוכנות להחלטה שלך', count: reviewed.count, link: brief, titles: reviewed.titles },
     { key: 'stuck',    label: 'טיוטות שלא עברו בדיקה אחרי 2 תיקונים', count: stuck.count, link: brief, titles: stuck.titles },

@@ -7,8 +7,13 @@
  *
  * POST body: { "product_id": 65135, "faq": [{ "q": "...", "a": "..." }, ...] }
  *
+ * Optional "change": { change_id?, requested_by?, reason?, approved_by?, undo_of? }
+ *   (see _shared/site_change_log.ts). Every write saves the FAQ it replaces in
+ *   public.site_change_log first; if that backup can't be saved, nothing is
+ *   written. An empty faq is accepted only with change.undo_of (restoring "no FAQ").
+ *
  * Response on success:
- *   { "success": true, "product_id": 65135, "product_name": "...", "faq_count": 5 }
+ *   { "success": true, "product_id": 65135, "product_name": "...", "faq_count": 5, "change_id": "<uuid>" }
  *
  * Notes:
  *  - Uses query-string auth + redirect:'manual' to dodge the WC POST→GET
@@ -19,6 +24,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
+import { beginChange, finishChange, parseChangeContext } from "../_shared/site_change_log.ts";
+import { readProduct, siteEnv, writeProduct } from "../_shared/site_io.ts";
 
 const WOO_URL = (Deno.env.get("WOO_URL") || "").replace(/\/+$/, "");
 const WOO_KEY = Deno.env.get("WOO_KEY") || "";
@@ -65,7 +72,7 @@ serve(async (req) => {
     return json(500, { error: "WOO_URL, WOO_KEY, or WOO_SECRET not configured" });
   }
 
-  let body: { product_id?: unknown; faq?: unknown };
+  let body: { product_id?: unknown; faq?: unknown; change?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -77,59 +84,54 @@ serve(async (req) => {
     return json(400, { error: "product_id must be a positive integer" });
   }
 
-  const faq = validateFaq(body.faq);
+  const ctx = parseChangeContext(body.change);
+  // An empty FAQ is only accepted when undoing a change to a product that had
+  // none — restoring "no FAQ" is the point of that undo.
+  const faq = validateFaq(body.faq) ?? (ctx.undo_of && Array.isArray(body.faq) && body.faq.length === 0 ? [] : null);
   if (!faq) {
     return json(400, { error: "faq must be a non-empty array of { q, a } objects" });
   }
 
-  // Stored as JSON string — same shape the plugin's get_published_faq expects.
-  const faqJson = JSON.stringify(faq);
-
-  // Query-string auth + manual redirect → avoids POST→GET body-strip bug.
-  const wcUrl =
-    `${WOO_URL}/wp-json/wc/v3/products/${productId}` +
-    `?consumer_key=${encodeURIComponent(WOO_KEY)}` +
-    `&consumer_secret=${encodeURIComponent(WOO_SEC)}`;
-
-  const wcRes = await fetch(wcUrl, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    redirect: "manual",
-    body: JSON.stringify({
-      meta_data: [{ key: META_KEY, value: faqJson }],
-    }),
-  });
-
-  // Detect a redirect (would mean WOO_URL isn't canonical).
-  if (wcRes.status >= 300 && wcRes.status < 400) {
-    const loc = wcRes.headers.get("location") || "(none)";
-    return json(502, {
-      error: `WC returned redirect ${wcRes.status} → ${loc}. WOO_URL must be canonical (https://www.minuto.co.il, with www).`,
-    });
-  }
-
-  // Parse response. WC returns JSON on both success and error paths.
-  let wcBody: Record<string, unknown>;
+  // Back up the FAQ this write replaces. No backup → no write.
+  const env = siteEnv({ wpUrl: WOO_URL, wooKey: WOO_KEY, wooSecret: WOO_SEC });
+  let changeId: string;
   try {
-    wcBody = await wcRes.json();
-  } catch {
-    const text = await wcRes.text().catch(() => "");
-    return json(502, {
-      error: `WC returned non-JSON (status ${wcRes.status}): ${text.slice(0, 300)}`,
+    const current = await readProduct(env, productId);
+    changeId = await beginChange({
+      target_type:   "product_faq",
+      target_id:     productId,
+      target_url:    current.permalink || null,
+      target_title:  current.name || null,
+      before:        current.faq,
+      before_source: "woo_rest",
+      after:         faq,
+      source_fn:     "set-product-faq",
+      ctx,
     });
+  } catch (e) {
+    return json(502, { error: `Not written: could not back up the current FAQ first (${(e as Error).message})` });
   }
 
-  // Validate response shape — WC error responses have { code, message, data }.
-  if (!wcBody.id || typeof wcBody.id !== "number") {
-    return json(502, {
-      error: `WC error: ${JSON.stringify(wcBody).slice(0, 500)}`,
-    });
+  let written: { id: number; name: string };
+  try {
+    written = await writeProduct(env, productId, { faq });
+  } catch (e) {
+    const error = `WC error: ${(e as Error).message}`;
+    await finishChange(changeId, { ok: false, error });
+    return json(502, { error, change_id: changeId });
   }
+
+  // Record the FAQ as WooCommerce stored it, so a later undo compares like with like.
+  let stored: unknown = undefined;
+  try { stored = (await readProduct(env, productId)).faq; } catch { /* keep `after` as sent */ }
+  const logged = await finishChange(changeId, { ok: true, after: stored });
 
   return json(200, {
     success: true,
-    product_id: wcBody.id,
-    product_name: wcBody.name ?? null,
+    change_id: changeId,
+    ...(logged.logged ? {} : { change_log_warning: logged.error }),
+    product_id: written.id,
+    product_name: written.name || null,
     faq_count: faq.length,
     meta_key: META_KEY,
   });

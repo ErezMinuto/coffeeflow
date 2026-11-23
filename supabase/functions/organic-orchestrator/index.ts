@@ -522,6 +522,60 @@ serve(async (req: Request): Promise<Response> => {
       `tasks=${emittedTasks.length}`,
     )
 
+    // ── 5-pre. BLOG PAUSE (SEO agent build plan, Phase 0) ─────────────
+    // Blog posts wait until the strategist owns SEO and writes one only when
+    // its audit finds a real gap. Instagram and FAQ proposals keep running.
+    // ops_profile.seo_blog_planner = { paused: false } turns posts back on;
+    // a missing or unreadable setting counts as paused.
+    //
+    // Converted in place, never removed, so parent/depends indexes stay
+    // valid (same reasoning as the cannibalization gate and brand guard).
+    // The article's own banner visual goes with it.
+    {
+      let blogPaused = true
+      try {
+        const { data } = await supabase.from('ops_profile').select('value').eq('key', 'seo_blog_planner').maybeSingle()
+        blogPaused = (data?.value as Record<string, unknown> | undefined)?.paused !== false
+      } catch { /* keep paused */ }
+      if (blogPaused) {
+        const paused = new Set<number>()
+        emittedTasks.forEach((et, i) => { if (et.task_type === 'text_generation') paused.add(i) })
+        // Anything hanging off a paused article (its banner, any dependant) is paused too.
+        let grew = paused.size > 0
+        while (grew) {
+          grew = false
+          emittedTasks.forEach((et, i) => {
+            if (paused.has(i)) return
+            const parent = et.parent_task_index
+            const dep = et.depends_on_index
+            if ((typeof parent === 'number' && paused.has(parent)) || (typeof dep === 'number' && paused.has(dep))) {
+              paused.add(i); grew = true
+            }
+          })
+        }
+        for (const i of paused) {
+          const et = emittedTasks[i]
+          const original = { task_type: et.task_type, task_subtype: et.task_subtype ?? null, brief: et.brief_data }
+          et.task_type    = 'dynamic_experiment'
+          et.task_subtype = 'blog_paused'
+          et.brief_data   = {
+            description:
+              `Blog posts are paused (SEO agent build plan, Phase 0), so this ${original.task_type} task was not queued. ` +
+              `The strategist will propose articles once its site audit finds a real gap.`,
+            approval_required: false,
+            details: { conflict_subtype: 'blog_paused', original_task_type: original.task_type, original_task_subtype: original.task_subtype, original_brief: original.brief },
+          } as unknown as typeof et.brief_data
+          et.rationale = `[blog-paused] did NOT queue — ${et.rationale ?? ''}`.trim()
+          delete et.experiment_group
+          delete et.variation_label
+        }
+        if (paused.size > 0) {
+          console.log(`[organic-orchestrator] blog paused: ${paused.size} task(s) recorded instead of queued`)
+          log.info('plan.blog_paused', 'blog posts paused; tasks recorded instead of queued', { count: paused.size })
+        }
+      }
+    }
+
     // ── 5b. CANNIBALIZATION GATE (text_generation only) ────────────────
     // ONE mechanism, TWO detection sources.
     //

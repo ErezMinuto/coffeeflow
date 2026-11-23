@@ -57,7 +57,12 @@ workflow itself still works and is how migrations reach production (`target: pro
 > - **New behaviour starts dry-run.** It reports what it would change without writing; then it
 >   is tried on a single test item (a draft post, a hidden product); then switched on with a
 >   setting (e.g. in `ops_profile`) that can turn it off at once.
-> - **Every write to the live site keeps the old value** so it can be undone.
+> - **Every write to the live site keeps the old value** so it can be undone: read the current
+>   value, `beginChange()`, write, `finishChange()` (`_shared/site_change_log.ts`, readers and
+>   writers in `_shared/site_io.ts`, table `site_change_log`). No backup → no write.
+> - **The admin chat never writes live content itself.** Its tools file a `proposed` change; the
+>   owner approves, rejects or undoes it in the dashboard's approvals inbox
+>   (`handle-seo-chat` actions `site_change.*`, admin Clerk token only, never the service key).
 
 ---
 

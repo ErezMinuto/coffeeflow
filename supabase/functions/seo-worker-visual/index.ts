@@ -571,6 +571,8 @@ serve(runLogged('seo-worker-visual', async (req, log) => {
           postId:      parentWpPostId,
           imageUrl,
           titleHint:   (renderResponse.scene_brief as string)?.slice(0, 60) ?? 'seo banner',
+          sourceFn:    'seo-worker-visual',
+          change:      { requested_by: 'seo-worker-visual', reason: `blog banner passed visual QA (task ${task.id})` },
         })
         console.log(`[seo-worker-visual] ${workerId} attached media_id=${attachedMediaId} to post_id=${parentWpPostId}`)
       } catch (e: any) {
