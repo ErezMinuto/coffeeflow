@@ -130,11 +130,25 @@ function duplicates(values: Array<string | null>): Set<string> {
   return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k))
 }
 
+// The shared inputs every crawl check needs (inlinks, duplicate titles and
+// descriptions) cost ~0.2 s of CPU on the full site. A strategist step can ask
+// for a dozen issue lists at once, and edge functions have only a couple of
+// seconds of CPU per call, so they are computed once per pages array.
+type IssueCtx = { inlinks: Map<string, number>; dupTitles: Set<string>; dupDescs: Set<string> }
+const issueCtxCache = new WeakMap<CrawlPage[], IssueCtx>()
+function issueCtx(pages: CrawlPage[]): IssueCtx {
+  const hit = issueCtxCache.get(pages)
+  if (hit) return hit
+  const live = pages.filter(ok)
+  const ctx = { inlinks: inlinkCounts(pages), dupTitles: duplicates(live.map((p) => p.title)), dupDescs: duplicates(live.map((p) => p.meta_description)) }
+  issueCtxCache.set(pages, ctx)
+  return ctx
+}
+
 export interface CrawlIssueSummary { id: string; area: AuditArea; label: string; count: number; by_type: Record<string, number>; examples: string[] }
 
 export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: CrawlIssueSummary[]; pages_by_type: Record<string, number>; status_counts: Record<string, number> } {
-  const live = pages.filter(ok)
-  const ctx = { inlinks: inlinkCounts(pages), dupTitles: duplicates(live.map((p) => p.title)), dupDescs: duplicates(live.map((p) => p.meta_description)) }
+  const ctx = issueCtx(pages)
   const by_issue: CrawlIssueSummary[] = []
   for (const def of CRAWL_ISSUES) {
     const hit = pages.filter((p) => def.test(p, ctx))
@@ -156,8 +170,7 @@ export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: Crawl
 export function pagesWithIssue(pages: CrawlPage[], issueId: string): CrawlPage[] {
   const def = CRAWL_ISSUES.find((d) => d.id === issueId)
   if (!def) return []
-  const live = pages.filter(ok)
-  const ctx = { inlinks: inlinkCounts(pages), dupTitles: duplicates(live.map((p) => p.title)), dupDescs: duplicates(live.map((p) => p.meta_description)) }
+  const ctx = issueCtx(pages)
   return pages.filter((p) => def.test(p, ctx))
 }
 
