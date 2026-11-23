@@ -31,6 +31,7 @@ import { callLoopAds } from '../_shared/loop_ads_client.ts'
 import { checkBlogKeywordLive } from '../_shared/keyword_research.ts'
 import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
 import { GOOGLE_SEARCH_SPEC_SYSTEM, googleSearchSpecProblems } from '../_shared/google_search_spec.ts'
+import { BANNER_SYSTEM, bannerBrief, bannerPrompt, fallbackSceneBrief, parseBannerReply, type BannerSource } from './blog_banner.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -455,8 +456,51 @@ async function exportBlog(supabase: SupabaseClient, rec: RecommendationRow): Pro
   if (d.task_id) {
     const { data: t } = await supabase.from('seo_tasks').select('result_data').eq('id', d.task_id).maybeSingle()
     await supabase.from('seo_tasks').update({ result_data: { ...(t?.result_data ?? {}), wp_post_id: pub.id, edit_url: pub.edit_url, link: pub.link, exported_by_loop_at: new Date().toISOString() } }).eq('id', d.task_id)
+    // After the wp_post_id write above: the visual worker reads it from this
+    // parent to attach the featured image.
+    await queueBlogBanner(supabase, rec, d)
+  } else {
+    console.warn(`[strategist-executor] ${rec.id} blog snapshot has no task_id; WP post ${pub.id} gets no banner (nothing to attach it through)`)
   }
   return `wp:${pub.id}`
+}
+
+/** Best-effort banner for an exported article (see blog_banner.ts). A failure
+ *  here is logged, never thrown: the WP draft already exists, and failing the
+ *  export would leave the rec un-finished over a missing image. */
+async function queueBlogBanner(supabase: SupabaseClient, rec: RecommendationRow, d: Record<string, any>): Promise<void> {
+  const taskId = String(d.task_id)
+  try {
+    // An export retried after a partial failure must not render a second banner.
+    const { data: existing } = await supabase.from('seo_tasks').select('id')
+      .eq('parent_task_id', taskId).eq('task_type', 'visual_generation').limit(1)
+    if (existing && existing.length > 0) return
+
+    const src: BannerSource = { title: String(d.title), body: String(d.body), keyword: d.keyword ?? rec.action_params?.keyword }
+    let scene: string | null = null
+    try {
+      const res = await callClaude({
+        sourceFn: 'strategist-executor', runId: rec.run_id, model: MODEL_CAMPAIGN,
+        system: BANNER_SYSTEM,
+        messages: [{ role: 'user', content: bannerPrompt(src) }],
+        // MODEL_CAMPAIGN may be a thinking model; thinking counts against this.
+        maxTokens: 8000, timeoutMs: 60_000,
+      })
+      scene = parseBannerReply(parseClaudeJson(res.text))
+    } catch (e) {
+      console.warn(`[strategist-executor] ${rec.id} banner brief call failed, using fallback: ${e instanceof Error ? e.message : e}`)
+    }
+    const [banner] = await insertTasks(supabase, [{
+      task_type:           'visual_generation',
+      brief_data:          bannerBrief(scene ?? fallbackSceneBrief(src)),
+      rationale:           `[strategist] banner for: ${rec.title}${scene ? '' : ' (fallback scene brief)'}`,
+      orchestrator_run_id: runIdOf(rec),
+      parent_task_id:      taskId,
+    }])
+    console.log(`[strategist-executor] ${rec.id} queued blog banner ${banner?.id} for writer task ${taskId}`)
+  } catch (e) {
+    console.error(`[strategist-executor] ${rec.id} could not queue a blog banner for task ${taskId}: ${e instanceof Error ? e.message : e}`)
+  }
 }
 
 async function exportIg(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
