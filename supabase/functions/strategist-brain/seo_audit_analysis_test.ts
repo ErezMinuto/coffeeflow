@@ -38,6 +38,12 @@ check('orphan: linked product is not orphan', !pagesWithIssue(pages, 'orphan').s
 check('home never counted as orphan', !pagesWithIssue(pages, 'orphan').some((p) => p.page_type === 'home'))
 check('404 page not double-counted as on-page issues', !pagesWithIssue(pages, 'missing_h1').some((p) => p.status !== 200))
 check('pages by type', ci.pages_by_type.product === 2 && ci.status_counts['404'] === 1)
+{
+  const redirected = P('https://www.minuto.co.il/product/old/', { redirects: 1, final_url: 'https://www.minuto.co.il/product-category/beans/', schema_types: ['BreadcrumbList'] })
+  const withRedirect = [...pages, redirected]
+  check('a redirected product counts as a redirect', pagesWithIssue(withRedirect, 'redirected_in_sitemap').some((p) => p.url.endsWith('/product/old/')))
+  check('…and not as missing Product markup on the page it lands on', !pagesWithIssue(withRedirect, 'missing_product_schema').some((p) => p.url.endsWith('/product/old/')))
+}
 check('unknown issue → no pages', pagesWithIssue(pages, 'nope').length === 0)
 
 // ── search views ──
@@ -118,9 +124,10 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   const now = Date.parse('2026-11-30T09:00:00Z')
   const cov = coverage({ crawl_finished_at: '2026-11-30T03:00:00Z', query_page_end: '2026-11-29', speed_ok: 0, speed_refused: 4, inspect_ok: 0, inspect_failed: 60, ga4_synced_at: '2026-11-30T06:00:00Z', ads_synced_at: '2026-11-30T03:00:00Z', ai_probe_at: '2026-11-28T22:00:00Z', orders_synced_at: '2026-11-30T09:00:00Z' }, now)
   const ctx = { coverage: cov, signals: sig }
+  const statusOf = (a: string) => cov.find((c) => c.area === a)?.status
   const allVerdicts = (problemAreas: string[]) => AUDIT_AREA_KEYS.map((a) => ({
     area: a,
-    verdict: cov.find((c) => c.area === a)?.status === 'blind' ? 'blind' : problemAreas.includes(a) ? 'problem' : 'ok',
+    verdict: statusOf(a) === 'blind' ? 'blind' : problemAreas.includes(a) ? 'problem' : statusOf(a) === 'partial' ? 'partial' : 'ok',
     note: 'checked',
   }))
   const finding = { area: 'category_pages', title: 'Beans category losing clicks', evidence: '60 → 10', fix: 'rewrite', effort: 'low', est_monthly_value_ils: 500, value_method: 'm', signals: ['page_loss:/product-category/beans/'] }
@@ -141,6 +148,21 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check("can't call a blind area ok", !blindClaimedOk.ok && blindClaimedOk.problems.some((p) => p.includes('authority')))
   const problemNoFinding = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages', 'on_page']), dismissed_signals: rest }, ctx)
   check("'problem' area needs a finding", !problemNoFinding.ok && problemNoFinding.problems.some((p) => p.includes("on_page is 'problem'")))
+  const partialOk = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']).map((v) => v.area === 'speed_mobile' ? { ...v, verdict: 'ok' } : v), dismissed_signals: rest }, ctx)
+  check("can't call a partly visible area 'ok'", !partialOk.ok && partialOk.problems.some((p) => p.includes('speed_mobile') && p.includes('partly visible')))
+  const coveredPartial = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']).map((v) => v.area === 'on_page' ? { ...v, verdict: 'partial' } : v), dismissed_signals: rest }, ctx)
+  check("a fully visible area can't be 'partial'", !coveredPartial.ok && coveredPartial.problems.some((p) => p.includes('on_page')))
+  check('competitors and site changes are honest blind spots', statusOf('competitors') === 'blind' && statusOf('site_changes') === 'blind')
+
+  // Look before you dismiss.
+  const crawlIds = rest.filter((d) => d.id.startsWith('crawl:'))
+  check('test data has crawl signals to dismiss', crawlIds.length > 0)
+  const notLooked = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, { ...ctx, toolCalls: [{ name: 'get_seo_audit_overview', input: {} }] })
+  check('dismissing a crawl issue without opening its pages is refused', !notLooked.ok && notLooked.problems.some((p) => p.includes('without looking')))
+  const looked = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, { ...ctx, toolCalls: crawlIds.map((d) => ({ name: 'get_seo_issue_pages', input: { issue: d.id.slice('crawl:'.length) } })) })
+  check('dismissing after opening the pages is accepted', looked.ok, looked.ok ? '' : looked.problems.join(' | '))
+  check('crawl signal text includes the page-type mix', sig.filter((x) => x.kind === 'crawl_issue').every((x) => /\(\d+ \w+/.test(x.summary)), sig.filter((x) => x.kind === 'crawl_issue').map((x) => x.summary).join(' / '))
+
   const findingInOkArea = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts([]), dismissed_signals: rest }, ctx)
   check("finding in an 'ok' area refused", !findingInOkArea.ok)
   const unpriced = normaliseSeoAudit({ findings: [{ ...finding, est_monthly_value_ils: undefined, value_method: '' }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
