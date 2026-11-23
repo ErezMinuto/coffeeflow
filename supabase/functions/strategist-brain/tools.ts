@@ -832,7 +832,9 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
                   title:                 { type: 'string' },
                   evidence:              { type: 'string', description: 'the numbers from the audit tools' },
                   pages:                 { type: 'array', items: { type: 'string' }, description: 'exact URLs, money first, up to 20' },
-                  est_monthly_value_ils: { type: ['number', 'null'] },
+                  // A plain number, left out when it cannot be estimated: Gemini (which
+                  // runs the strategist in production) rejects type unions like ['number','null'].
+                  est_monthly_value_ils: { type: 'number', description: 'estimated ILS per month; leave out when it cannot be defended from the data' },
                   value_method:          { type: 'string' },
                   effort:                { type: 'string', enum: ['low', 'medium', 'high'] },
                   fix:                   { type: 'string' },
