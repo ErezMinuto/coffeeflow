@@ -42,6 +42,18 @@ async function db(path, init = {}) {
   return text ? JSON.parse(text) : null
 }
 
+/** Every row of a query, 1,000 at a time: PostgREST caps one response at its max-rows (1,000). */
+async function dbAll(path, { pageSize = 1000, maxRows = 200000 } = {}) {
+  const out = []
+  for (;;) {
+    const sep = path.includes('?') ? '&' : '?'
+    const rows = await db(`${path}${sep}limit=${pageSize}&offset=${out.length}`)
+    out.push(...(rows ?? []))
+    if (!rows || rows.length < pageSize) return out
+    if (out.length >= maxRows) throw new Error(`more than ${maxRows} rows for ${path.split('?')[0]}`)
+  }
+}
+
 async function get(url, { timeoutMs = 20000 } = {}) {
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
@@ -120,7 +132,7 @@ async function pageSpeed(url, page_type) {
 async function speedTargets(pages) {
   const byPath = new Map(pages.filter((p) => p.status === 200).map((p) => [new URL(p.url).pathname, p]))
   const since = new Date(Date.now() - 28 * 864e5).toISOString().slice(0, 10)
-  const rows = await db(`ga4_pages_daily?select=page_path,sessions&channel_group=eq.Organic%20Search&date=gte.${since}&limit=20000`).catch(() => [])
+  const rows = await dbAll(`ga4_pages_daily?select=page_path,sessions&channel_group=eq.Organic%20Search&date=gte.${since}&order=date,page_path`).catch(() => [])
   const sessions = new Map()
   for (const r of rows ?? []) sessions.set(r.page_path, (sessions.get(r.page_path) ?? 0) + (r.sessions ?? 0))
   const best = new Map()
@@ -137,7 +149,7 @@ async function speedTargets(pages) {
 async function inspectTargets(pages) {
   const cats = pages.filter((p) => p.page_type === 'category' && p.status === 200).map((p) => p.url)
   const since = new Date(Date.now() - 28 * 864e5).toISOString().slice(0, 10)
-  const rows = await db(`google_search_console?select=page,clicks&keyword=eq.__page__&date=gte.${since}&limit=20000`).catch(() => [])
+  const rows = await dbAll(`google_search_console?select=page,clicks&keyword=eq.__page__&date=gte.${since}&order=date,page`).catch(() => [])
   const clicks = new Map()
   for (const r of rows ?? []) if (r.page) clicks.set(r.page, (clicks.get(r.page) ?? 0) + (r.clicks ?? 0))
   const top = [...clicks].sort((a, b) => b[1] - a[1]).map(([u]) => u)
