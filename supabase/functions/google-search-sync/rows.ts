@@ -125,3 +125,100 @@ export function syncWindow(body: unknown, now = Date.now()): { startDate: string
   if (span > MAX_WINDOW_DAYS) return { error: `window is ${span} days, at most ${MAX_WINDOW_DAYS} per run` }
   return { startDate: s, endDate: e }
 }
+
+// ── Search + page (SEO agent Phase 1) ───────────────────────────────────────
+// One call per window: dimensions [query, page], summed over QUERY_PAGE_DAYS,
+// so every search is tied to the page that ranks for it. 'current' ends
+// yesterday; 'previous' is the window before it, for week-on-week losses.
+
+export const QUERY_PAGE_DAYS = 28
+
+export interface QueryPageRow {
+  period_end:  string
+  period_days: number
+  query:       string
+  page:        string
+  clicks:      number
+  impressions: number
+  ctr:         number
+  position:    number
+  synced_at:   string
+}
+
+export function queryPageWindow(which: unknown, now = Date.now()): { startDate: string; endDate: string } | { error: string } {
+  const back = which === 'previous' ? QUERY_PAGE_DAYS : which === 'current' || which == null ? 0 : -1
+  if (back < 0) return { error: "window must be 'current' or 'previous'" }
+  const end = now - DAY - back * DAY
+  return { startDate: iso(end - (QUERY_PAGE_DAYS - 1) * DAY), endDate: iso(end) }
+}
+
+export function toQueryPageRows(rows: GscApiRow[], periodEnd: string, syncedAt: string): QueryPageRow[] {
+  const byKey = new Map<string, QueryPageRow>()
+  for (const r of rows) {
+    const [query, page] = (r.keys ?? []) as [string, string]
+    if (typeof query !== 'string' || typeof page !== 'string' || !query || !page) continue
+    byKey.set(`${query}\u0000${page}`, {
+      period_end: periodEnd, period_days: QUERY_PAGE_DAYS, query, page,
+      clicks: Math.round(r.clicks ?? 0), impressions: Math.round(r.impressions ?? 0),
+      ctr: r.ctr ?? 0, position: r.position ?? 0, synced_at: syncedAt,
+    })
+  }
+  return [...byKey.values()]
+}
+
+// ── URL Inspection (SEO agent Phase 1) ──────────────────────────────────────
+// Google's own view of a page: indexed or not, why, and which canonical it
+// chose. Quota is 2,000 inspections a day per site; the weekly job inspects
+// only the pages that earn money.
+
+export const INSPECT_MAX_URLS = 60
+
+export interface InspectionRow {
+  url:              string
+  verdict:          string | null
+  coverage_state:   string | null
+  indexing_state:   string | null
+  robots_txt_state: string | null
+  page_fetch_state: string | null
+  google_canonical: string | null
+  user_canonical:   string | null
+  last_crawl_time:  string | null
+  rich_results:     unknown
+  error:            string | null
+}
+
+// deno-lint-ignore no-explicit-any
+export function toInspectionRow(url: string, body: any): InspectionRow {
+  const r = body?.inspectionResult?.indexStatusResult ?? {}
+  const s = (v: unknown) => (typeof v === 'string' && v ? v : null)
+  return {
+    url,
+    verdict:          s(r.verdict),
+    coverage_state:   s(r.coverageState),
+    indexing_state:   s(r.indexingState),
+    robots_txt_state: s(r.robotsTxtState),
+    page_fetch_state: s(r.pageFetchState),
+    google_canonical: s(r.googleCanonical),
+    user_canonical:   s(r.userCanonical),
+    last_crawl_time:  s(r.lastCrawlTime),
+    rich_results:     body?.inspectionResult?.richResultsResult ?? null,
+    error:            null,
+  }
+}
+
+/** Only absolute https URLs on the site itself, deduped, capped. */
+export function cleanInspectUrls(input: unknown, siteUrl: string, max = INSPECT_MAX_URLS): string[] {
+  if (!Array.isArray(input)) return []
+  let host = ''
+  try { host = new URL(siteUrl).host } catch { return [] }
+  const out = new Set<string>()
+  for (const u of input) {
+    if (typeof u !== 'string') continue
+    try {
+      const x = new URL(u)
+      if (x.protocol === 'https:' && x.host === host) out.add(x.href)
+    } catch { /* skip */ }
+    if (out.size >= max) break
+  }
+  return [...out]
+}

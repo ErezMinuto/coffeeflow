@@ -14,6 +14,13 @@
  * Requires the OAuth token to have scope: https://www.googleapis.com/auth/webmasters.readonly
  * User must reconnect Google after this scope was added.
  *
+ * Two more modes for the SEO agent's weekly audit (build plan, Phase 1), run
+ * by .github/workflows/seo-audit-weekly.yml:
+ *   { "mode": "query_page", "window": "current" | "previous" }
+ *       clicks/impressions per (search, page) summed over 28 days → gsc_query_page
+ *   { "mode": "inspect", "urls": ["https://www.minuto.co.il/...", ...] }
+ *       Google's index status per URL (URL Inspection API, max 60) → gsc_url_inspection
+ *
  * Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  * (uses same oauth_tokens row as google-sync — same refresh token, different scope)
  */
@@ -21,7 +28,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { forEachGscPage, syncWindow, toDbRows, upsertInBatches, type GscApiRow, type GscDbRow } from './rows.ts'
+import {
+  chunk, cleanInspectUrls, forEachGscPage, queryPageWindow, syncWindow, toDbRows, toInspectionRow, toQueryPageRows, upsertInBatches,
+  type GscApiRow, type GscDbRow,
+} from './rows.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -57,7 +67,9 @@ serve(async (req) => {
   const startedAt = new Date().toISOString()
   let records = 0
 
-  const win = syncWindow(await req.json().catch(() => ({})))
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>
+  const mode = body.mode === 'query_page' || body.mode === 'inspect' ? body.mode : 'daily'
+  const win = mode === 'daily' ? syncWindow(body) : mode === 'query_page' ? queryPageWindow(body.window) : { startDate: '', endDate: '' }
   if ('error' in win) {
     return new Response(JSON.stringify({ error: win.error }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
   }
@@ -83,6 +95,32 @@ serve(async (req) => {
     // Site URL — stored as Supabase secret, fallback to env
     const siteUrl = Deno.env.get('GOOGLE_SITE_URL') || 'https://www.minuto.co.il'
     const encodedSite = encodeURIComponent(siteUrl)
+
+    if (mode === 'inspect') {
+      // Google's index status for each URL. Stops early rather than run into
+      // the 150 s gateway limit; the reply says how many were done.
+      const urls = cleanInspectUrls(body.urls, siteUrl)
+      if (!urls.length) throw new Error('inspect needs urls: absolute https URLs on the site')
+      const deadline = Date.now() + 110_000
+      const rows = []
+      for (const url of urls) {
+        if (Date.now() > deadline) break
+        const res = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inspectionUrl: url, siteUrl }),
+        })
+        const j = await res.json().catch(() => ({}))
+        rows.push(res.ok ? toInspectionRow(url, j) : { ...toInspectionRow(url, {}), error: `HTTP ${res.status}: ${String(j?.error?.message ?? '').slice(0, 300)}` })
+      }
+      for (const batch of chunk(rows, 200)) {
+        const { error } = await supabase.from('gsc_url_inspection').insert(batch)
+        if (error) throw new Error(`gsc_url_inspection insert failed: ${error.message}`)
+      }
+      const failed = rows.filter((r) => r.error).length
+      await supabase.from('sync_log').insert({ platform: 'google_search_inspect', status: failed === rows.length ? 'error' : 'success', records: rows.length, started_at: startedAt, finished_at: new Date().toISOString(), ...(failed ? { error_msg: `${failed} of ${rows.length} inspections failed` } : {}) })
+      return new Response(JSON.stringify({ success: failed < rows.length, mode, records: rows.length, failed, requested: urls.length }), { headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
 
     console.log(`Fetching GSC data for ${siteUrl} from ${startDate} to ${endDate}`)
 
@@ -113,6 +151,23 @@ serve(async (req) => {
     const upsert = (batch: GscDbRow[]) =>
       supabase.from('google_search_console').upsert(batch, { onConflict: 'date,keyword,page' })
     const syncedAt = new Date().toISOString()
+
+    if (mode === 'query_page') {
+      // Every (search, page) pair over the window, summed. Replaces that
+      // window's rows so a re-run never leaves stale pairs behind.
+      const syncedAtQp = new Date().toISOString()
+      const { error: delErr } = await supabase.from('gsc_query_page').delete().eq('period_end', endDate).eq('period_days', 28)
+      if (delErr) throw new Error(`gsc_query_page clear failed: ${delErr.message}`)
+      await forEachGscPage(queryPage(['query', 'page']), async (page) => {
+        for (const batch of chunk(toQueryPageRows(page, endDate, syncedAtQp), 1000)) {
+          const { error } = await supabase.from('gsc_query_page').upsert(batch, { onConflict: 'period_end,period_days,query,page' })
+          if (error) throw new Error(`gsc_query_page upsert failed after ${records} rows: ${error.message}`)
+          records += batch.length
+        }
+      })
+      await supabase.from('sync_log').insert({ platform: 'google_search_query_page', status: 'success', records, started_at: startedAt, finished_at: new Date().toISOString() })
+      return new Response(JSON.stringify({ success: true, mode, records, start_date: startDate, end_date: endDate }), { headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
 
     // Query 1: every keyword (query + date dimensions)
     await forEachGscPage(queryPage(['query', 'date']), async (page) => {

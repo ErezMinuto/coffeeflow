@@ -1,0 +1,13 @@
+{
+  "name": "minuto-seo-audit",
+  "private": true,
+  "type": "module",
+  "description": "Weekly site crawl for the SEO agent audit (see crawl.mjs)",
+  "scripts": {
+    "crawl": "node crawl.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "node-html-parser": "6.1.13"
+  }
+}

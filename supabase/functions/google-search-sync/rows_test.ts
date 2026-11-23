@@ -1,5 +1,5 @@
 // deno run supabase/functions/google-search-sync/rows_test.ts
-import { chunk, dedupeByKey, forEachGscPage, syncWindow, toDbRows, upsertInBatches, MAX_WINDOW_DAYS, type GscApiRow, type GscDbRow } from './rows.ts'
+import { chunk, cleanInspectUrls, dedupeByKey, forEachGscPage, queryPageWindow, syncWindow, toDbRows, toInspectionRow, toQueryPageRows, upsertInBatches, MAX_WINDOW_DAYS, QUERY_PAGE_DAYS, type GscApiRow, type GscDbRow } from './rows.ts'
 import { selectAll } from '../_shared/select_all.ts'
 import { fetchGscKeywordTotals } from '../_shared/gsc_totals.ts'
 import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
@@ -156,6 +156,33 @@ check('marketing_intel: top_by_clicks sorted', sc.top_by_clicks[0].clicks === 6)
 const res = await fetchKeywordResearch(fakeDb)
 check('keyword_research: every keyword + ads rows', res.rows.filter(r => r.source === 'search_console').length === 2500 && res.rows.some(r => r.source === 'google_ads'), String(res.rows.length))
 check('keyword_research: gsc_as_of = newest last_date', res.gsc_as_of === '2026-11-04', String(res.gsc_as_of))
+
+// ── query + page windows (SEO agent Phase 1)
+{
+  const now = Date.parse('2026-11-24T08:00:00Z')
+  const cur = queryPageWindow('current', now) as { startDate: string; endDate: string }
+  const prev = queryPageWindow('previous', now) as { startDate: string; endDate: string }
+  check('current window ends yesterday', cur.endDate === '2026-11-23', cur.endDate)
+  check(`current window is ${QUERY_PAGE_DAYS} days`, (Date.parse(cur.endDate) - Date.parse(cur.startDate)) / 864e5 + 1 === QUERY_PAGE_DAYS)
+  check('previous window ends the day before current starts', Date.parse(prev.endDate) + 864e5 === Date.parse(cur.startDate), `${prev.endDate} / ${cur.startDate}`)
+  check('bad window refused', 'error' in queryPageWindow('last-year', now))
+  const qp = toQueryPageRows([
+    { keys: ['פולי קפה', 'https://www.minuto.co.il/a/'], clicks: 3.4, impressions: 99.6, ctr: 0.03, position: 6.1 },
+    { keys: ['פולי קפה', 'https://www.minuto.co.il/a/'], clicks: 5, impressions: 100 },
+    { keys: ['', 'x'] }, { keys: ['q'] },
+  ], cur.endDate, T)
+  check('query+page rows deduped and incomplete keys dropped', qp.length === 1 && qp[0].clicks === 5, JSON.stringify(qp))
+  check('query+page row carries its window', qp[0].period_end === '2026-11-23' && qp[0].period_days === QUERY_PAGE_DAYS)
+}
+// ── URL inspection
+{
+  const r = toInspectionRow('https://www.minuto.co.il/x/', { inspectionResult: { indexStatusResult: { verdict: 'PASS', coverageState: 'Submitted and indexed', googleCanonical: 'https://www.minuto.co.il/x/' } } })
+  check('inspection verdict read', r.verdict === 'PASS' && r.coverage_state === 'Submitted and indexed')
+  check('inspection empty body = nulls', toInspectionRow('u', {}).verdict === null)
+  const urls = cleanInspectUrls(['https://www.minuto.co.il/a/', 'https://www.minuto.co.il/a/', 'http://www.minuto.co.il/b/', 'https://evil.example/c', 42], 'https://www.minuto.co.il', 60)
+  check('inspect urls: own https host only, deduped', urls.length === 1 && urls[0] === 'https://www.minuto.co.il/a/', JSON.stringify(urls))
+  check('inspect urls capped', cleanInspectUrls(Array.from({ length: 80 }, (_, i) => `https://www.minuto.co.il/p${i}/`), 'https://www.minuto.co.il', 60).length === 60)
+}
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')
