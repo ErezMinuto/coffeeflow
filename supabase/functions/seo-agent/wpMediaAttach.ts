@@ -13,6 +13,14 @@
 //
 // Caller is responsible for: fetching WP credentials from env, choosing
 // the post_id, providing the image URL, and a sensible titleHint string.
+//
+// Step 2 replaces the post's featured image, so the previous media id is
+// saved to public.site_change_log first (undo puts it back). If that backup
+// can't be saved the post is left untouched and this throws; the uploaded
+// file just stays unused in the media library.
+
+import { beginChange, finishChange, type ChangeContext } from '../_shared/site_change_log.ts'
+import { readPost, siteEnv } from '../_shared/site_io.ts'
 
 export async function attachFeaturedImage(args: {
   wpUrl:        string
@@ -21,6 +29,8 @@ export async function attachFeaturedImage(args: {
   postId:       number
   imageUrl:     string
   titleHint:    string
+  sourceFn:     string          // edge function making the change (for the change log)
+  change?:      ChangeContext
 }): Promise<number> {
   const auth = 'Basic ' + btoa(`${args.username}:${args.appPassword}`)
 
@@ -60,8 +70,22 @@ export async function attachFeaturedImage(args: {
   }
   const mediaId = mediaJson.id
 
-  // 4. Update the existing post with featured_media. WP REST uses POST
-  //    (not PUT) on the /posts/{id} endpoint for partial updates.
+  // 4. Back up the current featured image, then update the post with
+  //    featured_media. WP REST uses POST (not PUT) on /posts/{id} for
+  //    partial updates.
+  const env = siteEnv({ wpUrl: args.wpUrl, wpUser: args.username, wpPass: args.appPassword })
+  const current = await readPost(env, args.postId)
+  const changeId = await beginChange({
+    target_type:   'post_featured_image',
+    target_id:     args.postId,
+    target_url:    current.link || null,
+    target_title:  current.title || null,
+    before:        current.featured_media,
+    before_source: 'wp_rest',
+    after:         mediaId,
+    source_fn:     args.sourceFn,
+    ctx:           args.change ?? {},
+  })
   const postRes = await fetch(`${args.wpUrl}/wp-json/wp/v2/posts/${encodeURIComponent(String(args.postId))}`, {
     method:  'POST',
     headers: { Authorization: auth, 'Content-Type': 'application/json' },
@@ -69,7 +93,10 @@ export async function attachFeaturedImage(args: {
   })
   if (!postRes.ok) {
     const errText = await postRes.text().catch(() => '')
-    throw new Error(`WP post update ${postRes.status}: ${errText.slice(0, 300)}`)
+    const error = `WP post update ${postRes.status}: ${errText.slice(0, 300)}`
+    await finishChange(changeId, { ok: false, error })
+    throw new Error(error)
   }
+  await finishChange(changeId, { ok: true })
   return mediaId
 }

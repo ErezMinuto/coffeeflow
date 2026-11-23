@@ -42,42 +42,62 @@ All AI assistants working on this project MUST follow the rules below.
 | Environment | Project ID | URL |
 |-------------|------------|-----|
 | **Production** | `ytydgldyeygpzmlxvpvb` | `https://ytydgldyeygpzmlxvpvb.supabase.co` |
-| **Dev** | `emnijrlfiuwbddjahkzn` | `https://emnijrlfiuwbddjahkzn.supabase.co` |
 
-> **Rule for AI assistants**: Always deploy to **prod** only when explicitly asked. Never run migrations against prod directly — always apply to dev first.
+There is **no dev Supabase project**. The old dev project (`emnijrlfiuwbddjahkzn`) is gone:
+production is the only Supabase project on the account (checked 2026-11-23). Some files still mention it (the `dev`
+target in `.github/workflows/apply-migration.yml`, `.env.local.example`, the comment at the top
+of `scripts/deploy-functions.sh`, `scripts/setup-dev-db.sh`). Those dev-only parts no longer work; the
+workflow itself still works and is how migrations reach production (`target: prod`).
+
+> **Rule for AI assistants**: Deploy to prod only when explicitly asked. Every database and edge
+> function change lands on production, so make it safe there instead of "testing on dev first":
+> - **Migrations are additive only** — new tables, columns, functions, policies. Never drop,
+>   rename or rewrite existing objects or data without the developer's explicit OK. Apply only
+>   after the PR is reviewed, via Actions → Apply database migration (`target: prod`).
+> - **New behaviour starts dry-run.** It reports what it would change without writing; then it
+>   is tried on a single test item (a draft post, a hidden product); then switched on with a
+>   setting (e.g. in `ops_profile`) that can turn it off at once.
+> - **Every write to the live site keeps the old value** so it can be undone: read the current
+>   value, `beginChange()`, write, `finishChange()` (`_shared/site_change_log.ts`, readers and
+>   writers in `_shared/site_io.ts`, table `site_change_log`). No backup → no write.
+> - **The admin chat never writes live content itself.** Its tools file a `proposed` change; the
+>   owner approves, rejects or undoes it in the dashboard's approvals inbox
+>   (`handle-seo-chat` actions `site_change.*`, admin Clerk token only, never the service key).
 
 ---
 
-## Dev Environment
+## Environments
 
 ### Architecture
 ```
 main branch    →  Vercel PRODUCTION  →  Supabase PROD
-feature branch →  Vercel PREVIEW     →  Supabase DEV
+other branches →  no deployment      (preview/** branches → Vercel PREVIEW, see below)
 ```
 
 ### Local Setup (for each developer)
 1. Copy `.env.local.example` → `.env.local`
-2. Fill in the **dev** Supabase URL + anon key (get from project owner)
-3. Run `npm start` — app runs locally pointing at dev DB
-
-### First-time Dev DB Setup
-```bash
-export DEV_DB_URL="postgresql://postgres:<password>@db.<dev-project-id>.supabase.co:5432/postgres"
-./scripts/setup-dev-db.sh
-```
-This applies all migrations and seeds test data.
+2. Fill in the Supabase URL + anon key (get from project owner). With no dev project these are
+   **production** values — the local app reads and writes real data.
+3. Run `npm start`
 
 ### Vercel Preview Deployments
-- In Vercel → Project Settings → Environment Variables:
-  - `REACT_APP_SUPABASE_URL` + `REACT_APP_SUPABASE_ANON_KEY` set for **Preview** → dev project values
-  - Same vars set for **Production** → prod project values
-- Every feature branch pushed to GitHub auto-gets a preview URL hitting the dev DB
+- Two Vercel projects build from this repo: **coffeeflow-thaf** (the CoffeeFlow app, repo root)
+  and **dashboard** (the marketing dashboard, `dashboard/`). A push that builds counts twice
+  toward Vercel's daily deployment limit.
+- So only `main` deploys. Pushes to any other branch build nothing (`git.deploymentEnabled`
+  in `vercel.json` and `dashboard/vercel.json`). To get a preview URL, push to a branch named
+  `preview/<something>`.
+- Finish and test work before pushing, push once per PR where possible, and merge to `main`
+  at most once a day.
+- Preview builds are **not isolated**: their Supabase variables either point at production or at
+  the deleted dev project (then the preview cannot load data). Check in Vercel → Project
+  Settings → Environment Variables before relying on a preview.
 
 ### Seed Data
 - File: `supabase/seed.sql`
 - Contains: 6 origins, 3 roast profiles, 6 products, 3 employees
-- Replace `'DEV_USER_ID'` with actual Clerk user ID before running
+- Written for the old dev database. **Do not run it**: with no dev project, the only database is
+  production, and it would insert test rows into real tables.
 
 ---
 
@@ -169,7 +189,7 @@ with the differing files. Reconcile it, then Actions → Deploy edge functions �
 Run workflow with the function names (and `force` once checked by hand).
 
 Do not deploy by hand after a merge — the workflow already did. The script
-below is for emergencies and for dev (`PROJECT_REF=emnijrlfiuwbddjahkzn`):
+below is for emergencies only:
 
 ```bash
 ./scripts/deploy-functions.sh coffee-bot mission-worker   # named functions

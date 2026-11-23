@@ -77,9 +77,16 @@ export function critiqueOn(cfg: LoopConfig, actionType: string): boolean {
   return LOOP_IMPLEMENTED.has(actionType) && cfg.critique[actionType as LoopActionType] === true
 }
 
+/** Every recommendation waits for Erez's own approval until this date,
+ *  whatever ops_profile says: the first month of the rebuilt SEO agent runs
+ *  on manual approval only (SEO agent build plan, Phase 0). Moving the date
+ *  is a code change, so it goes through a reviewed pull request. */
+export const MANUAL_APPROVAL_UNTIL = '2027-02-01T00:00:00Z'
+
 /** Auto-approve needs the critic on too: skipping the planning gate is only
  *  acceptable because a critic stands between the draft and Erez. */
-export function autoApproveOn(cfg: LoopConfig, actionType: string): boolean {
+export function autoApproveOn(cfg: LoopConfig, actionType: string, now: Date = new Date()): boolean {
+  if (now.getTime() < Date.parse(MANUAL_APPROVAL_UNTIL)) return false
   return critiqueOn(cfg, actionType) && cfg.auto_approve[actionType as LoopActionType] === true
 }
 

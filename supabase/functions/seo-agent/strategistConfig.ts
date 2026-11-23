@@ -37,8 +37,10 @@ export const ADVANCE_SOFT_BUDGET_MS = 110_000
 // checks month-to-date spend in agent_cost_ledger against this and skips +
 // alerts if exceeded. The budget gates FREQUENCY (skip a run), never depth —
 // each run that does fire still thinks fully.
-export const BUDGET_CEILING_USD = 150
-export const BUDGET_TARGET_USD = 90
+export const BUDGET_CEILING_USD = 250   // raised from 150 for weekly full-site SEO audits (owner, 2026-11-23)
+export const BUDGET_TARGET_USD = 150
+// health-watchdog warns the owner once spend passes this share of the ceiling ($200).
+export const BUDGET_ALERT_SHARE = 0.8
 
 // ── Token pricing ────────────────────────────────────────────────────────────
 // Moved to pricing.ts so callClaude can price its own calls without an import

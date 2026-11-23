@@ -34,6 +34,9 @@ import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { buildApprovalDigest, renderApprovalDigest } from '../_shared/approval_digest.ts'
 import { artisanCoverageFindings } from './artisan_coverage.ts'
+import { budgetFinding } from './budget.ts'
+import { getMonthToDateSpendUsd } from '../seo-agent/db.ts'
+import { BUDGET_ALERT_SHARE, BUDGET_CEILING_USD } from '../seo-agent/strategistConfig.ts'
 import {
   chatLoopFindings, edgeCrashFindings, visualQaFindings,
   CRASH_WINDOW_HOURS, VISUAL_WINDOW_HOURS,
@@ -229,7 +232,7 @@ const EXPECTED_FRESH_DATA: Array<{
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
   category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
-            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk' | 'strategist_loop_stuck'
+            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk' | 'strategist_loop_stuck' | 'budget'
   message:  string
   context?: Record<string, unknown>
 }
@@ -511,6 +514,14 @@ serve(runLogged('health-watchdog', async (req, _log) => {
     }
   } catch (e: any) {
     console.warn(`[health-watchdog] artisan coverage check threw: ${e?.message ?? e}`)
+  }
+
+  // ── 1f. Monthly AI spend — warn at 80% of the cap, before a run is skipped ──
+  try {
+    const f = budgetFinding(await getMonthToDateSpendUsd(supabase), BUDGET_CEILING_USD, BUDGET_ALERT_SHARE)
+    if (f) findings.push(f)
+  } catch (e: any) {
+    console.warn(`[health-watchdog] budget check threw: ${e?.message ?? e}`)
   }
 
   // ── 2. Task failure rate (last 24h) ───────────────────────────────────

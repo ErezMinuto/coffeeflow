@@ -17,6 +17,12 @@
  *     applied: [{ find, replace, count }, ...],
  *     description_length_before, description_length_after, written: true }
  *
+ * Optional "change": { change_id?, requested_by?, reason?, approved_by?, undo_of? }
+ * (see _shared/site_change_log.ts). Every write saves the description it
+ * replaces in public.site_change_log first; no backup → no write. With
+ * change.undo_of, "description" (the whole text) may be sent instead of
+ * replacements, to restore what a logged change replaced.
+ *
  * On dry_run=true, returns the same shape with written:false and includes
  * description_after for inspection — no WC PUT is issued.
  *
@@ -30,6 +36,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
+import { beginChange, finishChange, parseChangeContext } from "../_shared/site_change_log.ts";
+import { readProduct, siteEnv } from "../_shared/site_io.ts";
 
 const WOO_URL = (Deno.env.get("WOO_URL") || "").replace(/\/+$/, "");
 const WOO_KEY = Deno.env.get("WOO_KEY") || "";
@@ -135,7 +143,7 @@ serve(async (req) => {
     return json(500, { error: "WOO_URL, WOO_KEY, or WOO_SECRET not configured" });
   }
 
-  let body: { product_id?: unknown; replacements?: unknown; dry_run?: unknown };
+  let body: { product_id?: unknown; replacements?: unknown; dry_run?: unknown; description?: unknown; change?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -147,7 +155,11 @@ serve(async (req) => {
     return json(400, { error: "product_id must be a positive integer" });
   }
 
-  const replacements = validateReplacements(body.replacements);
+  const ctx = parseChangeContext(body.change);
+  // A whole description (instead of find/replace) is accepted only to undo a
+  // logged change: it restores the exact text that change replaced.
+  const restoreTo = ctx.undo_of && typeof body.description === "string" ? body.description : null;
+  const replacements = restoreTo === null ? validateReplacements(body.replacements) : [];
   if (!replacements) {
     return json(400, { error: "replacements must be a non-empty array of { find, replace } objects (find non-empty string)" });
   }
@@ -162,7 +174,8 @@ serve(async (req) => {
   }
 
   const lengthBefore = product.description.length;
-  const { result: newDesc, counts } = applyReplacements(product.description, replacements);
+  const { result: replaced, counts } = applyReplacements(product.description, replacements);
+  const newDesc = restoreTo ?? replaced;
   const applied = replacements.map((r, i) => ({ find: r.find, replace: r.replace, count: counts[i] }));
 
   if (dryRun) {
@@ -192,15 +205,42 @@ serve(async (req) => {
     });
   }
 
+  // Back up the description this write replaces. No backup → no write.
+  const env = siteEnv({ wpUrl: WOO_URL, wooKey: WOO_KEY, wooSecret: WOO_SEC });
+  let changeId: string;
+  try {
+    changeId = await beginChange({
+      target_type:   "product_description",
+      target_id:     productId,
+      target_title:  product.name || null,
+      before:        product.description,
+      before_source: "woo_rest",
+      after:         newDesc,
+      source_fn:     "update-product-description",
+      ctx,
+    });
+  } catch (e) {
+    return json(502, { error: `Not written: could not back up the current description first (${(e as Error).message})` });
+  }
+
   let writeRes: { id: number; name: string };
   try {
     writeRes = await writeDescription(productId, newDesc);
   } catch (e) {
-    return json(502, { error: `Write failed: ${(e as Error).message}` });
+    const error = `Write failed: ${(e as Error).message}`;
+    await finishChange(changeId, { ok: false, error });
+    return json(502, { error, change_id: changeId });
   }
+
+  // Record the description as WooCommerce stored it, so a later undo compares like with like.
+  let stored: unknown = undefined;
+  try { stored = (await readProduct(env, productId)).description; } catch { /* keep `after` as sent */ }
+  const logged = await finishChange(changeId, { ok: true, after: stored });
 
   return json(200, {
     success: true,
+    change_id: changeId,
+    ...(logged.logged ? {} : { change_log_warning: logged.error }),
     product_id: writeRes.id,
     product_name: writeRes.name || product.name,
     applied,

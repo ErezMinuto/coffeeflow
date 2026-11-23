@@ -21,7 +21,10 @@
 //     messages array.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { forbidden, hasRole } from '../_shared/role_caller.ts'
+import { callerRole, forbidden, hasRole, jwtSub } from '../_shared/role_caller.ts'
+import { proposeChange } from '../_shared/site_change_log.ts'
+import { readPost, siteEnv } from '../_shared/site_io.ts'
+import { SITE_CHANGE_ACTIONS, applyDirect, handleSiteChangeAction, resolveWpId } from './site_changes.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
 import { applyPlannedShot, withIgDestination } from '../_shared/shot_library.ts'
 import {
@@ -211,7 +214,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'set_post_faq',
-    description: "Write a FAQ (questions + answers) onto a blog post or product so it renders an accordion AND emits FAQPage JSON-LD (rich-result-eligible structured data) — the minuto-product-faq plugin reads it. Use when Erez asks to add/refresh an FAQ on an article (e.g. the grinder posts) for technical SEO. You author the Q&A yourself in Hebrew following brand voice (gender-inclusive, no em-dashes, no disparaging other gear/brands, 'אלו ש...' not 'מי ש...'). ALWAYS show Erez the exact Q&A you intend to write and get a one-line confirmation BEFORE calling — this writes to the LIVE page immediately (no draft state). Pass post_url (Erez usually pastes a link) or post_id. Passing an empty faq array CLEARS the FAQ.",
+    description: "Write a FAQ (questions + answers) onto a blog post or product so it renders an accordion AND emits FAQPage JSON-LD (rich-result-eligible structured data) — the minuto-product-faq plugin reads it. Use when Erez asks to add/refresh an FAQ on an article (e.g. the grinder posts) for technical SEO. You author the Q&A yourself in Hebrew following brand voice (gender-inclusive, no em-dashes, no disparaging other gear/brands, 'אלו ש...' not 'מי ש...'). This does NOT write to the live page: it files the FAQ as a proposal that Erez approves (or rejects) in the Approvals inbox, and it goes live only then. Show him the Q&A you filed. Pass post_url (Erez usually pastes a link) or post_id. Passing an empty faq array proposes CLEARING the FAQ.",
     input_schema: {
       type: 'object',
       properties: {
@@ -235,7 +238,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'approve_post_faq',
-    description: "Approve a technical_seo (faq_injection) task's PROPOSED FAQ and write it to the live page. seo-worker-techseo authors FAQ proposals for ranking articles but never writes them live — they sit with review_required=true until you approve here. Use when Erez says 'approve the FAQ for task X' / 'publish that FAQ'. ALWAYS show Erez the proposed Q&A (from get_task_details → result_data.proposed_faq) and get an explicit go BEFORE calling — this writes live. Optionally pass edited_faq to override the proposal with Erez's edits.",
+    description: "File a technical_seo (faq_injection) task's PROPOSED FAQ for Erez's approval in the Approvals inbox (it does not write live — only his click there does). seo-worker-techseo authors FAQ proposals for ranking articles but never writes them live — they sit with review_required=true until you approve here. Use when Erez wants to ship one, especially with edits: pass edited_faq with his final wording. He can also approve the task directly in the Approvals inbox without you.",
     input_schema: {
       type: 'object',
       properties: {
@@ -468,7 +471,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'edit_post',
-    description: "SMALL-EDIT tool ONLY — for inserting/replacing a SHORT span in an existing post: add a products section to a draft that forgot one, fix/add links, tweak a paragraph, append a CTA, fix a typo. The post keeps its status (drafts stay drafts; published stays published). You read_post first, modify in place, then write back the full HTML (it replaces wholesale). ⛔ DO NOT use this to WRITE or REWRITE a full article body. A chat turn cannot fit article-length generation — attempting it gets your output cut off at the length cap and the write is REFUSED (nothing saved). For writing a thin/empty draft up into a full article, or rewriting an article end-to-end, call queue_task('text_generation', {...}) instead — the writer worker owns long-form and returns a NEW draft. NEVER changes publish status (REFUSES any status field). For PUBLISHED posts confirm with Erez in one sentence first; DRAFTS need no confirmation. Returns {id, link, status, modified, content_length}.",
+    description: "SMALL-EDIT tool ONLY — for inserting/replacing a SHORT span in an existing post: add a products section to a draft that forgot one, fix/add links, tweak a paragraph, append a CTA, fix a typo. The post keeps its status (drafts stay drafts; published stays published). You read_post first, modify in place, then write back the full HTML (it replaces wholesale). ⛔ DO NOT use this to WRITE or REWRITE a full article body. A chat turn cannot fit article-length generation — attempting it gets your output cut off at the length cap and the write is REFUSED (nothing saved). For writing a thin/empty draft up into a full article, or rewriting an article end-to-end, call queue_task('text_generation', {...}) instead — the writer worker owns long-form and returns a NEW draft. NEVER changes publish status (REFUSES any status field). DRAFTS change immediately. A PUBLISHED (or scheduled/private) post is NOT changed: the edit is filed for Erez's approval in the Approvals inbox and goes live only when he approves it. Every edit is backed up and can be undone. Returns {id, change_id, status, note}.",
     input_schema: {
       type: 'object',
       properties: {
@@ -1084,38 +1087,43 @@ async function executeTool(
       }
 
       case 'set_post_faq': {
+        // Files a proposal; the owner approves it in the approvals inbox. The
+        // chat never writes a live FAQ itself (SEO agent build plan, Phase 0).
         const faqInput = Array.isArray(input.faq) ? input.faq : null
         if (!faqInput) {
           return { ok: false, payload: { error: 'set_post_faq requires faq (array of {q,a}). Empty array clears the FAQ.' } }
         }
         const post_url = typeof input.post_url === 'string' ? input.post_url.trim() : ''
-        const post_id  = typeof input.post_id === 'number' ? input.post_id : undefined
+        let post_id  = typeof input.post_id === 'number' ? Math.floor(input.post_id) : 0
         if (!post_url && !post_id) {
           return { ok: false, payload: { error: 'set_post_faq requires post_url or post_id.' } }
         }
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/set-post-faq`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
-          body:    JSON.stringify({ post_url: post_url || undefined, post_id, faq: faqInput }),
-        })
-        const json = await res.json().catch(() => ({})) as Record<string, unknown>
-        if (!res.ok || json.success !== true) {
-          return { ok: false, payload: { error: `set-post-faq failed (${res.status}): ${(json.error as string) ?? JSON.stringify(json).slice(0, 300)}` } }
-        }
-        return {
-          ok: true,
-          payload: {
-            post_id:    json.post_id,
-            post_type:  json.post_type,
-            post_title: json.post_title,
-            faq_count:  json.faq_count,
-            cleared:    json.cleared === true,
-            note:       'FAQ written to the LIVE page. FAQPage JSON-LD + accordion now render. If WP Rocket caches the page, purge cache to see it immediately.',
-          },
+        if (!post_id) post_id = (await resolveWpId(post_url)) ?? 0
+        if (!post_id) return { ok: false, payload: { error: `could not resolve ${post_url} to a post id.` } }
+        const faq = faqInput
+          .map((p: any) => ({ q: typeof p?.q === 'string' ? p.q.trim() : '', a: typeof p?.a === 'string' ? p.a.trim() : '' }))
+          .filter((p: any) => p.q && p.a)
+        try {
+          const row = await proposeChange({
+            target_type: 'post_faq', target_id: post_id, target_url: post_url || null,
+            after: faq, source_fn: 'handle-seo-chat', requested_by: 'chat',
+            reason: typeof input.reason === 'string' ? input.reason : 'FAQ written in the agent chat',
+          })
+          return {
+            ok: true,
+            payload: {
+              change_id: row.id, status: 'proposed', post_id, faq_count: faq.length, cleared: faq.length === 0,
+              note: 'NOT live yet. Filed for Erez\'s approval in the Approvals inbox (Approvals page). It goes live when he approves it there, and can be undone from there afterwards.',
+            },
+          }
+        } catch (e: any) {
+          return { ok: false, payload: { error: `could not file the FAQ for approval: ${e?.message ?? e}` } }
         }
       }
 
       case 'approve_post_faq': {
+        // The chat can't approve on Erez's behalf any more: this files the
+        // task's FAQ as a proposal for him to approve in the inbox.
         const task_id = String(input.task_id ?? '').trim()
         if (!task_id) return { ok: false, payload: { error: 'task_id required.' } }
         const { data: task, error: loadErr } = await supabase
@@ -1128,12 +1136,7 @@ async function executeTool(
         if (task.task_type !== 'technical_seo') {
           return { ok: false, payload: { error: `task is task_type=${task.task_type}, not technical_seo.` } }
         }
-        const rd = (task.result_data ?? {}) as {
-          proposed_faq?: Array<{ q: string; a: string }>
-          target_post_id?: number
-          target_post_url?: string
-          faq_written?: boolean
-        }
+        const rd = (task.result_data ?? {}) as Record<string, any>
         if (rd.faq_written === true) {
           return { ok: false, payload: { error: 'this task\'s FAQ was already written live. No-op.' } }
         }
@@ -1144,37 +1147,25 @@ async function executeTool(
         if (faq.length === 0) {
           return { ok: false, payload: { error: 'no valid {q,a} pairs to write (proposed_faq empty and no edited_faq supplied).' } }
         }
-        if (!rd.target_post_id && !rd.target_post_url) {
-          return { ok: false, payload: { error: 'task result_data has no target_post_id/url to write to.' } }
-        }
-        // Write live via set-post-faq (same path as the manual tool).
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/set-post-faq`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
-          body:    JSON.stringify({ post_id: rd.target_post_id, post_url: rd.target_post_url, faq }),
-        })
-        const wj = await res.json().catch(() => ({})) as Record<string, unknown>
-        if (!res.ok || wj.success !== true) {
-          return { ok: false, payload: { error: `set-post-faq failed (${res.status}): ${(wj.error as string) ?? JSON.stringify(wj).slice(0, 300)}` } }
-        }
-        // Patch the task: written + clear the review flag.
-        const patched = {
-          ...(task.result_data as Record<string, unknown> ?? {}),
-          faq_written:          true,
-          review_required:      false,
-          written_faq:          faq,
-          approved_via_chat_at: new Date().toISOString(),
-        }
-        await supabase.from('seo_tasks').update({ result_data: patched }).eq('id', task_id)
-        return {
-          ok: true,
-          payload: {
-            task_id,
-            post_id:   wj.post_id,
-            post_title: wj.post_title,
-            faq_count: wj.faq_count,
-            note: 'FAQ written LIVE. If WP Rocket caches the page, purge to see it immediately.',
-          },
+        let target_id = Number(rd.target_post_id) || 0
+        if (!target_id && typeof rd.target_post_url === 'string') target_id = (await resolveWpId(rd.target_post_url)) ?? 0
+        if (!target_id) return { ok: false, payload: { error: 'task result_data has no target post that resolves to an id.' } }
+        try {
+          const row = await proposeChange({
+            target_type: 'post_faq', target_id, target_url: rd.target_post_url ?? null,
+            target_title: rd.article_title ?? null, after: faq, source_fn: 'handle-seo-chat',
+            requested_by: 'chat', reason: `FAQ proposal from technical_seo task ${task_id}${edited ? ' (edited in chat)' : ''}`,
+          })
+          await supabase.from('seo_tasks').update({ result_data: { ...rd, change_id: row.id } }).eq('id', task_id)
+          return {
+            ok: true,
+            payload: {
+              task_id, change_id: row.id, status: 'proposed', faq_count: faq.length,
+              note: 'NOT live yet. Filed for Erez\'s approval in the Approvals inbox. It goes live when he approves it there.',
+            },
+          }
+        } catch (e: any) {
+          return { ok: false, payload: { error: `could not file the FAQ for approval: ${e?.message ?? e}` } }
         }
       }
 
@@ -1317,28 +1308,38 @@ async function executeTool(
           return { ok: false, payload: { error: 'edit_post needs at least one of content or title.' } }
         }
         if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
-        const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
-        const body: Record<string, unknown> = {}
-        if (newContent !== undefined) body.content = newContent
-        if (newTitle !== undefined)   body.title   = newTitle
-        const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${post_id}`, {
-          method:  'POST',  // WP accepts POST for updates on /posts/{id}
-          headers: { Authorization: auth, 'Content-Type': 'application/json' },
-          body:    JSON.stringify(body),
-        })
-        const json = await r.json().catch(() => ({})) as any
-        if (!r.ok) return { ok: false, payload: { error: `WP update HTTP ${r.status}: ${(json?.message ?? JSON.stringify(json)).toString().slice(0, 300)}` } }
+        const fields: { title?: string; content?: string } = {}
+        if (newContent !== undefined) fields.content = newContent
+        if (newTitle !== undefined)   fields.title   = newTitle
+        let post
+        try { post = await readPost(siteEnv(), post_id) } catch (e: any) {
+          return { ok: false, payload: { error: `could not read post ${post_id}: ${e?.message ?? e}` } }
+        }
+        if (post.type !== 'post') return { ok: false, payload: { error: `post ${post_id} is a ${post.type}, not a blog post — edit_post only edits blog posts.` } }
+        // Anyone can see a published (or scheduled / private) post, so a change
+        // to it waits for Erez's approval in the inbox. Drafts change at once.
+        // Both are backed up in the change log and can be undone.
+        if (['publish', 'future', 'private'].includes(post.status)) {
+          try {
+            const row = await proposeChange({
+              target_type: 'post_content', target_id: post_id, target_url: post.link || null,
+              target_title: post.title || null, after: fields, source_fn: 'handle-seo-chat', requested_by: 'chat',
+              reason: typeof input.reason === 'string' ? input.reason : 'post edit from the agent chat',
+            })
+            return { ok: true, payload: { id: post_id, change_id: row.id, status: 'proposed', post_status: post.status,
+              note: 'This post is LIVE, so the edit is NOT applied yet. Filed for Erez\'s approval in the Approvals inbox.' } }
+          } catch (e: any) {
+            return { ok: false, payload: { error: `could not file the edit for approval: ${e?.message ?? e}` } }
+          }
+        }
+        const w = await applyDirect({ target_type: 'post_content', target_id: post_id }, fields,
+          { requested_by: 'chat', approved_by: 'not_required:draft', reason: typeof input.reason === 'string' ? input.reason : 'draft edit from the agent chat' })
+        if (!w.ok) return { ok: false, payload: { error: w.error } }
         return {
           ok: true,
           payload: {
-            id:             json?.id,
-            link:           json?.link,
-            status:         json?.status,
-            modified:       json?.modified,
-            content_length: String(json?.content?.raw ?? json?.content?.rendered ?? '').length,
-            note:           json?.status === 'publish'
-              ? 'You just edited a LIVE post. Changes are visible immediately (WP Rocket cache may need a purge).'
-              : `Draft updated. Still in status='${json?.status}'; admin must click Publish to go live.`,
+            id: post_id, change_id: w.change_id, status: post.status, link: post.link,
+            note: `Draft updated (backed up, can be undone). Still in status='${post.status}'; admin must click Publish to go live.`,
           },
         }
       }
@@ -2075,6 +2076,8 @@ async function executeTool(
             postId:      rd.wp_post_id,
             imageUrl:    target.image_url,
             titleHint:   `seo-banner-attempt-${attemptN}-task-${task_id.slice(0, 8)}`,
+            sourceFn:    'handle-seo-chat',
+            change:      { requested_by: 'chat', reason: `approve_qa_attempt: banner attempt ${attemptN} for task ${task_id}` },
           })
         } catch (e: any) {
           return { ok: false, payload: { error: `WP attach failed: ${e?.message ?? e}` } }
@@ -2526,6 +2529,20 @@ serve(async (req: Request): Promise<Response> => {
   // change system_config and dispatch the fixer, so only an admin may drive it.
   // The gateway's verify_jwt alone still admits the public anon key.
   if (req.method !== 'OPTIONS' && !(await hasRole(req, ['admin']))) return forbidden(CORS_HEADERS)
+  // ── Approve / reject / undo a live site change (no model involved) ────────
+  // Sent by the approvals inbox. Only a signed-in admin's own click counts as
+  // an approval — the service key is refused here, so nothing automated can
+  // approve on the owner's behalf.
+  if (req.method === 'POST') {
+    const b = await req.clone().json().catch(() => ({} as Record<string, unknown>))
+    if (typeof b?.action === 'string' && SITE_CHANGE_ACTIONS.has(b.action)) {
+      const token = (req.headers.get('authorization') ?? '').match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? ''
+      const approver = token ? jwtSub(token) : null
+      if ((await callerRole(req)) !== 'admin' || !approver) return forbidden(CORS_HEADERS)
+      const r = await handleSiteChangeAction(b.action, b as Record<string, unknown>, approver, createSupabase())
+      return jsonResponse(r.body, r.status)
+    }
+  }
   // ── Gemini probe (READ-ONLY diagnostic) ───────────────────────────────────
   // Flipping MODEL_CHAT to Gemini produced success:true with a fallback reply,
   // zero tokens and NO cost-ledger row — i.e. the call threw before logCost.

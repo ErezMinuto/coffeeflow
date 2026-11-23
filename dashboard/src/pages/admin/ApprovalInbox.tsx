@@ -5,21 +5,24 @@
 //   • campaigns                  status='draft'   (email drafts, never sent from here)
 //   • seo_tasks                  result_data.review_required = true (IG posts, visuals, tech SEO)
 //   • strategist_signals         status='open'    (bugs, capability requests, ideas)
+//   • site_change_log            status='proposed' (live site edits filed by the agent chat)
 //
 // Every item can be approved, rejected with a reason, or handed to the agent
 // chat ("guide") with its context prefilled. Rejecting never deletes: rows get a
 // dismissed/declined/archived status or review_required=false plus the reason,
-// so anything can be restored. Publishing an Instagram post is the only action
-// that goes live, and it asks for confirmation first (same call as the task queue).
+// so anything can be restored. Three actions go live, and each asks for
+// confirmation first: publishing an Instagram post, approving a site change, and
+// adding a proposed FAQ to its page. Site changes are backed up and can be undone
+// from the "recent site changes" list at the bottom (SEO agent build plan, Phase 0).
 
 import { toast } from 'sonner'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Send } from 'lucide-react'
+import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Undo2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { PanelHead, RefreshButton, LoadingRows, Empty, Tag } from './seoUi'
 import { ImageLightbox } from '../../components/shared/ImageLightbox'
 
-type Kind = 'rec' | 'campaign' | 'task' | 'signal'
+type Kind = 'rec' | 'campaign' | 'task' | 'signal' | 'change'
 
 export interface InboxItem {
   key:      string          // `${kind}:${id}`
@@ -152,9 +155,10 @@ const hasUnpublishedFaq = (it: InboxItem) => Array.isArray(it.raw.result_data?.p
 
 /** One line under the buttons saying what Accept really does for this task type. */
 function acceptNote(it: InboxItem): string | null {
+  if (it.kind === 'change') return 'אישור מעלה את השינוי לאתר החי (עם בקשת אישור לפני). הגרסה הקודמת נשמרת, ואפשר לבטל מ"שינויים אחרונים באתר".'
   if (it.kind !== 'task') return null
   if (it.raw.task_type === 'technical_seo') return hasUnpublishedFaq(it)
-    ? 'סימון כנבדק רק מוציא את הפריט מהתיבה, ולא מוסיף את ה-FAQ לעמוד. כדי להעלות אותו לאוויר: "פרסום דרך השיחה". הסוכן מציג את השאלות והתשובות הסופיות וכותב אותן רק אחרי אישור.'
+    ? 'הוספה לעמוד מעלה את השאלות והתשובות שבפרטים לעמוד החי (עם בקשת אישור לפני). ה-FAQ הקודם נשמר, ואפשר לבטל מ"שינויים אחרונים באתר". לשינוי הניסוח: הנחיה לסוכן.'
     : 'סימון כנבדק רק מוציא את הפריט מהתיבה, ושום דבר אחר לא רץ.'
   if (it.raw.task_type === 'visual_generation') return 'סימון כנבדק רק מנקה את סימון האיכות. התמונה לא מצורפת ולא מתפרסמת בשום מקום.'
   if (it.raw.task_type === 'instagram_post') return 'פרסום מעלה את הפוסט ל-@minuto_cafe (עם בקשת אישור לפני).'
@@ -186,6 +190,15 @@ async function loadInbox(): Promise<InboxItem[]> {
     .filter(([, r]) => (r as { error: unknown }).error).map(([n]) => n)
   if (failed.length) throw new Error(`לא ניתן לטעון: ${failed.join(', ')}. כדאי לרענן ולנסות שוב.`)
   const out: InboxItem[] = []
+  // Proposed live-site changes. Optional source: before its migration the
+  // table doesn't exist, and the rest of the inbox must still load.
+  const changes = await supabase.from('site_change_log').select('*')
+    .eq('status', 'proposed').order('created_at', { ascending: false }).limit(200)
+  for (const c of (changes.error ? [] : changes.data ?? []) as any[]) {
+    out.push({ key: `change:${c.id}`, kind: 'change', id: c.id, group: 'שינויים באתר החי: ממתינים לאישור',
+      title: `${CHANGE_LABEL[c.target_type] ?? c.target_type}: ${clip(c.target_title || (c.target_url ? readableUrl(c.target_url) : `#${c.target_id}`))}`,
+      detail: c.reason ?? '', status: c.status, created: c.created_at, targetUrl: safeHref(c.target_url) ?? undefined, raw: c })
+  }
   for (const r of (recs.data ?? []) as any[]) {
     const group = r.status === 'proposed' ? 'רעיונות של האסטרטג: אישור יוצר טיוטה'
       : r.status === 'ready_for_review' ? 'טיוטות של האסטרטג: עברו בדיקה' : 'טיוטות של האסטרטג: לא עברו בדיקה'
@@ -230,6 +243,9 @@ async function rejectItem(it: InboxItem, reason: string): Promise<void> {
     res = await supabase.from('strategic_recommendations').update({ status: 'dismissed', draft_error: `rejected by Erez: ${reason}`, updated_at: now }).eq('id', it.id).eq('status', it.status)
   } else if (it.kind === 'campaign') {
     res = await supabase.from('campaigns').update({ status: 'archived' }).eq('id', it.id).eq('status', 'draft')
+  } else if (it.kind === 'change') {
+    await siteAction({ action: 'site_change.reject', change_id: it.id, reason })
+    return
   } else if (it.kind === 'task') {
     const rd = await freshResultData(it.id)
     res = await supabase.from('seo_tasks').update({ result_data: { ...rd, review_required: false, rejected_via_ui_at: now, reject_reason: reason } }).eq('id', it.id)
@@ -242,6 +258,19 @@ async function rejectItem(it: InboxItem, reason: string): Promise<void> {
 /** Approve = the item's existing "yes" (never publishes, except IG which confirms). */
 async function approveItem(it: InboxItem): Promise<void> {
   const now = new Date().toISOString()
+  if (it.kind === 'change') {
+    if (!window.confirm('להעלות את השינוי הזה לאתר החי עכשיו? הגרסה הקודמת נשמרת ואפשר לבטל.')) return
+    await siteAction({ action: 'site_change.approve', change_id: it.id })
+    toast.success('השינוי עלה לאתר')
+    return
+  }
+  if (it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it)) {
+    if (!window.confirm('להוסיף את ה-FAQ לעמוד החי עכשיו? ה-FAQ הקודם (אם יש) נשמר ואפשר לבטל.')) return
+    await freshResultData(it.id)
+    await siteAction({ action: 'faq_task.approve', task_id: it.id })
+    toast.success('ה-FAQ עלה לעמוד. אם WP Rocket שומר עותק במטמון, צריך לנקות אותו כדי לראות.')
+    return
+  }
   if (it.kind === 'rec') {
     // proposed → executor drafts it; ready_for_review → you handled it; needs_human → draft it anyway
     const next = it.status === 'proposed' ? 'approved' : it.status === 'ready_for_review' ? 'drafted' : 'exporting'
@@ -277,6 +306,8 @@ function approveLabel(it: InboxItem): string | null {
     const fresh = Date.now() - new Date(it.raw.result_data?.prepared_at ?? it.created).getTime() < IG_CONTAINER_TTL_MS
     return it.raw.result_data?.ig_creation_id && fresh ? 'פרסום' : null   // expired container: only reject makes sense
   }
+  if (it.kind === 'change') return 'אישור והעלאה'
+  if (it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it)) return 'הוספה לעמוד'
   // These only clear the review flag; the label must not suggest a fix is applied.
   if (it.kind === 'task' && (it.raw.task_type === 'technical_seo' || it.raw.task_type === 'visual_generation')) return 'סימון כנבדק'
   return 'אישור'
@@ -320,9 +351,102 @@ function PitchDetails({ s }: { s: Record<string, any> }) {
   )
 }
 
-/** Live FAQ writes go through the chat's approve_post_faq (service key + show-then-go), never from here. */
-export function publishFaqPrompt(it: InboxItem): string {
-  return `Publish the proposed FAQ of technical_seo task ${it.id} live (approve_post_faq) on ${it.raw.result_data?.target_post_url ?? 'its article'}. Show me the final Q&A first and wait for my go.`
+const CHANGE_LABEL: Record<string, string> = {
+  post_faq: 'FAQ במאמר', product_faq: 'FAQ במוצר', product_description: 'תיאור מוצר',
+  post_content: 'תוכן מאמר', post_featured_image: 'תמונה ראשית למאמר',
+}
+const CHANGE_STATUS: Record<string, string> = { applied: 'עלה לאתר', undone: 'בוטל', failed: 'נכשל', rejected: 'נדחה', applying: 'בתהליך' }
+
+/** Approve / reject / undo a live site change. Signed-in admin only: the
+ *  function refuses anything else, so the click itself is the approval. */
+export async function siteAction(body: Record<string, unknown>): Promise<Record<string, any>> {
+  const { data, error } = await supabase.functions.invoke('handle-seo-chat', { body })
+  if (error) {
+    let detail: Record<string, any> = {}
+    try { detail = await (error as any).context?.json?.() ?? {} } catch { /* no body */ }
+    const e = new Error(detail.error ?? error.message) as Error & { detail?: Record<string, any> }
+    e.detail = detail
+    throw e
+  }
+  if (data && data.ok === false) throw new Error(data.error ?? 'הפעולה נכשלה')
+  return data ?? {}
+}
+
+/** The value a change writes (or wrote), readable. */
+function ChangeValue({ type, v }: { type: string; v: unknown }) {
+  if (type === 'post_faq' || type === 'product_faq') {
+    return Array.isArray(v) && v.length ? <FaqList faq={v} /> : <span className="text-surface-400">ללא FAQ</span>
+  }
+  if (type === 'post_featured_image') return <span className="num">{Number(v) ? `מדיה #${Number(v)}` : 'ללא תמונה'}</span>
+  if (type === 'post_content' && v && typeof v === 'object') return <Fields obj={v as Record<string, unknown>} />
+  return <div className="whitespace-pre-wrap break-words max-h-64 overflow-y-auto" dir="auto">{String(v ?? '')}</div>
+}
+
+function ChangeDetails({ c }: { c: Record<string, any> }) {
+  return (
+    <details className="mt-1 text-[12.5px] leading-relaxed text-surface-700">
+      <summary className="inline-flex items-center gap-1 min-h-8 text-surface-500 hover:text-surface-800 select-none">
+        <ChevronLeft size={14} aria-hidden="true" className="chev" /> פרטים
+      </summary>
+      <div className="mt-1 mb-1 space-y-2.5 rounded-lg border border-surface-200 bg-surface-50 p-3">
+        <div><div className="text-surface-500 mb-1">מה יעלה לאתר</div><ChangeValue type={c.target_type} v={c.after} /></div>
+        {c.before != null && <div><div className="text-surface-500 mb-1">מה היה לפני</div><ChangeValue type={c.target_type} v={c.before} /></div>}
+        {c.requested_by && <div className="text-surface-500">ביקש: <span dir="auto">{String(c.requested_by)}</span></div>}
+      </div>
+    </details>
+  )
+}
+
+/** Changes made to the live site in the last 30 days, each with an Undo. */
+function RecentChanges({ busy, run }: { busy: boolean; run: (fn: () => Promise<void>) => void }) {
+  const [rows, setRows] = useState<Record<string, any>[] | null>(null)
+  const [missing, setMissing] = useState(false)
+  const load = useCallback(async () => {
+    const since = new Date(Date.now() - 30 * DAY).toISOString()
+    const { data, error } = await supabase.from('site_change_log').select('*')
+      .in('status', ['applied', 'undone', 'failed']).gte('created_at', since)
+      .order('created_at', { ascending: false }).limit(100)
+    if (error) { setMissing(true); setRows([]); return }
+    setRows(data ?? [])
+  }, [])
+  useEffect(() => { load() }, [load, busy])
+  if (missing || !rows || rows.length === 0) return null
+
+  const undo = (c: Record<string, any>) => run(async () => {
+    if (!window.confirm('לבטל את השינוי ולהחזיר את הגרסה הקודמת לאתר?')) return
+    try {
+      await siteAction({ action: 'site_change.undo', change_id: c.id })
+    } catch (e: any) {
+      if (!e?.detail?.can_force) throw e
+      if (!window.confirm(`${e.message}\n\nלבטל בכל זאת? השינוי המאוחר יותר יימחק.`)) return
+      await siteAction({ action: 'site_change.undo', change_id: c.id, force: true })
+    }
+    toast.success('השינוי בוטל והגרסה הקודמת חזרה לאתר')
+  })
+
+  return (
+    <section className="border-t border-surface-200">
+      <h3 className="flex items-center min-h-[44px] px-4 bg-surface-50 border-b border-surface-200 text-[13px] font-semibold text-surface-700">שינויים אחרונים באתר (30 יום)</h3>
+      <ul className="divide-y divide-surface-200">
+        {rows.map(c => (
+          <li key={c.id} className="px-4 pt-3 pb-2">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0 text-[14px] leading-snug text-surface-900 break-words" dir="auto">
+                {CHANGE_LABEL[c.target_type] ?? c.target_type}: {clip(c.target_title || (c.target_url ? readableUrl(c.target_url) : `#${c.target_id}`))}
+              </div>
+              <Tag tone={c.status === 'failed' ? 'warn' : undefined}>{CHANGE_STATUS[c.status] ?? c.status}</Tag>
+              <span className="text-[12px] text-surface-400 shrink-0 pt-0.5">{ageLabel(c.created_at)}</span>
+            </div>
+            {(c.reason || c.error) && <div className="text-[13px] text-surface-500 mt-1 line-clamp-2" dir="auto">{c.error ?? c.reason}</div>}
+            <ChangeDetails c={c} />
+            {c.status === 'applied' && c.before_source !== 'none' && (
+              <div className="-ms-2.5"><button type="button" onClick={() => undo(c)} disabled={busy} className="act"><Undo2 size={16} aria-hidden="true" /> ביטול השינוי</button></div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 export function guidePrompt(it: InboxItem): string {
@@ -450,13 +574,11 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                           )}
                           {it.kind === 'signal' && it.raw.kind === 'innovation_pitch' && <PitchDetails s={it.raw} />}
                           {it.kind === 'task' && <TaskDetails t={it.raw} />}
+                          {it.kind === 'change' && <ChangeDetails c={it.raw} />}
                           <div className="flex flex-wrap items-center gap-0.5 mt-1 -ms-2.5">
                             {ok && <button type="button" onClick={() => run(() => approveItem(it))} disabled={busy} className="act primary"><Check size={16} aria-hidden="true" /> {ok}</button>}
                             <button type="button" onClick={() => reject([it])} disabled={busy} className="act danger"><X size={16} aria-hidden="true" /> דחייה</button>
                             <button type="button" onClick={() => onGuide(guidePrompt(it))} className="act"><MessageSquare size={16} aria-hidden="true" /> הנחיה לסוכן</button>
-                            {it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it) && (
-                              <button type="button" onClick={() => onGuide(publishFaqPrompt(it))} className="act"><Send size={16} aria-hidden="true" className="-scale-x-100" /> פרסום דרך השיחה</button>
-                            )}
                             {it.link && <a href={it.link} className="act"><ExternalLink size={16} aria-hidden="true" /> פתיחה</a>}
                           </div>
                           {note && <div className="text-[12.5px] leading-relaxed text-surface-500 mb-1">{note}</div>}
@@ -469,6 +591,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
             </section>
           )
         })}
+        {items && <RecentChanges busy={busy} run={run} />}
       </div>
       {viewing && <ImageLightbox images={viewing.images} label={viewing.label} onClose={() => setViewing(null)} />}
     </div>

@@ -6,7 +6,7 @@
 // each UPDATE as one compare-and-set, so overlapping workers race as in prod.
 
 import {
-  autoApproveOn, critiqueOn, deterministicIssues, feedbackForDrafter, LOOP_OFF,
+  autoApproveOn, critiqueOn, deterministicIssues, feedbackForDrafter, LOOP_OFF, MANUAL_APPROVAL_UNTIL,
   nextStateAfterCritique, normaliseVerdict, passes, readLoopConfig, handBackForCritique,
 } from './strategist_loop.ts'
 import { claimLoopRows, finishLoopRow, sweepStaleLoop, MAX_CRITIQUE_ATTEMPTS } from './strategist_loop_ledger.ts'
@@ -102,7 +102,9 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
   check('critique never on for a type with no loop code', !critiqueOn(cfg, 'none'))
   check('ad_google loop on when switched on', critiqueOn(cfg, 'ad_google'))
   check('ad_meta loop on when switched on', critiqueOn(cfg, 'ad_meta'))
-  check('auto-approve needs the critic on', autoApproveOn(cfg, 'email_campaign') && !autoApproveOn(cfg, 'content_blog'))
+  const later = new Date(Date.parse(MANUAL_APPROVAL_UNTIL) + 1000)
+  check('auto-approve needs the critic on', autoApproveOn(cfg, 'email_campaign', later) && !autoApproveOn(cfg, 'content_blog', later))
+  check('auto-approve locked off until the manual-approval date', !autoApproveOn(cfg, 'email_campaign', new Date(Date.parse(MANUAL_APPROVAL_UNTIL) - 1000)))
 }
 {
   const db = fakeTable({ ops_profile: [{ key: 'strategist_loop', value: { critique: { content_blog: true, content_ig: true, email_campaign: false } } }] })
