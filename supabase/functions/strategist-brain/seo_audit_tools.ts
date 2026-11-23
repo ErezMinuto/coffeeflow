@@ -6,9 +6,9 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { selectAll } from '../_shared/select_all.ts'
 import {
-  AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, pageKey, pagesWithIssue,
+  AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, materialSignals, pageKey, pagesWithIssue,
   searchTotals, searchView, valuePerSession,
-  type CrawlPage, type DataState, type QpRow, type SearchView,
+  type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal,
 } from './seo_audit_analysis.ts'
 
 const CRAWL_COLS = 'url, page_type, status, final_url, redirects, title, meta_description, h1, h1_count, canonical, robots_meta, x_robots_tag, word_count, schema_types, internal_links, images, images_missing_alt, response_ms'
@@ -91,6 +91,13 @@ async function dataState(supabase: SupabaseClient): Promise<DataState> {
   return { crawl_finished_at: crawl, query_page_end: qp, ga4_synced_at: ga4, ads_synced_at: ads, ai_probe_at: ai, orders_synced_at: orders, speed_ok: speedOk, speed_refused: speedRefused, inspect_ok: inspOk, inspect_failed: inspFail }
 }
 
+/** What conclude_brief checks the audit against: the coverage map and the signals it must answer. */
+export async function auditContext(supabase: SupabaseClient): Promise<{ coverage: CoverageRow[]; signals: Signal[] }> {
+  const [state, crawl, qp] = await Promise.all([dataState(supabase), latestCrawl(supabase), queryPageWindows(supabase)])
+  const pages = crawl ? await crawlPages(supabase, crawl.id) : []
+  return { coverage: coverage(state), signals: materialSignals(pages, qp.cur, qp.prev) }
+}
+
 // ── Tools ───────────────────────────────────────────────────────────────────
 
 export async function getSeoAuditOverview(supabase: SupabaseClient) {
@@ -128,6 +135,9 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
     search: end ? { window_end: end, window_days: 28, ...searchTotals(cur, prev), by_page_type: byType } : { error: 'no Search Console per search + page data yet' },
     page_speed: speed ?? [],
     index_status: { inspected: inspected.length, by_coverage_state: coverageStates, not_indexed: inspected.filter((r) => !r.error && r.verdict && r.verdict !== 'PASS').slice(0, 20), canonical_mismatch: inspected.filter((r) => r.google_canonical && r.user_canonical && pageKey(r.google_canonical) !== pageKey(r.user_canonical)).slice(0, 20) },
+    // Every one of these must be answered in seo_audit: inside a finding's
+    // signals[] or in dismissed_signals with a reason. conclude_brief refuses otherwise.
+    signals_to_address: materialSignals(pages, cur, prev),
     issue_ids: CRAWL_ISSUES.map((d) => d.id),
     search_views: SEARCH_VIEWS,
   }
@@ -189,7 +199,7 @@ export async function getPageReport(supabase: SupabaseClient, input: { url?: str
 export const SEO_AUDIT_TOOL_DEFS = [
   {
     name: 'get_seo_audit_overview',
-    description: `START HERE for the weekly SEO audit. One call returns: data freshness and a COVERAGE map of all ${Object.keys(AUDIT_AREAS).length} SEO areas the owner requires (covered / partial / blind, and what is missing for each blind spot — report those as blind spots, do not guess); every crawl issue with counts and example URLs; Search Console clicks/impressions now vs the previous 28 days, split by page type; page speed; Google index status; and visit_value (web revenue per session) for putting a money figure on each finding.`,
+    description: `START HERE for the weekly SEO audit. One call returns: data freshness and a COVERAGE map of all ${Object.keys(AUDIT_AREAS).length} SEO areas the owner requires (covered / partial / blind — an area the map marks blind can only get the verdict 'blind'); signals_to_address — every material signal in the data, each of which your seo_audit must answer (inside a finding's signals[] or in dismissed_signals with a reason); every crawl issue with counts and example URLs; Search Console clicks/impressions now vs the previous 28 days, split by page type; page speed; Google index status; and visit_value (web revenue per session) for putting a money figure on each finding.`,
     input_schema: { type: 'object', properties: {} },
   },
   {

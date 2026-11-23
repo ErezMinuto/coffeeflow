@@ -307,6 +307,61 @@ export function coverage(s: DataState, now = Date.now()): CoverageRow[] {
   ]
 }
 
+// ── Signals the audit must answer ───────────────────────────────────────────
+// The first real audit (2026-11-23) looked at the right views and still left
+// the biggest losses out. So code lists every material signal in the data,
+// and the audit is refused until each one is either part of a finding or
+// dismissed with a reason. Thresholds decide what is big enough to answer;
+// they never decide what it means.
+
+export interface Signal { id: string; kind: string; area: AuditArea; summary: string; size: number }
+
+const TYPE_AREA: Record<string, AuditArea> = { category: 'category_pages', product: 'product_pages', post: 'content', home: 'brand', page: 'on_page' }
+const areaOfType = (t: string | null | undefined): AuditArea => TYPE_AREA[t ?? ''] ?? 'keyword_map'
+
+export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[]): Signal[] {
+  const out: Signal[] = []
+  const typeOf = new Map(pages.map((p) => [pageKey(p.final_url ?? p.url), p.page_type ?? 'other']))
+
+  // 1. A whole page type losing search clicks.
+  const byType = new Map<string, { now: number; before: number }>()
+  for (const [rows, k] of [[cur, 'now'], [prev, 'before']] as const) {
+    for (const r of rows) {
+      const t = typeOf.get(pageKey(r.page)) ?? 'not_in_crawl'
+      const v = byType.get(t) ?? { now: 0, before: 0 }
+      v[k] += r.clicks
+      byType.set(t, v)
+    }
+  }
+  for (const [t, v] of byType) {
+    const drop = v.before - v.now
+    if (v.before >= 100 && drop >= v.before * 0.15) {
+      out.push({ id: `type_loss:${t}`, kind: 'type_loss', area: areaOfType(t), size: drop, summary: `${t} pages: ${v.before} → ${v.now} search clicks over 28 days (−${Math.round((drop / v.before) * 100)}%)` })
+    }
+  }
+  // 2. Single pages losing clicks.
+  for (const r of (searchView('page_losses', cur, prev, 8) as Array<{ page: string; clicks: number; clicks_prev: number; change: number }>)) {
+    if (r.change <= -20) out.push({ id: `page_loss:${r.page}`, kind: 'page_loss', area: areaOfType(typeOf.get(r.page)), size: -r.change, summary: `${r.page}: ${r.clicks_prev} → ${r.clicks} search clicks` })
+  }
+  // 3. First-page positions earning far fewer clicks than they should.
+  for (const r of (searchView('ctr_gaps', cur, prev, 8) as Array<{ query: string; page: string; position: number; clicks: number; expected_clicks: number; click_gap: number }>)) {
+    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected` })
+  }
+  // 4. One search split across several of our pages.
+  for (const r of (searchView('cannibalization', cur, prev, 5) as Array<{ query: string; impressions: number; pages: unknown[] }>)) {
+    if (r.impressions >= 300) out.push({ id: `cannibal:${r.query}`, kind: 'cannibalization', area: 'content', size: r.impressions, summary: `"${r.query}" (${r.impressions} impressions) split across ${r.pages.length} of our pages` })
+  }
+  // 5. Near the first page with real demand.
+  for (const r of (searchView('striking_distance', cur, prev, 5) as Array<{ query: string; page: string; position: number; impressions: number }>)) {
+    if (r.impressions >= 500) out.push({ id: `striking:${r.query}|${r.page}`, kind: 'striking_distance', area: 'keyword_map', size: r.impressions, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.impressions} impressions` })
+  }
+  // 6. Crawl issues on many pages.
+  for (const i of crawlIssues(pages).by_issue) {
+    if (i.count >= 5) out.push({ id: `crawl:${i.id}`, kind: 'crawl_issue', area: i.area, size: i.count, summary: `${i.count} pages: ${i.label}` })
+  }
+  return out.slice(0, 50)
+}
+
 // ── The audit the strategist hands in (conclude_brief.seo_audit) ────────────
 
 export interface SeoFinding {
@@ -316,18 +371,43 @@ export interface SeoFinding {
   pages: string[]
   est_monthly_value_ils: number | null
   value_method: string
+  no_value_reason: string
   effort: 'low' | 'medium' | 'high'
   fix: string
+  signals: string[]
 }
 export interface BlindSpot { area: AuditArea; why: string; needed: string }
-export interface SeoAudit { findings: SeoFinding[]; blind_spots: BlindSpot[] }
+export type Verdict = 'problem' | 'ok' | 'blind'
+export interface AreaVerdict { area: AuditArea; verdict: Verdict; note: string }
+export interface DismissedSignal { id: string; reason: string }
+export interface SeoAudit {
+  findings: SeoFinding[]
+  blind_spots: BlindSpot[]
+  area_verdicts: AreaVerdict[]
+  dismissed_signals: DismissedSignal[]
+  signals_checked: number
+}
 
 const EFFORTS = new Set(['low', 'medium', 'high'])
+const VERDICTS = new Set(['problem', 'ok', 'blind'])
 
-/** Checks and tidies the audit. Problems are returned for the model to fix, never silently dropped. */
-export function normaliseSeoAudit(raw: unknown): { ok: true; audit: SeoAudit } | { ok: false; problems: string[] } {
+/**
+ * Checks and tidies the audit. Problems go back to the model to fix; nothing
+ * is silently dropped. With `ctx` (always in production) it also enforces:
+ *   - a verdict for every one of the 23 areas, consistent with the coverage
+ *     map (an area the data cannot see can only be 'blind');
+ *   - every 'problem' area has a finding and every finding's area is a 'problem';
+ *   - every material signal is part of a finding or dismissed with a reason;
+ *   - an unpriced finding says why;
+ *   - every blind or partial area from the coverage map is in blind_spots
+ *     (added by code: the model can add to the list, never shorten it).
+ */
+export function normaliseSeoAudit(
+  raw: unknown,
+  ctx?: { coverage: CoverageRow[]; signals: Signal[] },
+): { ok: true; audit: SeoAudit } | { ok: false; problems: string[] } {
   const problems: string[] = []
-  if (!raw || typeof raw !== 'object') return { ok: false, problems: ['seo_audit is required: { findings: [...], blind_spots: [...] }'] }
+  if (!raw || typeof raw !== 'object') return { ok: false, problems: ['seo_audit is required: { findings, blind_spots, area_verdicts, dismissed_signals }'] }
   const r = raw as Record<string, unknown>
   const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
   const area = (v: unknown, at: string): AuditArea | null => {
@@ -335,9 +415,11 @@ export function normaliseSeoAudit(raw: unknown): { ok: true; audit: SeoAudit } |
     problems.push(`${at}.area must be one of: ${AUDIT_AREA_KEYS.join(', ')}`)
     return null
   }
+
+  // Findings.
   const findings: SeoFinding[] = []
   if (!Array.isArray(r.findings)) problems.push('seo_audit.findings must be an array (empty if nothing was found)')
-  for (const [i, f] of (Array.isArray(r.findings) ? r.findings : []).slice(0, 25).entries()) {
+  for (const [i, f] of (Array.isArray(r.findings) ? r.findings : []).slice(0, 40).entries()) {
     const at = `seo_audit.findings[${i}]`
     const x = (f ?? {}) as Record<string, unknown>
     const a = area(x.area, at)
@@ -348,29 +430,93 @@ export function normaliseSeoAudit(raw: unknown): { ok: true; audit: SeoAudit } |
     const effort = str(x.effort)
     if (!EFFORTS.has(effort)) problems.push(`${at}.effort must be low, medium or high`)
     const v = x.est_monthly_value_ils
-    const value = v == null ? null : Number(v)
-    if (value != null && !(Number.isFinite(value) && value >= 0)) problems.push(`${at}.est_monthly_value_ils must be a non-negative number or null`)
+    const value = v == null || v === '' ? null : Number(v)
+    if (value != null && !(Number.isFinite(value) && value >= 0)) problems.push(`${at}.est_monthly_value_ils must be a non-negative number, or left out`)
     if (value != null && !str(x.value_method)) problems.push(`${at}.value_method is required when a value is given`)
+    if (value == null && ctx && !str(x.no_value_reason)) problems.push(`${at} has no est_monthly_value_ils: give one (extra visits × visit_value) or say why in no_value_reason`)
     if (a && title && evidence && fix && EFFORTS.has(effort)) {
       findings.push({
         area: a, title, evidence, fix, effort: effort as SeoFinding['effort'],
         pages: (Array.isArray(x.pages) ? x.pages : []).filter((p): p is string => typeof p === 'string').slice(0, 20),
         est_monthly_value_ils: value != null && Number.isFinite(value) ? Math.round(value) : null,
         value_method: str(x.value_method),
+        no_value_reason: value == null ? str(x.no_value_reason) : '',
+        signals: (Array.isArray(x.signals) ? x.signals : []).filter((s): s is string => typeof s === 'string'),
       })
     }
   }
-  const blind_spots: BlindSpot[] = []
-  if (!Array.isArray(r.blind_spots)) problems.push('seo_audit.blind_spots must be an array (copy the blind areas from the coverage map)')
+
+  // Blind spots the model listed.
+  const modelBlind: BlindSpot[] = []
+  if (!Array.isArray(r.blind_spots)) problems.push('seo_audit.blind_spots must be an array')
   for (const [i, b] of (Array.isArray(r.blind_spots) ? r.blind_spots : []).slice(0, 30).entries()) {
     const at = `seo_audit.blind_spots[${i}]`
     const x = (b ?? {}) as Record<string, unknown>
     const a = area(x.area, at)
-    if (a && str(x.why) && str(x.needed)) blind_spots.push({ area: a, why: str(x.why), needed: str(x.needed) })
+    if (a && str(x.why) && str(x.needed)) modelBlind.push({ area: a, why: str(x.why), needed: str(x.needed) })
     else if (a) problems.push(`${at} needs why and needed`)
   }
+
+  // Area verdicts.
+  const verdicts: AreaVerdict[] = []
+  if (ctx) {
+    if (!Array.isArray(r.area_verdicts)) problems.push(`seo_audit.area_verdicts must list all ${AUDIT_AREA_KEYS.length} areas, each with verdict problem | ok | blind and a one-line note`)
+    const seen = new Set<string>()
+    for (const [i, v] of (Array.isArray(r.area_verdicts) ? r.area_verdicts : []).entries()) {
+      const at = `seo_audit.area_verdicts[${i}]`
+      const x = (v ?? {}) as Record<string, unknown>
+      const a = area(x.area, at)
+      const verdict = str(x.verdict)
+      if (!VERDICTS.has(verdict)) { problems.push(`${at}.verdict must be problem, ok or blind`); continue }
+      if (!a) continue
+      if (seen.has(a)) { problems.push(`${at}: ${a} is listed twice`); continue }
+      seen.add(a)
+      verdicts.push({ area: a, verdict: verdict as Verdict, note: str(x.note) })
+    }
+    const missing = AUDIT_AREA_KEYS.filter((k) => !seen.has(k))
+    if (Array.isArray(r.area_verdicts) && missing.length) problems.push(`seo_audit.area_verdicts is missing: ${missing.join(', ')}`)
+    const cov = new Map(ctx.coverage.map((c) => [c.area, c]))
+    for (const v of verdicts) {
+      if (cov.get(v.area)?.status === 'blind' && v.verdict !== 'blind') problems.push(`area_verdicts ${v.area}: the coverage map shows this area is blind (${cov.get(v.area)?.missing ?? 'no data'}), so its verdict can only be 'blind'`)
+      if (v.verdict === 'problem' && !findings.some((f) => f.area === v.area)) problems.push(`area_verdicts ${v.area} is 'problem' but no finding has area ${v.area}`)
+      if (!v.note) problems.push(`area_verdicts ${v.area} needs a one-line note (what you checked, or why it is blind)`)
+    }
+    for (const f of findings) {
+      const v = verdicts.find((x) => x.area === f.area)
+      if (v && v.verdict !== 'problem') problems.push(`finding "${f.title}" is in ${f.area}, but that area's verdict is '${v.verdict}' (make it 'problem')`)
+    }
+  }
+
+  // Signals.
+  const dismissed: DismissedSignal[] = []
+  for (const [i, d] of (Array.isArray(r.dismissed_signals) ? r.dismissed_signals : []).entries()) {
+    const x = (d ?? {}) as Record<string, unknown>
+    if (str(x.id) && str(x.reason)) dismissed.push({ id: str(x.id), reason: str(x.reason) })
+    else problems.push(`seo_audit.dismissed_signals[${i}] needs id and reason`)
+  }
+  if (ctx) {
+    const known = new Set(ctx.signals.map((s) => s.id))
+    const answered = new Set([...findings.flatMap((f) => f.signals), ...dismissed.map((d) => d.id)])
+    const open = ctx.signals.filter((s) => !answered.has(s.id))
+    if (open.length) {
+      problems.push(`${open.length} material signal(s) are not answered. Each must be in a finding's signals[] or in dismissed_signals with a reason: ${open.map((s) => `${s.id} (${s.summary})`).join(' | ')}`)
+    }
+    const unknown = [...answered].filter((id) => !known.has(id))
+    if (unknown.length) problems.push(`unknown signal id(s), use the ids from signals_to_address exactly: ${unknown.slice(0, 10).join(', ')}`)
+  }
+
   if (problems.length) return { ok: false, problems }
-  // Money first; unknown value last.
+
+  // Blind spots: the coverage map's blind and partial gaps, always; the
+  // model's own wording wins where it covered the same area.
+  const blind_spots: BlindSpot[] = [...modelBlind]
+  if (ctx) {
+    for (const c of ctx.coverage) {
+      if (c.status === 'covered' || !c.missing || blind_spots.some((b) => b.area === c.area)) continue
+      blind_spots.push({ area: c.area, why: c.status === 'blind' ? 'no data for this area' : `only partly visible: sees ${c.sees}`, needed: c.missing })
+    }
+  }
+  // Money first; unpriced last.
   findings.sort((a, b) => (b.est_monthly_value_ils ?? -1) - (a.est_monthly_value_ils ?? -1))
-  return { ok: true, audit: { findings, blind_spots } }
+  return { ok: true, audit: { findings, blind_spots, area_verdicts: verdicts, dismissed_signals: dismissed, signals_checked: ctx?.signals.length ?? 0 } }
 }

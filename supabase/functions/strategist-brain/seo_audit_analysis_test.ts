@@ -1,6 +1,6 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
 import {
-  AUDIT_AREA_KEYS, coverage, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
+  AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
   searchTotals, searchView, valuePerSession, type CrawlPage, type QpRow,
 } from './seo_audit_analysis.ts'
 
@@ -102,6 +102,53 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('missing audit refused', !normaliseSeoAudit(undefined).ok)
   check('value without method refused', !normaliseSeoAudit({ findings: [{ area: 'on_page', title: 't', evidence: 'e', fix: 'f', effort: 'low', est_monthly_value_ils: 50 }], blind_spots: [] }).ok)
   check('empty audit is valid (nothing found, nothing blind)', normaliseSeoAudit({ findings: [], blind_spots: [] }).ok)
+}
+
+// ── material signals + strict audit (ctx) ──
+{
+  const sig = materialSignals(pages, cur, prev)
+  const ids = sig.map((x) => x.id)
+  check('signal: category lost 50 clicks', ids.includes('page_loss:/product-category/beans/'), ids.join(','))
+  check('signal: CTR gap at position 3', ids.some((i) => i.startsWith('ctr_gap:פולי קפה|')))
+  check('no page-type signal below 100 clicks before', !ids.some((i) => i.startsWith('type_loss:')))
+  const big = materialSignals(pages, [Q('x', 'https://www.minuto.co.il/product-category/beans/', 60, 900, 3)], [Q('x', 'https://www.minuto.co.il/product-category/beans/', 150, 900, 3)])
+  check('signal: whole page type losing clicks (150 → 60)', big.some((x) => x.id === 'type_loss:category' && x.area === 'category_pages'), big.map((x) => x.id).join(','))
+  check('signal areas map by page type', sig.find((x) => x.id === 'page_loss:/product-category/beans/')?.area === 'category_pages')
+
+  const now = Date.parse('2026-11-30T09:00:00Z')
+  const cov = coverage({ crawl_finished_at: '2026-11-30T03:00:00Z', query_page_end: '2026-11-29', speed_ok: 0, speed_refused: 4, inspect_ok: 0, inspect_failed: 60, ga4_synced_at: '2026-11-30T06:00:00Z', ads_synced_at: '2026-11-30T03:00:00Z', ai_probe_at: '2026-11-28T22:00:00Z', orders_synced_at: '2026-11-30T09:00:00Z' }, now)
+  const ctx = { coverage: cov, signals: sig }
+  const allVerdicts = (problemAreas: string[]) => AUDIT_AREA_KEYS.map((a) => ({
+    area: a,
+    verdict: cov.find((c) => c.area === a)?.status === 'blind' ? 'blind' : problemAreas.includes(a) ? 'problem' : 'ok',
+    note: 'checked',
+  }))
+  const finding = { area: 'category_pages', title: 'Beans category losing clicks', evidence: '60 → 10', fix: 'rewrite', effort: 'low', est_monthly_value_ils: 500, value_method: 'm', signals: ['page_loss:/product-category/beans/'] }
+  const rest = sig.filter((x) => !finding.signals.includes(x.id)).map((x) => ({ id: x.id, reason: 'too small this week' }))
+
+  const good = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
+  check('complete audit accepted', good.ok, good.ok ? '' : good.problems.join(' | '))
+  if (good.ok) {
+    check('blind areas added by code', ['authority', 'local', 'shopping', 'other_engines'].every((a) => good.audit.blind_spots.some((b) => b.area === a)))
+    check('partial gaps added too (speed refused)', good.audit.blind_spots.some((b) => b.area === 'speed_mobile' && b.needed.includes('PAGESPEED_API_KEY')))
+    check('signals counted', good.audit.signals_checked === sig.length)
+  }
+  const unanswered = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: [] }, ctx)
+  check('unanswered signals refused', !unanswered.ok && unanswered.problems.some((p) => p.includes('not answered')))
+  const missingArea = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']).slice(1), dismissed_signals: rest }, ctx)
+  check('a missing area verdict refused', !missingArea.ok && missingArea.problems.some((p) => p.includes('missing')))
+  const blindClaimedOk = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']).map((v) => v.area === 'authority' ? { ...v, verdict: 'ok' } : v), dismissed_signals: rest }, ctx)
+  check("can't call a blind area ok", !blindClaimedOk.ok && blindClaimedOk.problems.some((p) => p.includes('authority')))
+  const problemNoFinding = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages', 'on_page']), dismissed_signals: rest }, ctx)
+  check("'problem' area needs a finding", !problemNoFinding.ok && problemNoFinding.problems.some((p) => p.includes("on_page is 'problem'")))
+  const findingInOkArea = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts([]), dismissed_signals: rest }, ctx)
+  check("finding in an 'ok' area refused", !findingInOkArea.ok)
+  const unpriced = normaliseSeoAudit({ findings: [{ ...finding, est_monthly_value_ils: undefined, value_method: '' }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
+  check('unpriced finding without a reason refused', !unpriced.ok && unpriced.problems.some((p) => p.includes('no_value_reason')))
+  const unpricedOk = normaliseSeoAudit({ findings: [{ ...finding, est_monthly_value_ils: undefined, value_method: '', no_value_reason: 'no traffic data for these pages' }], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
+  check('unpriced finding with a reason accepted', unpricedOk.ok)
+  const bogus = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: [...rest, { id: 'made-up', reason: 'x' }] }, ctx)
+  check('unknown signal id refused', !bogus.ok && bogus.problems.some((p) => p.includes('unknown signal')))
 }
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }

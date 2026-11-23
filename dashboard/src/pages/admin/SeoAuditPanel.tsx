@@ -25,9 +25,15 @@ const EFFORT: Record<string, { label: string; tone: 'ok' | 'warn' | 'danger' }> 
   low: { label: 'מאמץ קטן', tone: 'ok' }, medium: { label: 'מאמץ בינוני', tone: 'warn' }, high: { label: 'מאמץ גדול', tone: 'danger' },
 }
 
-interface Finding { area: string; title: string; evidence: string; pages?: string[]; est_monthly_value_ils?: number | null; value_method?: string; effort: string; fix: string }
+interface Finding { area: string; title: string; evidence: string; pages?: string[]; est_monthly_value_ils?: number | null; value_method?: string; no_value_reason?: string; effort: string; fix: string }
 interface BlindSpot { area: string; why: string; needed: string }
-interface Brief { id: string; week_start: string; created_at: string; seo_audit: { findings?: Finding[]; blind_spots?: BlindSpot[] } }
+interface AreaVerdict { area: string; verdict: 'problem' | 'ok' | 'blind'; note: string }
+interface Dismissed { id: string; reason: string }
+interface Brief { id: string; week_start: string; created_at: string; seo_audit: { findings?: Finding[]; blind_spots?: BlindSpot[]; area_verdicts?: AreaVerdict[]; dismissed_signals?: Dismissed[]; signals_checked?: number } }
+
+const VERDICT: Record<string, { label: string; tone: 'danger' | 'ok' | 'neutral' }> = {
+  problem: { label: 'יש בעיה', tone: 'danger' }, ok: { label: 'נבדק, תקין', tone: 'ok' }, blind: { label: 'לא נראה', tone: 'neutral' },
+}
 interface DataStatus {
   crawl: { finished_at: string; urls_total: number; urls_ok: number } | null
   queryPageEnd: string | null
@@ -83,7 +89,7 @@ function FindingRow({ f, rank }: { f: Finding; rank: number }) {
             <div className="flex-1 min-w-0 text-[14px] font-medium leading-snug text-surface-900 break-words" dir="auto">{f.title}</div>
             {value
               ? <span className="text-[13px] font-semibold text-surface-900 num shrink-0" title={f.value_method || undefined}>{value} לחודש</span>
-              : <span className="text-[12.5px] text-surface-400 shrink-0">שווי לא הוערך</span>}
+              : <span className="text-[12.5px] text-surface-400 shrink-0" title={f.no_value_reason || undefined}>שווי לא הוערך</span>}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             <Tag>{AREA_LABEL[f.area] ?? f.area}</Tag>
@@ -91,6 +97,7 @@ function FindingRow({ f, rank }: { f: Finding; rank: number }) {
           </div>
           <div className="text-[13px] leading-relaxed text-surface-600 mt-1.5" dir="auto"><span className="text-surface-500">ממצא: </span>{f.evidence}</div>
           <div className="text-[13px] leading-relaxed text-surface-800 mt-1" dir="auto"><span className="text-surface-500">תיקון: </span>{f.fix}</div>
+          {!value && f.no_value_reason && <div className="text-[12.5px] text-surface-500 mt-1" dir="auto">למה אין הערכת שווי: {f.no_value_reason}</div>}
           {(pages.length > 0 || f.value_method) && (
             <details className="mt-1 text-[12.5px] text-surface-700">
               <summary className="inline-flex items-center gap-1 min-h-8 text-surface-500 hover:text-surface-800 select-none">
@@ -156,6 +163,8 @@ export default function SeoAuditPanel() {
     .filter(({ f }) => !area || f.area === area), [data, area])
   const allFindings = data?.brief?.seo_audit?.findings ?? []
   const blind = data?.brief?.seo_audit?.blind_spots ?? []
+  const verdicts = data?.brief?.seo_audit?.area_verdicts ?? []
+  const dismissed = data?.brief?.seo_audit?.dismissed_signals ?? []
   const total = allFindings.reduce((s, f) => s + (f.est_monthly_value_ils ?? 0), 0)
   const areasPresent = [...new Set(allFindings.map((f) => f.area))]
 
@@ -197,6 +206,42 @@ export default function SeoAuditPanel() {
             {findings.length === 0
               ? <Empty>לא נמצאו חולשות{area ? ' בתחום הזה' : ''} השבוע.</Empty>
               : <ol className="divide-y divide-surface-200">{findings.map(({ f, rank }) => <FindingRow key={rank} f={f} rank={rank} />)}</ol>}
+            {verdicts.length > 0 && (
+              <section className="border-t border-surface-200">
+                <h3 className="flex items-center min-h-[44px] px-4 bg-surface-50 border-b border-surface-200 text-[13px] font-semibold text-surface-700">
+                  כל 23 התחומים
+                  <span className="ms-2 text-surface-500 font-normal">
+                    {verdicts.filter((v) => v.verdict === 'problem').length} עם בעיה · {verdicts.filter((v) => v.verdict === 'ok').length} תקינים · {verdicts.filter((v) => v.verdict === 'blind').length} לא נראים
+                  </span>
+                </h3>
+                <ul className="divide-y divide-surface-200">
+                  {verdicts.map((v) => {
+                    const t = VERDICT[v.verdict] ?? VERDICT.blind
+                    return (
+                      <li key={v.area} className="px-4 py-2 flex items-start gap-3 text-[13px]">
+                        <Tag tone={t.tone}>{t.label}</Tag>
+                        <div className="min-w-0"><span className="font-medium text-surface-900">{AREA_LABEL[v.area] ?? v.area}</span>{v.note && <span className="text-surface-600" dir="auto"> — {v.note}</span>}</div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            )}
+            {dismissed.length > 0 && (
+              <details className="border-t border-surface-200">
+                <summary className="flex items-center min-h-[44px] px-4 bg-surface-50 text-[13px] font-semibold text-surface-700 cursor-pointer select-none">
+                  אותות שנבדקו ונדחו <span className="ms-2 text-surface-500 num font-normal">{dismissed.length}</span>
+                </summary>
+                <ul className="divide-y divide-surface-200 border-t border-surface-200">
+                  {dismissed.map((d) => (
+                    <li key={d.id} className="px-4 py-2 text-[13px] leading-relaxed">
+                      <div className="font-mono text-[11.5px] text-surface-500 break-all" dir="ltr">{readable(d.id)}</div>
+                      <div className="text-surface-700" dir="auto">{d.reason}</div>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
             {blind.length > 0 && (
               <section className="border-t border-surface-200">
                 <h3 className="flex items-center min-h-[44px] px-4 bg-surface-50 border-b border-surface-200 text-[13px] font-semibold text-surface-700">
