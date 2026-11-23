@@ -129,6 +129,39 @@ Deno.test("parseTaskMessage: notes on later lines", () => {
   assertEquals(p.notes, "שיבולת שועל\n12 קרטונים");
 });
 
+Deno.test("parseTaskMessage: task on the line after 'משימה לפלג:'", () => {
+  // Erez's real message, the task as one long line.
+  const a = parsed("משימה לפלג:\nלשבוע הבא להוציא הזמנה לפומו על פולי קפה ובקבוק גדול של נוזל ניקוי חלב 26/11");
+  assertEquals([a.assigneeName, a.explicitName], ["פלג", true]);
+  assertEquals(a.title, "לשבוע הבא להוציא הזמנה לפומו על פולי קפה ובקבוק גדול של נוזל ניקוי חלב");
+  assertEquals(a.due, "2026-11-26");
+  assertEquals(a.notes, null);
+
+  // Same message with a line break before the date: the date still counts.
+  const b = parsed("משימה לפלג:\nלהוציא הזמנה לפומו על פולי קפה ובקבוק גדול של נוזל\nניקוי חלב 26/11");
+  assertEquals(b.title, "להוציא הזמנה לפומו על פולי קפה ובקבוק גדול של נוזל");
+  assertEquals(b.due, "2026-11-26");
+  assertEquals(b.notes, "ניקוי חלב");
+
+  // Blank lines between, extra detail lines kept with their breaks.
+  const c = parsed("משימה לפלג:\n\n  להזמין חלב מחר\nשיבולת שועל\n12 קרטונים");
+  assertEquals([c.title, c.due, c.notes], ["להזמין חלב", "2026-11-21", "שיבולת שועל\n12 קרטונים"]);
+
+  // "משימה" alone on the first line, the rest below.
+  const d = parsed("משימה\nלפלג: לבדוק מלאי");
+  assertEquals([d.assigneeName, d.title], ["פלג", "לבדוק מלאי"]);
+
+  // A date on the title line wins over one in the details.
+  const e = parsed("משימה לפלג: להזמין חלב מחר\nלא אחרי 30/11");
+  assertEquals([e.due, e.notes], ["2026-11-21", "לא אחרי 30/11"]);
+
+  // A past date in the details is reported, not silently dropped.
+  assertEquals(parsed("משימה לפלג:\nלהזמין חלב\nעד 10/11"), { error: "התאריך 10/11 כבר עבר" });
+
+  // Nothing after the colon at all.
+  assertEquals(parsed("משימה לפלג:\n\n"), { error: "חסר תיאור למשימה" });
+});
+
 Deno.test("extractDue: relative words", () => {
   assertEquals(extractDue("להזמין חלב היום", TODAY), { due: TODAY, rest: "להזמין חלב" });
   assertEquals(extractDue("עד מחר להזמין חלב", TODAY), { due: "2026-11-21", rest: "להזמין חלב" });
