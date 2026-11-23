@@ -137,6 +137,18 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
   return data
 }
 
+/** Search clicks/impressions per page, computed once per Search Console window. */
+type PageClicks = ReadonlyMap<string, { readonly clicks: number; readonly impressions: number }>
+const clicksCache = new WeakMap<readonly QpRow[], PageClicks>()
+export function clicksByPage(rows: readonly QpRow[]): PageClicks {
+  const hit = clicksCache.get(rows)
+  if (hit) return hit
+  const m = new Map<string, { clicks: number; impressions: number }>()
+  for (const r of rows) { const k = pageKey(r.page); const v = m.get(k) ?? { clicks: 0, impressions: 0 }; v.clicks += r.clicks; v.impressions += r.impressions; m.set(k, v) }
+  clicksCache.set(rows, m)
+  return m
+}
+
 // ── Tools ───────────────────────────────────────────────────────────────────
 
 export async function getSeoAuditOverview(supabase: SupabaseClient) {
@@ -186,8 +198,7 @@ export async function getSeoIssuePages(supabase: SupabaseClient, input: { issue?
   const { crawlId, pages, cur, organic } = await auditData(supabase)
   if (!crawlId) return { error: 'no finished crawl yet' }
   const limit = Math.min(Math.max(Math.trunc(Number(input?.limit ?? 30)) || 30, 1), 100)
-  const clicks = new Map<string, { clicks: number; impressions: number }>()
-  for (const r of cur) { const k = pageKey(r.page); const v = clicks.get(k) ?? { clicks: 0, impressions: 0 }; v.clicks += r.clicks; v.impressions += r.impressions; clicks.set(k, v) }
+  const clicks = clicksByPage(cur)
   let hit = pagesWithIssue(pages, issue)
   if (input?.page_type) hit = hit.filter((p) => p.page_type === input.page_type)
   const rows = hit.map((p) => {
