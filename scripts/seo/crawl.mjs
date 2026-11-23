@@ -18,7 +18,7 @@
 //   node scripts/seo/crawl.mjs              full run
 //   node scripts/seo/crawl.mjs --dry-run    crawl 20 URLs, write nothing
 
-import { extractPage, isSitemapIndex, mapLimit, pageType, robotsSitemaps, sitemapLocs } from './crawl_lib.mjs'
+import { extractPage, isSitemapIndex, mapLimit, pageType, robotsSitemaps, sitemapLocs, toCrawlRow } from './crawl_lib.mjs'
 
 const SITE = (process.env.SITE_URL || 'https://www.minuto.co.il').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).host
@@ -38,7 +38,12 @@ async function db(path, init = {}) {
     headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', Prefer: init.prefer ?? 'return=minimal' },
   })
   const text = await res.text()
-  if (!res.ok) throw new Error(`db ${init.method ?? 'GET'} ${path.split('?')[0]} → ${res.status}`)
+  if (!res.ok) {
+    // PostgREST's own code and message only, never the request body (public logs).
+    let why = ''
+    try { const j = JSON.parse(text); why = `${j.code ?? ''} ${String(j.message ?? '').slice(0, 120)}`.trim() } catch { /* not JSON */ }
+    throw new Error(`db ${init.method ?? 'GET'} ${path.split('?')[0]} → ${res.status}${why ? ` (${why})` : ''}`)
+  }
   return text ? JSON.parse(text) : null
 }
 
@@ -185,7 +190,7 @@ async function main() {
   if (DRY) { console.log('dry run: nothing written'); return }
 
   for (let i = 0; i < pages.length; i += 200) {
-    await db('site_crawl_pages', { method: 'POST', body: JSON.stringify(pages.slice(i, i + 200)) })
+    await db('site_crawl_pages', { method: 'POST', body: JSON.stringify(pages.slice(i, i + 200).map(toCrawlRow)) })
   }
   await db(`site_crawls?id=eq.${crawlId}`, { method: 'PATCH', body: JSON.stringify({ status: 'done', finished_at: new Date().toISOString(), urls_total: pages.length, urls_ok: ok, urls_error: pages.length - ok }) })
 

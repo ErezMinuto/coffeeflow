@@ -83,3 +83,14 @@ test('mapLimit keeps order and limits concurrency', async () => {
   assert.deepEqual(out, [10, 20, 30, 40, 50])
   assert.equal(peak, 2)
 })
+
+import { CRAWL_ROW_COLUMNS, toCrawlRow } from './crawl_lib.mjs'
+test('every crawl row has the same keys, failed pages included', () => {
+  const ok = toCrawlRow({ crawl_id: 'c', url: 'a', status: 200, title: 't', schema_types: ['X'], internal_links: ['/b/'] })
+  const failed = toCrawlRow({ crawl_id: 'c', url: 'b', status: 0, error: 'timeout' })
+  assert.deepEqual(Object.keys(ok), CRAWL_ROW_COLUMNS)
+  assert.deepEqual(Object.keys(failed), CRAWL_ROW_COLUMNS)
+  assert.equal(failed.title, null)
+  assert.equal(failed.redirects, 0)
+  assert.equal(toCrawlRow({ url: 'x', extra: 1 }).extra, undefined)
+})

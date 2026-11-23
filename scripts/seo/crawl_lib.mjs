@@ -137,3 +137,21 @@ export async function mapLimit(items, limit, fn) {
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
   return out
 }
+
+// Every column a crawl row can carry. PostgREST refuses a bulk insert whose
+// rows have different keys ("All object keys must match"), and a page that
+// failed to load carries fewer fields than one that loaded — so every row is
+// sent with all of them, missing ones as null.
+export const CRAWL_ROW_COLUMNS = [
+  'crawl_id', 'url', 'page_type', 'in_sitemap', 'status', 'final_url', 'redirects', 'title', 'meta_description',
+  'h1', 'h1_count', 'canonical', 'robots_meta', 'x_robots_tag', 'lang', 'word_count', 'schema_types',
+  'internal_links', 'external_links', 'images', 'images_missing_alt', 'html_bytes', 'response_ms', 'error',
+]
+
+export function toCrawlRow(page) {
+  const row = {}
+  for (const c of CRAWL_ROW_COLUMNS) row[c] = page[c] ?? null
+  if (row.redirects == null) row.redirects = 0
+  if (row.in_sitemap == null) row.in_sitemap = true
+  return row
+}
