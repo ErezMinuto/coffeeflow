@@ -53,7 +53,7 @@ async function loadAudit(): Promise<{ brief: Brief | null; status: DataStatus }>
   const [briefRes, crawlRes, qpRes, speedOk, speedRefused, inspectOk, inspectFailed] = await Promise.all([
     // Only briefs written since the audit exists (older ones have an empty seo_audit).
     supabase.from('strategic_briefs').select('id, week_start, created_at, seo_audit')
-      .not('seo_audit->findings', 'is', null).order('created_at', { ascending: false }).limit(1),
+      .not('seo_audit->>findings', 'is', null).order('created_at', { ascending: false }).limit(1),
     supabase.from('site_crawls').select('finished_at, urls_total, urls_ok').eq('status', 'done').order('finished_at', { ascending: false }).limit(1),
     supabase.from('gsc_query_page').select('period_end').order('period_end', { ascending: false }).limit(1),
     count('page_speed', 'measured_at', true), count('page_speed', 'measured_at', false),
@@ -98,11 +98,11 @@ function FindingRow({ f, rank }: { f: Finding; rank: number }) {
               </summary>
               <div className="mb-1 space-y-1.5 rounded-lg border border-surface-200 bg-surface-50 p-3">
                 {f.value_method && <div dir="auto"><span className="text-surface-500">איך חושב השווי: </span>{f.value_method}</div>}
-                {pages.map((p) => {
+                {pages.map((p, i) => {
                   const href = safeHref(p)
                   return href
-                    ? <a key={p} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-brand-600 hover:underline break-all"><ExternalLink size={12} aria-hidden="true" className="shrink-0" /><span dir="auto">{readable(p)}</span></a>
-                    : <div key={p} className="break-all" dir="auto">{readable(p)}</div>
+                    ? <a key={`${i}-${p}`} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-brand-600 hover:underline break-all"><ExternalLink size={12} aria-hidden="true" className="shrink-0" /><span dir="auto">{readable(p)}</span></a>
+                    : <div key={`${i}-${p}`} className="break-all" dir="auto">{readable(p)}</div>
                 })}
               </div>
             </details>
@@ -149,7 +149,11 @@ export default function SeoAuditPanel() {
     return () => { supabase.removeChannel(channel) }
   }, [refresh])
 
-  const findings = useMemo(() => (data?.brief?.seo_audit?.findings ?? []).filter((f) => !area || f.area === area), [data, area])
+  // Each finding keeps its rank in the full list, so its key (and an open
+  // details panel) stays with it when the list is filtered by area.
+  const findings = useMemo(() => (data?.brief?.seo_audit?.findings ?? [])
+    .map((f, i) => ({ f, rank: i + 1 }))
+    .filter(({ f }) => !area || f.area === area), [data, area])
   const allFindings = data?.brief?.seo_audit?.findings ?? []
   const blind = data?.brief?.seo_audit?.blind_spots ?? []
   const total = allFindings.reduce((s, f) => s + (f.est_monthly_value_ils ?? 0), 0)
@@ -192,7 +196,7 @@ export default function SeoAuditPanel() {
             </div>
             {findings.length === 0
               ? <Empty>לא נמצאו חולשות{area ? ' בתחום הזה' : ''} השבוע.</Empty>
-              : <ol className="divide-y divide-surface-200">{findings.map((f, i) => <FindingRow key={`${f.area}-${i}`} f={f} rank={i + 1} />)}</ol>}
+              : <ol className="divide-y divide-surface-200">{findings.map(({ f, rank }) => <FindingRow key={rank} f={f} rank={rank} />)}</ol>}
             {blind.length > 0 && (
               <section className="border-t border-surface-200">
                 <h3 className="flex items-center min-h-[44px] px-4 bg-surface-50 border-b border-surface-200 text-[13px] font-semibold text-surface-700">
