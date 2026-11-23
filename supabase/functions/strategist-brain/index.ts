@@ -18,7 +18,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, getMonthToDateSpendUsd } from '../seo-agent/db.ts'
 import { callClaude, type ChatMessage, type MessageContentBlock } from '../seo-agent/claude.ts'
-import { latestToolResult, toolCallsIn, toolResultValues } from './run_history.ts'
+import { latestToolResult, toolCallsIn, toolResultValues, turnKind } from './run_history.ts'
 import { evidenceIndex } from './seo_audit_analysis.ts'
 import { clearAuditCache } from './seo_audit_tools.ts'
 import { STRATEGIST_BRAIN_SYSTEM_PROMPT } from '../seo-agent/prompts/strategistBrain.ts'
@@ -51,6 +51,8 @@ const LOCK_MINUTES = 5
 const PER_CALL_TIMEOUT_MS  = 120_000
 const WALL_CLOCK_BUDGET_MS  = 135_000
 const MAX_TRANSIENT_RETRIES = 5
+// Consecutive blank or cut-off model turns before the run fails (each is retried).
+const MAX_EMPTY_TURNS = 4
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -74,6 +76,7 @@ interface RunState {
   messages: ChatMessage[]   // the evolving ReAct transcript (system is NOT stored here)
   nudged?:  boolean         // did we already remind it to conclude?
   retries?: number          // consecutive transient (timeout/5xx) errors; fails the run past the cap
+  empty_turns?: number      // consecutive blank / cut-off model turns (retried, not recorded)
 }
 interface CostTotals {
   input_tokens: number
@@ -218,6 +221,7 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
   let concluded = false
   let briefId: string | undefined
   let failure: string | undefined
+  const emptyTurns: string[] = []   // stop_reasons of retried blank / cut-off turns this tick
   const startMs = Date.now()
 
   // Start a step only while a full per-call timeout still fits the wall-clock —
@@ -267,10 +271,27 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
       cacheReadTokens: res.cacheReadTokens, cacheCreationTokens: res.cacheCreationTokens,
     })) * 10000) / 10000
 
+    // A blank turn, or one cut off at the output limit before any tool call,
+    // is not the model's decision: drop it (never record an empty turn) and
+    // ask again, in this tick if time allows. Past the cap the run fails with
+    // the real reason instead of "ended turn twice".
+    const kind = turnKind(res.content, res.stop_reason)
+    if (kind === 'retry') {
+      const empty = (state.empty_turns ?? 0) + 1
+      state.empty_turns = empty
+      emptyTurns.push(String(res.stop_reason ?? 'none'))
+      if (empty >= MAX_EMPTY_TURNS) {
+        failure = `model returned ${empty} blank or cut-off turns in a row (last stop_reason: ${res.stop_reason}); raise STRATEGIST_MAX_TOKENS or shorten the step`
+        break
+      }
+      continue
+    }
+    state.empty_turns = 0
+
     // Record the assistant turn verbatim (tool_use blocks must round-trip exactly).
     state.messages.push({ role: 'assistant', content: res.content })
 
-    if (res.stop_reason === 'tool_use') {
+    if (kind === 'tool') {
       const toolUses = res.content.filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
       const toolResults: MessageContentBlock[] = []
       for (const tu of toolUses) {
@@ -321,6 +342,7 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
     ok: true, run_id: run.id, steps_taken: steps,
     status: concluded ? 'brief_ready' : failure ? 'failed' : 'thinking',
     concluded, brief_id: briefId, failure, cost_calls: cost.calls,
+    ...(emptyTurns.length ? { retried_turns: emptyTurns } : {}),
   })
 }
 
