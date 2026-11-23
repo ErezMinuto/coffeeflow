@@ -93,9 +93,42 @@ async function dataState(supabase: SupabaseClient): Promise<DataState> {
 
 /** What conclude_brief checks the audit against: the coverage map and the signals it must answer. */
 export async function auditContext(supabase: SupabaseClient): Promise<{ coverage: CoverageRow[]; signals: Signal[] }> {
-  const [state, crawl, qp] = await Promise.all([dataState(supabase), latestCrawl(supabase), queryPageWindows(supabase)])
-  const pages = crawl ? await crawlPages(supabase, crawl.id) : []
-  return { coverage: coverage(state), signals: materialSignals(pages, qp.cur, qp.prev) }
+  const [state, d] = await Promise.all([dataState(supabase), auditData(supabase)])
+  return { coverage: coverage(state), signals: materialSignals(d.pages, d.cur, d.prev) }
+}
+
+// ── One load per tick ───────────────────────────────────────────────────────
+// The model often calls several of these tools in ONE step (e.g. opening the
+// page list for 8 crawl issues before dismissing them). Each used to reload the
+// whole crawl, Search Console and GA4; eight copies at once hit the edge
+// worker's resource limit (546 WORKER_RESOURCE_LIMIT, run c0e8430f). The data
+// only changes with the weekly job, so it is loaded once and shared, keyed by
+// the crawl and Search Console window, for a few minutes.
+
+interface AuditData { crawlId: string | null; pages: CrawlPage[]; end: string | null; cur: QpRow[]; prev: QpRow[]; organic: Map<string, { sessions: number; conversions: number }> }
+let cached: { key: string; at: number; data: Promise<AuditData> } | null = null
+const CACHE_MS = 5 * 60_000
+
+async function auditData(supabase: SupabaseClient): Promise<AuditData> {
+  const [crawl, latestEnd] = await Promise.all([
+    latestCrawl(supabase),
+    supabase.from('gsc_query_page').select('period_end').eq('period_days', 28).order('period_end', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => (data as { period_end: string } | null)?.period_end ?? null),
+  ])
+  const key = `${crawl?.id ?? '-'}|${latestEnd ?? '-'}`
+  if (cached && cached.key === key && Date.now() - cached.at < CACHE_MS) return cached.data
+  const data = (async (): Promise<AuditData> => {
+    const [pages, qp, organic] = await Promise.all([
+      crawl ? crawlPages(supabase, crawl.id) : Promise.resolve([] as CrawlPage[]),
+      queryPageWindows(supabase),
+      organicSessionsByPage(supabase),
+    ])
+    return { crawlId: crawl?.id ?? null, pages, end: qp.end, cur: qp.cur, prev: qp.prev, organic }
+  })()
+  cached = { key, at: Date.now(), data }
+  // A failed load must not stay cached.
+  data.catch(() => { if (cached?.data === data) cached = null })
+  return data
 }
 
 // ── Tools ───────────────────────────────────────────────────────────────────
@@ -103,8 +136,7 @@ export async function auditContext(supabase: SupabaseClient): Promise<{ coverage
 export async function getSeoAuditOverview(supabase: SupabaseClient) {
   const state = await dataState(supabase)
   const crawl = await latestCrawl(supabase)
-  const pages = crawl ? await crawlPages(supabase, crawl.id) : []
-  const { end, cur, prev } = await queryPageWindows(supabase)
+  const { pages, end, cur, prev } = await auditData(supabase)
   const since = new Date(Date.now() - 8 * DAY).toISOString()
   const [{ data: speed }, { data: insp }, value] = await Promise.all([
     supabase.from('page_speed').select('url, page_type, performance_score, lcp_ms, cls, tbt_ms, field_lcp_p75_ms, field_inp_p75_ms, field_cls_p75, field_category, error').gte('measured_at', since).order('measured_at', { ascending: false }).limit(12),
@@ -146,10 +178,9 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
 export async function getSeoIssuePages(supabase: SupabaseClient, input: { issue?: string; page_type?: string; limit?: number }) {
   const issue = String(input?.issue ?? '')
   if (!CRAWL_ISSUES.some((d) => d.id === issue)) return { error: `unknown issue; one of: ${CRAWL_ISSUES.map((d) => d.id).join(', ')}` }
-  const crawl = await latestCrawl(supabase)
-  if (!crawl) return { error: 'no finished crawl yet' }
+  const { crawlId, pages, cur, organic } = await auditData(supabase)
+  if (!crawlId) return { error: 'no finished crawl yet' }
   const limit = Math.min(Math.max(Math.trunc(Number(input?.limit ?? 30)) || 30, 1), 100)
-  const [pages, { cur }, organic] = await Promise.all([crawlPages(supabase, crawl.id), queryPageWindows(supabase), organicSessionsByPage(supabase)])
   const clicks = new Map<string, { clicks: number; impressions: number }>()
   for (const r of cur) { const k = pageKey(r.page); const v = clicks.get(k) ?? { clicks: 0, impressions: 0 }; v.clicks += r.clicks; v.impressions += r.impressions; clicks.set(k, v) }
   let hit = pagesWithIssue(pages, issue)
@@ -170,7 +201,7 @@ export async function getSearchPageMap(supabase: SupabaseClient, input: { view?:
   const view = String(input?.view ?? '') as SearchView
   if (!SEARCH_VIEWS.includes(view)) return { error: `view must be one of: ${SEARCH_VIEWS.join(', ')}` }
   const limit = Math.min(Math.max(Math.trunc(Number(input?.limit ?? 25)) || 25, 1), 60)
-  const { end, cur, prev } = await queryPageWindows(supabase)
+  const { end, cur, prev } = await auditData(supabase)
   if (!end) return { error: 'no Search Console per search + page data yet' }
   return { view, window_end: end, window_days: 28, rows: searchView(view, cur, prev, limit) }
 }
@@ -178,13 +209,12 @@ export async function getSearchPageMap(supabase: SupabaseClient, input: { view?:
 export async function getPageReport(supabase: SupabaseClient, input: { url?: string }) {
   const key = pageKey(String(input?.url ?? ''))
   if (!input?.url) return { error: 'url required' }
-  const crawl = await latestCrawl(supabase)
-  const pages = crawl ? await crawlPages(supabase, crawl.id) : []
+  const { crawlId, pages, end, cur, prev, organic: organicMap } = await auditData(supabase)
+  const crawl = crawlId
   const page = pages.find((p) => pageKey(p.final_url ?? p.url) === key || pageKey(p.url) === key) ?? null
   const inlinks = inlinkCounts(pages).get(key) ?? 0
-  const { end, cur, prev } = await queryPageWindows(supabase)
   const mine = (rows: QpRow[]) => rows.filter((r) => pageKey(r.page) === key).sort((a, b) => b.impressions - a.impressions)
-  const organic = (await organicSessionsByPage(supabase)).get(key) ?? { sessions: 0, conversions: 0 }
+  const organic = organicMap.get(key) ?? { sessions: 0, conversions: 0 }
   const { data: insp } = await supabase.from('gsc_url_inspection').select('url, inspected_at, verdict, coverage_state, indexing_state, google_canonical, user_canonical, last_crawl_time, rich_results, error').order('inspected_at', { ascending: false }).limit(300)
   const inspection = ((insp ?? []) as Array<Record<string, unknown>>).find((r) => pageKey(String(r.url ?? '')) === key) ?? null
   return {
