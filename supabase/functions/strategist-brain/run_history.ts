@@ -31,3 +31,10 @@ export function latestToolResult(messages: Message[], toolName: string): Record<
   }
   return null
 }
+
+/** Every tool result in the run (strings as stored, objects as is) — the data the model actually received. */
+export function toolResultValues(messages: Message[]): unknown[] {
+  const out: unknown[] = []
+  for (const m of messages) for (const b of blocks(m)) if (b?.type === 'tool_result') out.push(b.content ?? null)
+  return out
+}

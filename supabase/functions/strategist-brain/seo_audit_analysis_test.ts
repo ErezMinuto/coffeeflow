@@ -1,7 +1,7 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
 import {
   AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
-  searchTotals, searchView, valuePerSession, issueCtx, type CrawlPage, type QpRow,
+  searchTotals, searchView, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow,
 } from './seo_audit_analysis.ts'
 import { clicksByPage } from './seo_audit_tools.ts'
 
@@ -131,7 +131,11 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
     verdict: statusOf(a) === 'blind' ? 'blind' : problemAreas.includes(a) ? 'problem' : statusOf(a) === 'partial' ? 'partial' : 'ok',
     note: 'checked',
   }))
-  const finding = { area: 'category_pages', title: 'Beans category losing clicks', evidence: '60 → 10', fix: 'rewrite', effort: 'low', est_monthly_value_ils: 500, value_method: 'm', signals: ['page_loss:/product-category/beans/'] }
+  // The fixture's "פולי קפה" searches are coffee-beans searches our beans category does not rank for,
+  // so they cannot be dismissed (must_address): the finding takes them.
+  const locked = sig.filter((x) => x.must_address).map((x) => x.id)
+  check('fixture: the two "פולי קפה" signals are locked', locked.length === 2 && locked.every((i) => i.includes('פולי קפה')), locked.join(','))
+  const finding = { area: 'category_pages', title: 'Beans category losing clicks', evidence: '60 → 10', fix: 'rewrite', effort: 'low', est_monthly_value_ils: 500, value_method: 'm', signals: ['page_loss:/product-category/beans/', ...locked] }
   const rest = sig.filter((x) => !finding.signals.includes(x.id)).map((x) => ({ id: x.id, reason: 'too small this week' }))
 
   const good = normaliseSeoAudit({ findings: [finding], blind_spots: [], area_verdicts: allVerdicts(['category_pages']), dismissed_signals: rest }, ctx)
@@ -203,6 +207,76 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('clicksByPage sums all searches of one page', m.get(pageKey('https://minuto.co.il/x/'))?.clicks === 5 && m.get(pageKey('https://minuto.co.il/x/'))?.impressions === 15)
   check('clicksByPage: same rows → same cached map', clicksByPage(rows) === m)
   check('clicksByPage: other rows → computed afresh', clicksByPage(rows.slice(0, 1)).get(pageKey('https://minuto.co.il/x/'))?.clicks === 2)
+}
+
+// ── Priority: coffee-beans searches cannot be dismissed while the beans category ranks badly ──
+{
+  const beans = 'https://www.minuto.co.il' + encodeURI(PRIORITY_CATEGORY_PATH)
+  const blog = 'https://www.minuto.co.il/blog/%D7%9B%D7%9C-%D7%9E%D7%94/'
+  // The real case from the third audit: blog post at 10.4 with 2,533 impressions, beans category at 33.5.
+  const real = [Q('פולי קפה', blog, 2, 2533, 10.4), Q('פולי קפה', beans, 0, 53, 33.5), Q('מטחנה', 'https://www.minuto.co.il/product/a/', 5, 900, 12)]
+  const s1 = materialSignals(pages, real, [])
+  const st = s1.find((x) => x.id.startsWith('striking:פולי קפה|/blog/'))
+  check('real case: "פולי קפה" striking signal exists', !!st, s1.map((x) => x.id).join(','))
+  check('real case: it is locked, naming the category position', !!st?.must_address && st.must_address.includes('33.5'), st?.must_address ?? '')
+  check('a non-beans search is not locked', !s1.find((x) => x.id.startsWith('striking:מטחנה'))?.must_address)
+  check('locked signals come first (never cut by the 50 cap)', s1[0].must_address !== undefined)
+  // Once the beans category is in the top 3 for the search, the same signal may be dismissed.
+  const s2 = materialSignals(pages, [Q('פולי קפה', blog, 2, 2533, 10.4), Q('פולי קפה', beans, 300, 3000, 2.4)], [])
+  check('beans category in the top 3 → not locked', s2.filter((x) => x.id.includes('פולי קפה')).every((x) => !x.must_address), JSON.stringify(s2.map((x) => [x.id, x.must_address])))
+  const sub = 'https://www.minuto.co.il' + encodeURI(PRIORITY_CATEGORY_PATH + 'ברזיל/')
+  const s3 = materialSignals(pages, [Q('פולי קפה ברזיל', blog, 1, 900, 9), Q('פולי קפה ברזיל', sub, 40, 900, 2)], [])
+  check('a beans sub-category in the top 3 counts as the category', s3.filter((x) => x.id.includes('ברזיל')).every((x) => !x.must_address))
+  check('English "coffee beans" search is priority too', !!materialSignals(pages, [Q('Coffee Beans Israel', blog, 1, 900, 9)], []).find((x) => x.id.startsWith('striking:'))?.must_address)
+  const loss = materialSignals(pages, [Q('x', beans, 10, 500, 5)], [Q('x', beans, 80, 500, 5)])
+  check('a coffee-beans page losing clicks is locked', !!loss.find((x) => x.id.startsWith('page_loss:' + PRIORITY_CATEGORY_PATH))?.must_address, loss.map((x) => x.id).join(','))
+}
+
+// ── Numbers in a dismissal must come from the data ──
+{
+  const n = (t: string) => citedNumbers(t).map((c) => [c.value, c.lo, c.hi, c.percent])
+  check('cited: digits inside names are not numbers', citedNumbers('our hero product (Oak8) and the Mara X PL62X').length === 0, JSON.stringify(citedNumbers('our hero product (Oak8) and the Mara X PL62X')))
+  check('cited: a name with digits does not satisfy the number rule', dismissalNumberProblems('Acceptable split with Oak8.', evidenceIndex([8]))[0]?.includes('no number'))
+  check('cited: a unit glued on still counts (316 SKUs, 4k)', citedNumbers('316 SKUs').length === 1 && citedNumbers('4k visits')[0]?.value === 4000)
+  check('cited: time windows are periods, not claims', citedNumbers('in 28 days, 90d, 4 weeks').every((c) => c.period))
+  check('only a time window → refused (cites no count)', dismissalNumberProblems('nothing in 28 days', evidenceIndex({})).length === 1)
+  check('cited: comma thousands', JSON.stringify(n('1,051 pages')) === JSON.stringify([[1051, 1050.5, 1051.5, false]]))
+  check('cited: "4+ million" means 4M–5M', JSON.stringify(n('4+ million impressions')) === JSON.stringify([[4e6, 4e6, 5e6, false]]))
+  check('cited: decimal keeps its precision', (() => { const c = citedNumbers('pos 10.6')[0]; return Math.abs(c.lo - 10.55) < 1e-9 && Math.abs(c.hi - 10.65) < 1e-9 })())
+  check('cited: percent flagged', citedNumbers('a 15% drop')[0].percent)
+  check('cited: "1000+" means 1000–2000', JSON.stringify(n('1000+ files')) === JSON.stringify([[1000, 1000, 2000, false]]))
+  check('cited: "4.2k" → 4,200 ± 50', JSON.stringify(n('4.2k')) === JSON.stringify([[4200, 4150, 4250, false]]))
+
+  const idx = evidenceIndex({ total: 1051, position: 9.1, clicks: 29, impressions: 2533, ads: 337, change: -29 })
+  // Identifiers, raw units, URLs and dates are not evidence (a UUID fragment once "proved" 4 million).
+  const noise = evidenceIndex({ id: 'c4845111-12a9-4f00-8000-000000000001', run_id: 4500000, cost_micros: 4500000, synced_at: '2026-11-23T18:47:51Z',
+    note: 'see https://www.minuto.co.il/p/4400000/ on 2026-04-27, ref c4845111-12a9-4f00-8000-000000000002', summary: '"פולי קפה" (2,533 impressions) split across 2 pages' })
+  check('evidence: ids, micros, URLs, dates and UUIDs ignored', !inEvidence(noise, 1e6, 1e10) && !inEvidence(noise, 2026, 2026), Array.from(noise).join(','))
+  check('evidence: numbers written in text kept (2,533)', inEvidence(noise, 2533, 2533) && inEvidence(noise, 2, 2))
+  check('evidence: JSON-text tool results are parsed (ids inside skipped)', !inEvidence(evidenceIndex(JSON.stringify({ campaign_id: 4500000, n: 7 })), 4e6, 5e6) && inEvidence(evidenceIndex(JSON.stringify({ n: 7 })), 7, 7))
+  check('evidence: range lookup', inEvidence(idx, 2533, 2533) && !inEvidence(idx, 2534, 2600))
+  check('no number → refused', dismissalNumberProblems('Standard WooCommerce bloat.', idx)[0]?.includes('no number'))
+  check('only a percentage → refused (cites no count)', dismissalNumberProblems('drop of 15%', idx).length === 1)
+  check('the real "4+ million" claim against real ad numbers → refused', dismissalNumberProblems('We dominate via Google Ads (4+ million impressions).', idx)[0]?.includes('4+ million'))
+  check('"1000+ files" against 1,051 → accepted', dismissalNumberProblems('Bulk issue across 1000+ files', idx).length === 0)
+  check('"pos 9" against 9.1 → accepted', dismissalNumberProblems('4 clicks expected at pos 9... ', evidenceIndex([4, 9.1])).length === 0)
+  check('"29 clicks" against a −29 change → accepted', dismissalNumberProblems('Small drop (29 clicks).', idx).length === 0)
+  check('one bad number among good ones → refused, naming it', dismissalNumberProblems('2533 impressions, 2 clicks, 7,170 more', idx)[0]?.includes('7,170'))
+
+  // Through normaliseSeoAudit: only dismissals of real signals are checked.
+  const sig = [{ id: 'crawl:orphan', kind: 'crawl_issue', area: 'internal_links' as const, summary: '212 pages', size: 212 }]
+  const cov = coverage({ crawl_finished_at: '2026-11-30T03:00:00Z', query_page_end: '2026-11-29', speed_ok: 4, speed_refused: 0, inspect_ok: 50, inspect_failed: 0, ga4_synced_at: '2026-11-30T06:00:00Z', ads_synced_at: '2026-11-30T03:00:00Z', ai_probe_at: '2026-11-28T22:00:00Z', orders_synced_at: '2026-11-30T09:00:00Z' }, Date.parse('2026-11-30T09:00:00Z'))
+  const verdicts = AUDIT_AREA_KEYS.map((a) => { const st = cov.find((c) => c.area === a)?.status; return { area: a, verdict: st === 'blind' ? 'blind' : st === 'partial' ? 'partial' : 'ok', note: 'checked' } })
+  const looked = [{ name: 'get_seo_issue_pages', input: { issue: 'orphan' } }]
+  const ev = evidenceIndex('{"total":212,"organic_sessions_28d":3}')   // a tool result as stored: JSON text
+  const audit = (reason: string, extra: unknown[] = []) => normaliseSeoAudit({ findings: [], blind_spots: [], area_verdicts: verdicts, dismissed_signals: [{ id: 'crawl:orphan', reason }, ...extra] }, { coverage: cov, signals: sig, toolCalls: looked, evidence: ev })
+  const vague = audit('Mostly old pages or minor accessory products.')
+  check('vague dismissal refused through conclude', !vague.ok && vague.problems.some((p) => p.includes('crawl:orphan') && p.includes('no number')))
+  const grounded = audit('212 pages, together 3 organic sessions in 28 days')
+  check('grounded dismissal accepted', grounded.ok, grounded.ok ? '' : grounded.problems.join(' | '))
+  check('an unknown signal id is not number-checked', audit('212 pages', [{ id: 'old:gone', reason: 'no numbers here' }]).ok)
+  const noEvidence = normaliseSeoAudit({ findings: [], blind_spots: [], area_verdicts: verdicts, dismissed_signals: [{ id: 'crawl:orphan', reason: 'vague' }] }, { coverage: cov, signals: sig, toolCalls: looked })
+  check('without evidence in ctx the number check is skipped (unit callers)', noEvidence.ok)
 }
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
