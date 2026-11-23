@@ -102,24 +102,26 @@ export async function auditContext(supabase: SupabaseClient): Promise<{ coverage
 // page list for 8 crawl issues before dismissing them). Each used to reload the
 // whole crawl, Search Console and GA4; eight copies at once hit the edge
 // worker's resource limit (546 WORKER_RESOURCE_LIMIT, run c0e8430f). The data
-// only changes with the weekly job, so it is loaded once and shared, keyed by
-// the crawl and Search Console window, for a few minutes.
+// only changes with the weekly job, so it is loaded once per invocation and
+// shared by every tool call in it.
 
 interface AuditData { crawl: { id: string; finished_at: string; urls_total: number } | null; crawlId: string | null; pages: CrawlPage[]; end: string | null; cur: QpRow[]; prev: QpRow[]; organic: Map<string, { sessions: number; conversions: number }> }
-let cached: { at: number; data: Promise<AuditData> } | null = null
-const CACHE_MS = 5 * 60_000
+// Scoped to the request's own Supabase client (strategist-brain creates one
+// per invocation): the shared data disappears with the tick, even if the tick
+// throws, and two invocations never see each other's copy.
+const cache = new WeakMap<SupabaseClient, Promise<AuditData>>()
 
-/** Frees the shared audit data; strategist-brain calls this at the end of every tick
- *  so a reused worker does not hold it between ticks. */
-export function clearAuditCache(): void { cached = null }
+/** Frees this tick's shared audit data early (it is released with the client anyway). */
+export function clearAuditCache(supabase: SupabaseClient): void { cache.delete(supabase) }
 
 /**
- * The audit data, loaded at most once per few minutes. The promise is cached
+ * The audit data, loaded at most once per invocation. The promise is stored
  * the moment the load STARTS (synchronously), so calls made in parallel in
  * the same step all wait on that one load instead of starting their own.
  */
 function auditData(supabase: SupabaseClient): Promise<AuditData> {
-  if (cached && Date.now() - cached.at < CACHE_MS) return cached.data
+  const hit = cache.get(supabase)
+  if (hit) return hit
   const data = (async (): Promise<AuditData> => {
     const crawl = await latestCrawl(supabase)
     const [pages, qp, organic] = await Promise.all([
@@ -129,9 +131,9 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
     ])
     return { crawl, crawlId: crawl?.id ?? null, pages, end: qp.end, cur: qp.cur, prev: qp.prev, organic }
   })()
-  cached = { at: Date.now(), data }
+  cache.set(supabase, data)
   // A failed load must not stay cached.
-  data.catch(() => { if (cached?.data === data) cached = null })
+  data.catch(() => { if (cache.get(supabase) === data) cache.delete(supabase) })
   return data
 }
 

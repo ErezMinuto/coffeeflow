@@ -303,7 +303,7 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
   }
 
   // The shared audit data is only for this tick's tool calls; free it.
-  clearAuditCache()
+  clearAuditCache(supabase)
 
   // Checkpoint. Release the lock either way: a still-thinking run resumes next
   // tick; a concluded/failed run is terminal.
