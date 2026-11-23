@@ -85,7 +85,11 @@ export function inlinkCounts(pages: CrawlPage[]): Map<string, number> {
   return counts
 }
 
-const ok = (p: CrawlPage) => p.status === 200
+// A page is judged on its own content only when it answered 200 itself. A
+// sitemap URL that redirects is reported once, as redirected_in_sitemap; the
+// page it lands on is a different page (26 redirected products were also
+// counted as "missing Product markup" because they land on non-product pages).
+const ok = (p: CrawlPage) => p.status === 200 && !(p.redirects ?? 0)
 const len = (s: string | null) => (s ?? '').trim().length
 const noindex = (p: CrawlPage) => /noindex/i.test(`${p.robots_meta ?? ''} ${p.x_robots_tag ?? ''}`)
 const has = (p: CrawlPage, ...types: string[]) => (p.schema_types ?? []).some((t) => types.includes(t))
@@ -126,7 +130,7 @@ function duplicates(values: Array<string | null>): Set<string> {
   return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k))
 }
 
-export interface CrawlIssueSummary { id: string; area: AuditArea; label: string; count: number; examples: string[] }
+export interface CrawlIssueSummary { id: string; area: AuditArea; label: string; count: number; by_type: Record<string, number>; examples: string[] }
 
 export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: CrawlIssueSummary[]; pages_by_type: Record<string, number>; status_counts: Record<string, number> } {
   const live = pages.filter(ok)
@@ -134,7 +138,10 @@ export function crawlIssues(pages: CrawlPage[], examples = 5): { by_issue: Crawl
   const by_issue: CrawlIssueSummary[] = []
   for (const def of CRAWL_ISSUES) {
     const hit = pages.filter((p) => def.test(p, ctx))
-    if (hit.length) by_issue.push({ id: def.id, area: def.area, label: def.label, count: hit.length, examples: hit.slice(0, examples).map((p) => p.url) })
+    if (!hit.length) continue
+    const by_type: Record<string, number> = {}
+    for (const p of hit) by_type[p.page_type ?? 'other'] = (by_type[p.page_type ?? 'other'] ?? 0) + 1
+    by_issue.push({ id: def.id, area: def.area, label: def.label, count: hit.length, by_type, examples: hit.slice(0, examples).map((p) => p.url) })
   }
   const pages_by_type: Record<string, number> = {}
   const status_counts: Record<string, number> = {}
@@ -301,8 +308,8 @@ export function coverage(s: DataState, now = Date.now()): CoverageRow[] {
     row('conversion', ga4 ? 'partial' : 'blind', ga4 ? 'sessions and conversions per landing page (GA4)' : 'nothing', 'reliable revenue per landing page (GA4 conversion value is not populated)'),
     row('paid_coordination', fresh(s.ads_synced_at, 3, now) && qp ? 'covered' : 'partial', 'Google Ads keywords and Search Console searches side by side', fresh(s.ads_synced_at, 3, now) ? null : 'fresh Google Ads data'),
     row('other_engines', 'blind', 'nothing', 'Bing Webmaster Tools access'),
-    row('site_changes', crawl ? 'partial' : 'blind', crawl ? 'week-on-week crawl differences' : 'nothing', 'a check before theme, plugin or URL changes go live'),
-    row('competitors', 'partial', 'competitors named by AI assistants and competitor ads', 'competitor rankings for Minuto\'s searches (needs a rank/backlink tool)'),
+    row('site_changes', 'blind', 'nothing yet (crawls are stored, but no week-on-week comparison is built)', 'a week-on-week crawl comparison and a check before theme, plugin or URL changes go live'),
+    row('competitors', 'blind', 'no competitor ranking data (only competitor ads, which say nothing about search rankings)', 'competitor rankings for Minuto\'s searches (DataForSEO, Phase 5)'),
     row('measurement', ga4 && qp && fresh(s.orders_synced_at, 3, now) ? 'covered' : 'partial', 'Search Console, GA4 and orders freshness', ga4 && qp && fresh(s.orders_synced_at, 3, now) ? null : 'one of Search Console / GA4 / orders is stale'),
   ]
 }
@@ -357,7 +364,11 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   }
   // 6. Crawl issues on many pages.
   for (const i of crawlIssues(pages).by_issue) {
-    if (i.count >= 5) out.push({ id: `crawl:${i.id}`, kind: 'crawl_issue', area: i.area, size: i.count, summary: `${i.count} pages: ${i.label}` })
+    if (i.count < 5) continue
+    // The page-type mix is part of the signal, so it cannot be misread
+    // (e.g. "63 noindex pages" were taken for cart/checkout; 55 were products).
+    const mix = Object.entries(i.by_type).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${n} ${t}`).join(', ')
+    out.push({ id: `crawl:${i.id}`, kind: 'crawl_issue', area: i.area, size: i.count, summary: `${i.count} pages: ${i.label} (${mix})` })
   }
   return out.slice(0, 50)
 }
@@ -377,7 +388,7 @@ export interface SeoFinding {
   signals: string[]
 }
 export interface BlindSpot { area: AuditArea; why: string; needed: string }
-export type Verdict = 'problem' | 'ok' | 'blind'
+export type Verdict = 'problem' | 'ok' | 'partial' | 'blind'
 export interface AreaVerdict { area: AuditArea; verdict: Verdict; note: string }
 export interface DismissedSignal { id: string; reason: string }
 export interface SeoAudit {
@@ -389,7 +400,7 @@ export interface SeoAudit {
 }
 
 const EFFORTS = new Set(['low', 'medium', 'high'])
-const VERDICTS = new Set(['problem', 'ok', 'blind'])
+const VERDICTS = new Set(['problem', 'ok', 'partial', 'blind'])
 
 /**
  * Checks and tidies the audit. Problems go back to the model to fix; nothing
@@ -404,7 +415,7 @@ const VERDICTS = new Set(['problem', 'ok', 'blind'])
  */
 export function normaliseSeoAudit(
   raw: unknown,
-  ctx?: { coverage: CoverageRow[]; signals: Signal[] },
+  ctx?: { coverage: CoverageRow[]; signals: Signal[]; toolCalls?: Array<{ name: string; input: Record<string, unknown> }> },
 ): { ok: true; audit: SeoAudit } | { ok: false; problems: string[] } {
   const problems: string[] = []
   if (!raw || typeof raw !== 'object') return { ok: false, problems: ['seo_audit is required: { findings, blind_spots, area_verdicts, dismissed_signals }'] }
@@ -477,13 +488,18 @@ export function normaliseSeoAudit(
     if (Array.isArray(r.area_verdicts) && missing.length) problems.push(`seo_audit.area_verdicts is missing: ${missing.join(', ')}`)
     const cov = new Map(ctx.coverage.map((c) => [c.area, c]))
     for (const v of verdicts) {
-      if (cov.get(v.area)?.status === 'blind' && v.verdict !== 'blind') problems.push(`area_verdicts ${v.area}: the coverage map shows this area is blind (${cov.get(v.area)?.missing ?? 'no data'}), so its verdict can only be 'blind'`)
+      const status = cov.get(v.area)?.status
+      if (status === 'blind' && v.verdict !== 'blind') problems.push(`area_verdicts ${v.area}: the coverage map shows this area is blind (${cov.get(v.area)?.missing ?? 'no data'}), so its verdict can only be 'blind'`)
+      // "Fine" is a claim about the whole area, so only a fully visible area can be 'ok'.
+      if (status === 'partial' && (v.verdict === 'ok' || v.verdict === 'blind')) problems.push(`area_verdicts ${v.area}: the coverage map shows this area is only partly visible (missing: ${cov.get(v.area)?.missing ?? '?'}), so its verdict must be 'problem' (with a finding) or 'partial' (checked what is visible, the rest is a blind spot)`)
+      if (status === 'covered' && (v.verdict === 'partial' || v.verdict === 'blind')) problems.push(`area_verdicts ${v.area}: the coverage map shows this area is fully visible, so its verdict must be 'problem' or 'ok'`)
       if (v.verdict === 'problem' && !findings.some((f) => f.area === v.area)) problems.push(`area_verdicts ${v.area} is 'problem' but no finding has area ${v.area}`)
       if (!v.note) problems.push(`area_verdicts ${v.area} needs a one-line note (what you checked, or why it is blind)`)
     }
     for (const f of findings) {
       const v = verdicts.find((x) => x.area === f.area)
-      if (v && v.verdict === 'blind') problems.push(`finding "${f.title}" is in ${f.area}, which is blind (no data): an area you cannot see cannot have findings — remove the finding or move it to the area its evidence comes from`)
+      if (v && v.verdict === 'partial') problems.push(`finding "${f.title}" is in ${f.area}, whose verdict is 'partial': an area with a finding is 'problem'`)
+      else if (v && v.verdict === 'blind') problems.push(`finding "${f.title}" is in ${f.area}, which is blind (no data): an area you cannot see cannot have findings — remove the finding or move it to the area its evidence comes from`)
       else if (v && v.verdict !== 'problem') problems.push(`finding "${f.title}" is in ${f.area}, but that area's verdict is '${v.verdict}' (make it 'problem')`)
     }
   }
@@ -501,6 +517,14 @@ export function normaliseSeoAudit(
     const open = ctx.signals.filter((s) => !answered.has(s.id))
     if (open.length) {
       problems.push(`${open.length} material signal(s) are not answered. Each must be in a finding's signals[] or in dismissed_signals with a reason: ${open.map((s) => `${s.id} (${s.summary})`).join(' | ')}`)
+    }
+    // Look before you dismiss: a crawl issue can only be dismissed after
+    // opening its page list in this run (the first strict audit waved off
+    // 7 crawl issues as "pagination noise" without looking; there was none).
+    if (ctx.toolCalls) {
+      const looked = new Set(ctx.toolCalls.filter((c) => c.name === 'get_seo_issue_pages').map((c) => String(c.input?.issue ?? '')))
+      const unseen = dismissed.filter((d) => d.id.startsWith('crawl:') && known.has(d.id) && !looked.has(d.id.slice('crawl:'.length)))
+      if (unseen.length) problems.push(`dismissed crawl signal(s) without looking at the pages: call get_seo_issue_pages for ${unseen.map((d) => d.id.slice('crawl:'.length)).join(', ')} first, then keep the dismissal only if the pages support it`)
     }
     // Ids that are not in today's list are ignored rather than refused: they
     // answer nothing, and refusing them would block a brief if the weekly data

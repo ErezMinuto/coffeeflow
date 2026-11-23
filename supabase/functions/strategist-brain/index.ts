@@ -204,6 +204,12 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
     weekStart:    run.week_start ?? mondayOf(new Date()),
     workerId,
     dashboardUrl: DASHBOARD_URL,
+    // Read lazily: includes calls made earlier in the same assistant turn.
+    toolCalls: () => state.messages.flatMap((m) => Array.isArray(m.content)
+      ? (m.content as Array<{ type?: string; name?: string; input?: unknown }>)
+          .filter((b) => b?.type === 'tool_use' && typeof b.name === 'string')
+          .map((b) => ({ name: b.name as string, input: (b.input ?? {}) as Record<string, unknown> }))
+      : []),
   }
 
   const cost: CostTotals = { ...ZERO_COST, ...(run.cost_tokens ?? {}) }

@@ -46,6 +46,9 @@ export interface ToolContext {
   weekStart:    string   // ISO date (Monday)
   workerId:     string
   dashboardUrl: string
+  /** Every tool the model has called in this run so far (from the run's message
+   *  history), so conclude_brief can check the audit looked before it dismissed. */
+  toolCalls?:   () => Array<{ name: string; input: Record<string, unknown> }>
 }
 
 const REVENUE_ORDER_STATUSES = ['completed', 'processing']
@@ -497,7 +500,7 @@ async function handleConcludeBrief(
   try { auditCtx = await auditContext(supabase) } catch (e) {
     return { result: { error: `conclude_brief NOT saved — could not load the audit data to check seo_audit against (${e instanceof Error ? e.message : String(e)}). Try conclude_brief again.` } }
   }
-  const audit = normaliseSeoAudit(input.seo_audit, auditCtx)
+  const audit = normaliseSeoAudit(input.seo_audit, { ...auditCtx, toolCalls: ctx.toolCalls?.() ?? [] })
   if (!audit.ok) {
     return { result: { error: `conclude_brief NOT saved — seo_audit: ${audit.problems.join(' ; ')}. Fix and call conclude_brief again.`, areas: AUDIT_AREAS } }
   }
@@ -690,7 +693,7 @@ function renderBriefHtml(
     ${recs ? `<h3 style="margin:16px 0 6px;font-size:15px">Recommended (for your approval)</h3><ul style="padding-left:18px;margin:0">${recs}</ul>` : ''}
     ${ooh ? `<h3 style="margin:16px 0 6px;font-size:15px">For you to weigh (outside the agent's hands)</h3><ul style="padding-left:18px;margin:0">${ooh}</ul>` : ''}
     <h3 style="margin:16px 0 6px;font-size:15px">SEO audit: biggest weaknesses by money${(audit.findings ?? []).length > 10 ? ` (top 10 of ${audit.findings.length})` : ''}</h3>
-    ${(audit.area_verdicts ?? []).length ? `<p style="color:#6b7280;margin:0 0 6px;font-size:13px">${(audit.area_verdicts ?? []).filter(v => v.verdict === 'problem').length} areas with problems · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'ok').length} checked and fine · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'blind').length} blind · ${audit.signals_checked ?? 0} data signals answered</p>` : ''}
+    ${(audit.area_verdicts ?? []).length ? `<p style="color:#6b7280;margin:0 0 6px;font-size:13px">${(audit.area_verdicts ?? []).filter(v => v.verdict === 'problem').length} areas with problems · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'ok').length} checked and fine · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'partial').length} partly visible · ${(audit.area_verdicts ?? []).filter(v => v.verdict === 'blind').length} blind · ${audit.signals_checked ?? 0} data signals answered</p>` : ''}
     ${findings ? `<table style="border-collapse:collapse;width:100%;font-size:14px">${findings}</table>` : '<p style="color:#6b7280;margin:0">No SEO weaknesses found this week.</p>'}
     ${blind ? `<h3 style="margin:16px 0 6px;font-size:15px">Blind spots (what the audit could not check)</h3><ul style="padding-left:18px;margin:0">${blind}</ul>` : ''}
     <p style="margin-top:20px"><a href="${dashboardUrl}/admin/seo-agent" style="display:inline-block;background:#6A7D45;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600">Open the full brief →</a></p>
@@ -857,12 +860,12 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
             },
             area_verdicts: {
               type: 'array',
-              description: `exactly one entry for EACH of the ${AUDIT_AREA_KEYS.length} areas: problem (has at least one finding), ok (checked in the data, nothing worth fixing — say what you checked), or blind (the data cannot see it). An area the coverage map marks blind can only be blind.`,
-              items: { type: 'object', properties: { area: { type: 'string', enum: AUDIT_AREA_KEYS }, verdict: { type: 'string', enum: ['problem', 'ok', 'blind'] }, note: { type: 'string' } }, required: ['area', 'verdict', 'note'] },
+              description: `exactly one entry for EACH of the ${AUDIT_AREA_KEYS.length} areas, matching the coverage map: a fully visible (covered) area is problem (has at least one finding) or ok (checked in the data, nothing worth fixing — say what you checked); a partly visible area is problem or partial (checked what is visible, the rest is a blind spot); a blind area is blind.`,
+              items: { type: 'object', properties: { area: { type: 'string', enum: AUDIT_AREA_KEYS }, verdict: { type: 'string', enum: ['problem', 'ok', 'partial', 'blind'] }, note: { type: 'string' } }, required: ['area', 'verdict', 'note'] },
             },
             dismissed_signals: {
               type: 'array',
-              description: 'signals from signals_to_address that are not worth a finding, each with the reason (e.g. seasonal, already fixed, too small to matter — with the number)',
+              description: 'signals from signals_to_address that are not worth a finding, each with the reason and the number behind it. A crawl signal can only be dismissed after get_seo_issue_pages for that issue in this run.',
               items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'reason'] },
             },
           },
