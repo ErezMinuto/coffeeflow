@@ -16,7 +16,7 @@ export const STRATEGIST_EFFORT: 'low' | 'medium' | 'high' | 'xhigh' | 'max' = 'h
 
 // Hard cap on ReAct steps per run (also enforced by strategist_runs.max_steps).
 // A run that hits this without concluding is failed-safe, never looped forever.
-export const STRATEGIST_MAX_STEPS = 12
+export const STRATEGIST_MAX_STEPS = 30   // 12 before the weekly whole-site SEO audit (Phase 1)
 
 // Per-step output cap. The brain runs adaptive thinking, whose tokens count
 // toward output — so this must leave room for a real reasoning pass PLUS the

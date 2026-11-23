@@ -34,6 +34,8 @@ import { appendChatMessage } from '../seo-agent/db.ts'
 import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
+import { SEO_AUDIT_TOOL_DEFS, dispatchSeoAuditTool } from './seo_audit_tools.ts'
+import { AUDIT_AREAS, AUDIT_AREA_KEYS, normaliseSeoAudit, type SeoAudit } from './seo_audit_analysis.ts'
 
 export type BrainToolDefinition = ToolDefinition
 
@@ -483,11 +485,18 @@ async function handleConcludeBrief(
     top_thesis?: string
     recommendations?: BriefRecommendation[]
     out_of_hands?: OutOfHandsItem[]
+    seo_audit?: unknown
   },
 ): Promise<ToolOutcome> {
   if (!input.summary || !Array.isArray(input.diagnosis)) {
     return { result: { error: 'summary and diagnosis[] are required' } }
   }
+  // The weekly SEO audit is part of every brief (SEO agent build plan, Phase 1).
+  const audit = normaliseSeoAudit(input.seo_audit)
+  if (!audit.ok) {
+    return { result: { error: `conclude_brief NOT saved — seo_audit: ${audit.problems.join(' ; ')}. Fix and call conclude_brief again.`, areas: AUDIT_AREAS } }
+  }
+  input.seo_audit = audit.audit
 
   // Blog recommendations must name real catalog products before anything is
   // written — the writer links them and the banner shows products[0]. Refusing
@@ -574,6 +583,7 @@ async function handleConcludeBrief(
       top_thesis:      input.top_thesis ?? null,
       recommendations: input.recommendations ?? [],
       out_of_hands:    input.out_of_hands ?? [],
+      seo_audit:       audit.audit,
       status:          'draft',
     })
     .select('id')
@@ -643,9 +653,17 @@ function esc(s: string): string {
 }
 
 function renderBriefHtml(
-  b: { summary: string; diagnosis: DiagnosisItem[]; top_thesis?: string; recommendations?: BriefRecommendation[]; out_of_hands?: OutOfHandsItem[] },
+  b: { summary: string; diagnosis: DiagnosisItem[]; top_thesis?: string; recommendations?: BriefRecommendation[]; out_of_hands?: OutOfHandsItem[]; seo_audit?: unknown },
   dashboardUrl: string,
 ): string {
+  const audit = (b.seo_audit ?? { findings: [], blind_spots: [] }) as SeoAudit
+  const ils = (v: number | null) => (v == null ? '—' : `₪${Math.round(v).toLocaleString('en-US')}/mo`)
+  const findings = (audit.findings ?? []).slice(0, 10)
+    .map(f => `<tr><td style="padding:6px 8px;border-top:1px solid #e5e7eb;vertical-align:top"><b>${esc(f.title)}</b><br><span style="color:#6b7280;font-size:12px">${esc(AUDIT_AREAS[f.area] ?? f.area)} · ${esc(f.evidence)}</span><br><span style="font-size:13px">Fix: ${esc(f.fix)}</span></td><td style="padding:6px 8px;border-top:1px solid #e5e7eb;white-space:nowrap;vertical-align:top">${ils(f.est_monthly_value_ils)}<br><span style="color:#6b7280;font-size:12px">${esc(f.effort)} effort</span></td></tr>`)
+    .join('')
+  const blind = (audit.blind_spots ?? [])
+    .map(s => `<li style="margin:0 0 6px"><b>${esc(AUDIT_AREAS[s.area] ?? s.area)}</b> — ${esc(s.why)} <span style="color:#6b7280">Needs: ${esc(s.needed)}</span></li>`)
+    .join('')
   const diag = (b.diagnosis ?? [])
     .map(d => `<li style="margin:0 0 8px"><span style="color:#111827">${esc(d.claim)}</span><br><span style="color:#6b7280;font-size:13px">${esc(d.evidence)}</span></li>`)
     .join('')
@@ -666,6 +684,9 @@ function renderBriefHtml(
     ${diag ? `<h3 style="margin:16px 0 6px;font-size:15px">What the numbers say</h3><ul style="padding-left:18px;margin:0">${diag}</ul>` : ''}
     ${recs ? `<h3 style="margin:16px 0 6px;font-size:15px">Recommended (for your approval)</h3><ul style="padding-left:18px;margin:0">${recs}</ul>` : ''}
     ${ooh ? `<h3 style="margin:16px 0 6px;font-size:15px">For you to weigh (outside the agent's hands)</h3><ul style="padding-left:18px;margin:0">${ooh}</ul>` : ''}
+    <h3 style="margin:16px 0 6px;font-size:15px">SEO audit: biggest weaknesses by money${(audit.findings ?? []).length > 10 ? ` (top 10 of ${audit.findings.length})` : ''}</h3>
+    ${findings ? `<table style="border-collapse:collapse;width:100%;font-size:14px">${findings}</table>` : '<p style="color:#6b7280;margin:0">No SEO weaknesses found this week.</p>'}
+    ${blind ? `<h3 style="margin:16px 0 6px;font-size:15px">Blind spots (what the audit could not check)</h3><ul style="padding-left:18px;margin:0">${blind}</ul>` : ''}
     <p style="margin-top:20px"><a href="${dashboardUrl}/admin/seo-agent" style="display:inline-block;background:#6A7D45;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600">Open the full brief →</a></p>
     <p style="color:#9ca3af;font-size:12px;margin-top:16px">Thinking only — nothing here is published or spent without your approval. — strategist-brain</p>
   </div>`
@@ -798,8 +819,36 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
           },
         },
         out_of_hands: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, rationale: { type: 'string' } }, required: ['title', 'rationale'] } },
+        seo_audit: {
+          type: 'object',
+          description: 'The weekly whole-site SEO audit (required every cycle). findings: every SEO weakness worth fixing that the audit tools surfaced, across ALL areas, each with the numbers behind it, the exact pages, an estimated monthly value in ILS (extra visits per month × visit_value from get_seo_audit_overview, or null when it cannot be estimated, with the method stated), effort and the fix. Sorted by value automatically. blind_spots: every area the coverage map marks blind (and partial gaps that matter), with why and what is needed — never guess about an area you cannot see.',
+          properties: {
+            findings: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  area:                  { type: 'string', enum: AUDIT_AREA_KEYS },
+                  title:                 { type: 'string' },
+                  evidence:              { type: 'string', description: 'the numbers from the audit tools' },
+                  pages:                 { type: 'array', items: { type: 'string' }, description: 'exact URLs, money first, up to 20' },
+                  est_monthly_value_ils: { type: ['number', 'null'] },
+                  value_method:          { type: 'string' },
+                  effort:                { type: 'string', enum: ['low', 'medium', 'high'] },
+                  fix:                   { type: 'string' },
+                },
+                required: ['area', 'title', 'evidence', 'effort', 'fix'],
+              },
+            },
+            blind_spots: {
+              type: 'array',
+              items: { type: 'object', properties: { area: { type: 'string', enum: AUDIT_AREA_KEYS }, why: { type: 'string' }, needed: { type: 'string' } }, required: ['area', 'why', 'needed'] },
+            },
+          },
+          required: ['findings', 'blind_spots'],
+        },
       },
-      required: ['summary', 'diagnosis'],
+      required: ['summary', 'diagnosis', 'seo_audit'],
     },
   },
   {
@@ -809,6 +858,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   },
   // Research + innovation pitches (research_tools.ts).
   ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
+  // Weekly whole-site SEO audit (seo_audit_tools.ts).
+  ...(SEO_AUDIT_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
 
 async function getKeywordResearch(supabase: SupabaseClient, input: { limit?: number }) {
@@ -853,7 +904,10 @@ export async function dispatchTool(
       case 'get_seo_learnings':           return { result: await getSeoLearnings(supabase, input as { limit?: number }) }
       case 'get_current_capabilities':    return { result: await getCurrentCapabilities(supabase) }
       case 'emit_innovation_pitch':       return { result: await handleEmitInnovationPitch(supabase, ctx, input as unknown as PitchInput) }
-      default:                            return { result: { error: `unknown tool: ${name}` } }
+      default: {
+        const seo = await dispatchSeoAuditTool(supabase, name, input)
+        return seo === undefined ? { result: { error: `unknown tool: ${name}` } } : { result: seo }
+      }
     }
   } catch (e) {
     return { result: { error: `${name} threw: ${e instanceof Error ? e.message : String(e)}` } }
