@@ -34,8 +34,8 @@ import { appendChatMessage } from '../seo-agent/db.ts'
 import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
-import { SEO_AUDIT_TOOL_DEFS, auditContext, dispatchSeoAuditTool } from './seo_audit_tools.ts'
-import { AUDIT_AREAS, AUDIT_AREA_KEYS, normaliseSeoAudit, type SeoAudit } from './seo_audit_analysis.ts'
+import { SEO_AUDIT_TOOL_DEFS, dispatchSeoAuditTool } from './seo_audit_tools.ts'
+import { AUDIT_AREAS, AUDIT_AREA_KEYS, normaliseSeoAudit, type CoverageRow, type SeoAudit, type Signal } from './seo_audit_analysis.ts'
 
 export type BrainToolDefinition = ToolDefinition
 
@@ -49,6 +49,8 @@ export interface ToolContext {
   /** Every tool the model has called in this run so far (from the run's message
    *  history), so conclude_brief can check the audit looked before it dismissed. */
   toolCalls?:   () => Array<{ name: string; input: Record<string, unknown> }>
+  /** The latest get_seo_audit_overview result in this run, parsed (null if never called). */
+  auditOverview?: () => Record<string, unknown> | null
 }
 
 const REVENUE_ORDER_STATUSES = ['completed', 'processing']
@@ -496,9 +498,16 @@ async function handleConcludeBrief(
   }
   // The weekly SEO audit is part of every brief (SEO agent build plan, Phase 1),
   // checked against the coverage map and the material signals in the data.
-  let auditCtx: Awaited<ReturnType<typeof auditContext>> | undefined
-  try { auditCtx = await auditContext(supabase) } catch (e) {
-    return { result: { error: `conclude_brief NOT saved — could not load the audit data to check seo_audit against (${e instanceof Error ? e.message : String(e)}). Try conclude_brief again.` } }
+  // Checked against the overview this run already received — the same
+  // coverage map and signals the model saw. Recomputing them here (reloading
+  // the whole crawl and Search Console) pushed the final step over the edge
+  // worker's resource limit (546 WORKER_RESOURCE_LIMIT, 2026-11-23).
+  const overview = ctx.auditOverview?.() ?? null
+  const auditCtx = overview && Array.isArray(overview.coverage) && Array.isArray(overview.signals_to_address)
+    ? { coverage: overview.coverage as CoverageRow[], signals: overview.signals_to_address as Signal[] }
+    : null
+  if (!auditCtx) {
+    return { result: { error: 'conclude_brief NOT saved — call get_seo_audit_overview first: seo_audit is checked against its coverage map and signals_to_address.' } }
   }
   const audit = normaliseSeoAudit(input.seo_audit, { ...auditCtx, toolCalls: ctx.toolCalls?.() ?? [] })
   if (!audit.ok) {
