@@ -22,6 +22,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger } from '../_shared/logger.ts'
+import { addKeywordRow, type KeywordTotals } from './keyword_agg.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -539,7 +540,7 @@ serve(async (req) => {
         `
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'keywords_daily')
         // Aggregate per-keyword for the legacy keyword_ideas table (top-100).
-        const kwAgg: Map<string, any> = new Map()
+        const kwAgg = new Map<string, KeywordTotals>()
         for (const r of rows) {
           const kw = r.adGroupCriterion?.keyword?.text ?? ''
           const match = r.adGroupCriterion?.keyword?.matchType ?? 'UNSPECIFIED'
@@ -563,28 +564,18 @@ serve(async (req) => {
           }, { onConflict: 'campaign_id,ad_group_id,keyword_text,match_type,date' })
           stats.keyword_rows++
 
-          // Aggregate for legacy keyword_ideas
-          const key = kw
-          if (!kwAgg.has(key)) {
-            kwAgg.set(key, { impressions: 0, clicks: 0, cost: 0, matchType: match, impShare: 0, impShareN: 0 })
-          }
-          const a = kwAgg.get(key)!
-          a.impressions += r.metrics?.impressions ?? 0
-          a.clicks += r.metrics?.clicks ?? 0
-          a.cost += (r.metrics?.costMicros ?? 0) / 1_000_000
-          if (r.metrics?.searchImpressionShare) {
-            a.impShare += r.metrics.searchImpressionShare
-            a.impShareN += 1
-          }
+          // Aggregate for legacy keyword_ideas (metrics arrive as strings)
+          addKeywordRow(kwAgg, kw, match, r.metrics)
         }
         // Populate legacy keyword_ideas (backward compat for existing doctor code)
         const topKeywords = [...kwAgg.entries()]
           .sort((a, b) => b[1].impressions - a[1].impressions)
           .slice(0, 150)
+        let kwFailed = 0, kwFirstErr: string | null = null
         for (const [kw, a] of topKeywords) {
           const avgCpc = a.clicks > 0 ? a.cost / a.clicks : 0
           const avgIS = a.impShareN > 0 ? (a.impShare / a.impShareN) * 100 : 0
-          await supabase.from('keyword_ideas').upsert({
+          const { error: kwErr } = await supabase.from('keyword_ideas').upsert({
             keyword: kw,
             avg_monthly_searches: a.impressions,
             competition: a.matchType,
@@ -593,7 +584,9 @@ serve(async (req) => {
             high_top_bid_micros: Math.round(avgCpc * 1_000_000 * 1.2),
             synced_at: new Date().toISOString(),
           }, { onConflict: 'keyword' })
+          if (kwErr) { kwFailed++; kwFirstErr ??= kwErr.message }
         }
+        if (kwFailed) stats.errors.push(`keyword_ideas: ${kwFailed} of ${topKeywords.length} upserts failed (first: ${kwFirstErr})`)
       } catch (e: any) {
         log.error('block.keywords_daily.fail', 'keywords_daily block failed', { block: 'keywords_daily' }, e)
         stats.errors.push(`keywords_daily: ${e.message}`)
