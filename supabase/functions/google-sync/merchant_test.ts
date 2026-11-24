@@ -11,6 +11,7 @@ Deno.test('accountIdFromName parses accounts/{id} only', () => {
 Deno.test('classifyMerchantError tells set-up problems from failures', () => {
   assertEquals(classifyMerchantError(401, '{"error":{"status":"UNAUTHENTICATED","message":"GCP project with id x and number 1 is not registered with the merchant account."}}'), 'not_registered')
   assertEquals(classifyMerchantError(403, '{"error":{"status":"PERMISSION_DENIED","details":[{"reason":"ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}'), 'no_permission')
+  assertEquals(classifyMerchantError(403, '{"error":{"code":403,"status":"PERMISSION_DENIED","message":"Merchant API has not been used in project 1 before or it is disabled.","details":[{"reason":"SERVICE_DISABLED"}]}}'), 'api_disabled')
   assertEquals(classifyMerchantError(500, 'backend error'), 'error')
   assertEquals(classifyMerchantError(401, 'invalid credentials'), 'error')
 })
