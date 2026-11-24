@@ -153,7 +153,7 @@ async function speedTargets(pages) {
 
 /** Pages worth asking Google about: every category, then the pages with the most search clicks. */
 async function inspectTargets(pages) {
-  const cats = pages.filter((p) => p.page_type === 'category' && p.status === 200).map((p) => p.url)
+  const cats = pages.filter((p) => (p.page_type === 'category' || p.page_type === 'listing') && p.status === 200).map((p) => p.url)
   const since = new Date(Date.now() - 28 * 864e5).toISOString().slice(0, 10)
   const rows = await dbAll(`google_search_console?select=page,clicks&keyword=eq.__page__&date=gte.${since}&order=date,page`).catch(() => [])
   const clicks = new Map()
@@ -166,6 +166,9 @@ let crawlId = null
 
 async function main() {
   const { robotsTxt, sitemaps, urls } = await collectUrls()
+  // Hubs that link to many pages but may be missing from the sitemap: the blog
+  // index lists every post (its pages 2+ are followed below).
+  for (const hub of [`${SITE}/blog/`]) if (!urls.has(hub)) urls.set(hub, 'hub')
   let list = [...urls.entries()]
   if (DRY) list = list.slice(0, 20)
   console.log(`sitemaps: ${sitemaps.length}, urls: ${urls.size}${DRY ? ' (dry run: 20)' : ''}`)
@@ -176,7 +179,7 @@ async function main() {
   }
 
   const pages = await mapLimit(list, 4, async ([url, sm]) => {
-    const base = { crawl_id: crawlId, url, page_type: pageType(url, sm), in_sitemap: true }
+    const base = { crawl_id: crawlId, url, page_type: pageType(url, sm), in_sitemap: sm !== 'hub' }
     try {
       const r = await fetchPage(url)
       const extracted = r.html ? extractPage(r.html, r.final_url, SITE_HOST) : {}
@@ -193,7 +196,7 @@ async function main() {
   // product linked only from a later page counts as linked; and flag listings
   // Google cannot page through (paging only by a JavaScript button, or a
   // "next" page that repeats page 1).
-  const cats = pages.filter((p) => p.page_type === 'category' && p.status === 200)
+  const cats = pages.filter((p) => (p.page_type === 'category' || p.page_type === 'listing') && p.status === 200)
   let listingFetched = 0
   await mapLimit(cats, 4, async (cat) => {
     const links = new Set(cat.internal_links ?? [])
@@ -226,7 +229,7 @@ async function main() {
     cat.listing_pages = reached
     cat.listing_issue = listingIssue(cat, nextProducts)
   })
-  console.log(`category listings: ${cats.length} categories, ${listingFetched} further pages followed, ${cats.filter((c) => c.listing_issue).length} that Google cannot page through`)
+  console.log(`listings (shop categories + blog): ${cats.length}, ${listingFetched} further pages followed, ${cats.filter((c) => c.listing_issue).length} that Google cannot page through`)
 
   if (DRY) { console.log('dry run: nothing written'); return }
 
