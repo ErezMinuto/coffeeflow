@@ -77,6 +77,8 @@ export interface CrawlPage {
   listing_issue?: string | null
   /** product pages: hidden from the shop in WooCommerce (catalog visibility 'hidden'), i.e. discontinued */
   catalog_hidden?: boolean
+  /** category pages: words of the category's own text (its WooCommerce description), not the product grid */
+  category_text_words?: number | null
 }
 
 /** How many OTHER crawled pages link to each page. */
@@ -370,22 +372,44 @@ export const isPriorityText = (t: string | null | undefined): boolean => !!t && 
 const isPriorityCategory = (key: string): boolean => key.startsWith(PRIORITY_CATEGORY_PATH)
 
 /** Best position a coffee-beans category page holds for each query (lower is better). */
-function priorityCategoryRank(cur: readonly QpRow[]): Map<string, number> {
-  const best = new Map<string, number>()
+function priorityCategoryRank(cur: readonly QpRow[]): Map<string, { pos: number; key: string }> {
+  const best = new Map<string, { pos: number; key: string }>()
   for (const r of cur) {
-    if (!isPriorityCategory(pageKey(r.page))) continue
-    const q = norm(r.query)
-    best.set(q, Math.min(best.get(q) ?? Infinity, r.position))
+    const key = pageKey(r.page)
+    if (!isPriorityCategory(key)) continue
+    const q = norm(r.query), had = best.get(q)
+    if (!had || r.position < had.pos) best.set(q, { pos: r.position, key })
   }
   return best
 }
 
-function priorityLock(query: string | null, page: string | null, rank: Map<string, number>): string | undefined {
+/** Words on a page as the crawl counted them (post body) or, for a category, its own text. */
+export interface PageWords { categoryText: Map<string, number>; body: Map<string, number> }
+export function pageWords(pages: readonly CrawlPage[]): PageWords {
+  const categoryText = new Map<string, number>(), body = new Map<string, number>()
+  for (const p of pages) {
+    const k = pageKey(p.final_url ?? p.url)
+    if (p.category_text_words != null) categoryText.set(k, p.category_text_words)
+    if (p.word_count != null) body.set(k, p.word_count)
+  }
+  return { categoryText, body }
+}
+
+function priorityLock(query: string | null, page: string | null, rank: Map<string, { pos: number; key: string }>, words?: PageWords): string | undefined {
   if (query != null) {
     if (!isPriorityText(query)) return undefined
-    const pos = rank.get(norm(query))
-    if (pos != null && pos <= PRIORITY_CATEGORY_TOP) return undefined
-    return `coffee-beans search; our coffee-beans category ${pos == null ? 'does not rank for it' : `ranks ${Math.round(pos * 10) / 10}`} (needs top ${PRIORITY_CATEGORY_TOP} before this can be dismissed)`
+    const hit = rank.get(norm(query))
+    if (hit && hit.pos <= PRIORITY_CATEGORY_TOP) return undefined
+    // The facts that decide the fix, as data: how much text the category has, and the page Google prefers.
+    const catKey = hit?.key ?? PRIORITY_CATEGORY_PATH
+    const catWords = words?.categoryText.get(catKey)
+    const winner = page != null ? pageKey(page) : null
+    const winnerWords = winner && winner !== catKey ? words?.body.get(winner) : undefined
+    const facts = [
+      catWords != null ? `the category page (${catKey}) has ${catWords} words of its own text` : null,
+      winnerWords != null ? `the page Google shows instead (${winner}) has ${winnerWords} words` : null,
+    ].filter(Boolean).join('; ')
+    return `coffee-beans search; our coffee-beans category ${hit == null ? 'does not rank for it' : `ranks ${Math.round(hit.pos * 10) / 10}`} (needs top ${PRIORITY_CATEGORY_TOP} before this can be dismissed)${facts ? `. ${facts}` : ''}`
   }
   if (page != null && isPriorityText(page)) return 'coffee-beans page losing search clicks (coffee beans are the priority: cannot be dismissed)'
   return undefined
@@ -398,6 +422,7 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   const out: Signal[] = []
   const typeOf = new Map(pages.map((p) => [pageKey(p.final_url ?? p.url), p.page_type ?? 'other']))
   const rank = priorityCategoryRank(cur)
+  const words = pageWords(pages)
 
   // 1. A whole page type losing search clicks.
   const byType = new Map<string, { now: number; before: number }>()
@@ -421,15 +446,15 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   }
   // 3. First-page positions earning far fewer clicks than they should.
   for (const r of (searchView('ctr_gaps', cur, prev, 8) as Array<{ query: string; page: string; position: number; clicks: number; expected_clicks: number; click_gap: number }>)) {
-    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected`, must_address: priorityLock(r.query, null, rank) })
+    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected`, must_address: priorityLock(r.query, r.page, rank, words) })
   }
   // 4. One search split across several of our pages.
   for (const r of (searchView('cannibalization', cur, prev, 5) as Array<{ query: string; impressions: number; pages: unknown[] }>)) {
-    if (r.impressions >= 300) out.push({ id: `cannibal:${r.query}`, kind: 'cannibalization', area: 'content', size: r.impressions, summary: `"${r.query}" (${r.impressions} impressions) split across ${r.pages.length} of our pages`, must_address: priorityLock(r.query, null, rank) })
+    if (r.impressions >= 300) out.push({ id: `cannibal:${r.query}`, kind: 'cannibalization', area: 'content', size: r.impressions, summary: `"${r.query}" (${r.impressions} impressions) split across ${r.pages.length} of our pages`, must_address: priorityLock(r.query, null, rank, words) })
   }
   // 5. Near the first page with real demand.
   for (const r of (searchView('striking_distance', cur, prev, 5) as Array<{ query: string; page: string; position: number; impressions: number }>)) {
-    if (r.impressions >= 500) out.push({ id: `striking:${r.query}|${r.page}`, kind: 'striking_distance', area: 'keyword_map', size: r.impressions, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.impressions} impressions`, must_address: priorityLock(r.query, null, rank) })
+    if (r.impressions >= 500) out.push({ id: `striking:${r.query}|${r.page}`, kind: 'striking_distance', area: 'keyword_map', size: r.impressions, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.impressions} impressions`, must_address: priorityLock(r.query, r.page, rank, words) })
   }
   // 6. Crawl issues on many pages.
   for (const i of crawlIssues(pages).by_issue) {

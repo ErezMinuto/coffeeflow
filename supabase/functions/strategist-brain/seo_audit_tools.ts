@@ -4,6 +4,7 @@
 // analysis in seo_audit_analysis.ts. Read-only.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { visibleWords } from './seo_site_logic.ts'
 import { selectAll } from '../_shared/select_all.ts'
 import {
   AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, materialSignals, pageKey, pagesWithIssue,
@@ -23,6 +24,39 @@ async function latestCrawl(supabase: SupabaseClient): Promise<{ id: string; fini
 
 async function crawlPages(supabase: SupabaseClient, crawlId: string): Promise<CrawlPage[]> {
   return await selectAll<CrawlPage>((from, to) => supabase.from('site_crawl_pages').select(CRAWL_COLS).eq('crawl_id', crawlId).order('url').range(from, to), { label: 'site_crawl_pages', maxRows: 10_000 })
+}
+
+/**
+ * Words of each product category's own text (its WooCommerce description, shown
+ * on the category page), keyed by the category's page path. The crawl's word
+ * count of a category page also counts the product grid, so it cannot tell a
+ * thin category text from a full one. Best effort: on any failure the audit
+ * runs without these counts.
+ */
+export async function categoryTextWords(): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  const base = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
+  const key = Deno.env.get('WOO_KEY'), secret = Deno.env.get('WOO_SECRET')
+  if (!key || !secret) return out
+  try {
+    const cats: Array<{ id: number; slug: string; parent: number; description: string }> = []
+    for (let page = 1; page <= 10; page++) {
+      const r = await fetch(`${base}/wp-json/wc/v3/products/categories?per_page=100&page=${page}&_fields=id,slug,parent,description`, { headers: { Authorization: 'Basic ' + btoa(`${key}:${secret}`) } })
+      if (!r.ok) { await r.body?.cancel(); return out }
+      const rows = await r.json() as typeof cats
+      cats.push(...rows)
+      if (rows.length < 100) break
+    }
+    const byId = new Map(cats.map((c) => [c.id, c]))
+    const path = (c: { slug: string; parent: number }, depth = 0): string => {
+      const parent = c.parent ? byId.get(c.parent) : undefined
+      let slug = c.slug
+      try { slug = decodeURIComponent(c.slug) } catch { /* keep */ }
+      return (parent && depth < 10 ? path(parent, depth + 1) : '/product-category/') + slug + '/'
+    }
+    for (const c of cats) out.set(pageKey(path(c)), visibleWords(c.description ?? ''))
+  } catch { /* the audit works without it */ }
+  return out
 }
 
 /** Product pages hidden from the shop in WooCommerce (catalog visibility 'hidden'), as page keys. */
@@ -130,12 +164,14 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
   if (hit) return hit
   const data = (async (): Promise<AuditData> => {
     const crawl = await latestCrawl(supabase)
-    const [pages, qp, organic, hidden] = await Promise.all([
+    const [pages, qp, organic, hidden, catWords] = await Promise.all([
       crawl ? crawlPages(supabase, crawl.id) : Promise.resolve([] as CrawlPage[]),
       queryPageWindows(supabase),
       organicSessionsByPage(supabase),
       hiddenProductKeys(supabase),
+      categoryTextWords(),
     ])
+    for (const p of pages) if (p.page_type === 'category') p.category_text_words = catWords.get(pageKey(p.final_url ?? p.url)) ?? null
     // Mark discontinued products (hidden from the shop in WooCommerce) before
     // anything is computed from the pages.
     for (const p of pages) if (p.page_type === 'product') p.catalog_hidden = hidden.has(pageKey(p.final_url ?? p.url))
