@@ -1,7 +1,7 @@
 // node --test   (from scripts/seo)
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { extractPage, internalPath, isSitemapIndex, mapLimit, pageType, robotsSitemaps, schemaTypes, sitemapLocs } from './crawl_lib.mjs'
+import { extractPage, internalPath, isSitemapIndex, listingIssue, listingPageNumber, mapLimit, pageType, robotsSitemaps, schemaTypes, sitemapLocs } from './crawl_lib.mjs'
 
 const HOST = 'www.minuto.co.il'
 
@@ -93,4 +93,55 @@ test('every crawl row has the same keys, failed pages included', () => {
   assert.equal(failed.title, null)
   assert.equal(failed.redirects, 0)
   assert.equal(toCrawlRow({ url: 'x', extra: 1 }).extra, undefined)
+})
+
+test('listing page links of the same category', () => {
+  const cat = 'https://www.minuto.co.il/product-category/%d7%90/%d7%91/'
+  assert.equal(listingPageNumber('?page=4', cat, HOST), 4)
+  assert.equal(listingPageNumber(cat + '?page=2', cat, HOST), 2)
+  assert.equal(listingPageNumber('https://www.minuto.co.il/product-category/א/ב/?page=3', cat, HOST), 3)   // decoded form of the same path
+  assert.equal(listingPageNumber(cat + 'page/5/', cat, HOST), 5)
+  assert.equal(listingPageNumber('https://www.minuto.co.il/product-category/other/?page=2', cat, HOST), null)  // another category
+  assert.equal(listingPageNumber('https://example.com/product-category/%d7%90/%d7%91/?page=2', cat, HOST), null)
+  assert.equal(listingPageNumber('?page=x', cat, HOST), null)
+  assert.equal(listingPageNumber(cat, cat, HOST), null)
+  // from page 3 itself, links to page 1 and 4 of the same category still count
+  assert.equal(listingPageNumber(cat + '?page=4', cat + '?page=3', HOST), 4)
+})
+
+test('extractPage collects listing pages, rel=next and product paths', () => {
+  const cat = 'https://www.minuto.co.il/product-category/beans/'
+  const html = `<html><head><link rel="next" href="${cat}?page=2" /></head><body><main>
+    <a href="/product/a/">A</a><a href="/product/b/">B</a>
+    <nav class="mcp-pagination"><a href="${cat}" data-page="1">1</a><a href="${cat}?page=2">2</a><a href="${cat}?page=3">3</a><a href="${cat}?page=2">2</a></nav>
+    <a href="/product-category/other/?page=2">other</a></main></body></html>`
+  const p = extractPage(html, cat, HOST)
+  assert.deepEqual(p.listing_page_urls, [cat + '?page=2', cat + '?page=3'])
+  assert.equal(p.rel_next, cat + '?page=2')
+  assert.deepEqual(p.product_paths, ['/product/a/', '/product/b/'])
+  assert.ok(!p.internal_links.some((l) => l.includes('?')), 'stored internal links keep no query strings')
+})
+
+test('listing issues', () => {
+  const ok = { rel_next: 'x?page=2', listing_page_urls: ['x?page=2'], product_paths: ['/product/a/'] }
+  assert.equal(listingIssue({ rel_next: null, listing_page_urls: [], product_paths: [] }, null), null, 'one-page category')
+  assert.equal(listingIssue(ok, ['/product/b/']), null, 'real links, page 2 differs')
+  // The site before the pagination plugin: rel=next to /page/2/, only a JavaScript button.
+  assert.equal(listingIssue({ rel_next: 'x/page/2/', listing_page_urls: [], product_paths: ['/product/a/'] }, ['/product/a/']), 'no_page_links')
+  assert.equal(listingIssue(ok, ['/product/a/']), 'next_repeats_first')
+  assert.equal(listingIssue(ok, null), null, 'next page not fetched: no claim')
+})
+
+test('crawl rows carry the listing columns, not the helper fields', () => {
+  assert.ok(CRAWL_ROW_COLUMNS.includes('listing_pages') && CRAWL_ROW_COLUMNS.includes('listing_issue'))
+  const row = toCrawlRow({ url: 'u', listing_page_urls: ['a'], rel_next: 'b', product_paths: ['c'], listing_pages: 3 })
+  assert.equal(row.listing_pages, 3)
+  assert.equal(row.listing_issue, null)
+  assert.ok(!('listing_page_urls' in row) && !('rel_next' in row) && !('product_paths' in row))
+})
+
+test('an unparseable rel=next does not break the page', () => {
+  const p = extractPage('<html><head><link rel="next" href="http://[bad" /></head><body><main><a href="/product/a/">A</a></main></body></html>', 'https://www.minuto.co.il/product-category/x/', HOST)
+  assert.equal(p.rel_next, null)
+  assert.deepEqual(p.product_paths, ['/product/a/'])
 })

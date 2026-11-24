@@ -189,6 +189,9 @@ serve(async (req) => {
           image_urls: imgs,
           categories: cats,
           stock_status: p.stock_status ?? null,
+          // visible | catalog | search | hidden — the SEO audit reads it to tell a
+          // discontinued (hidden) product from one that is sold (2026-11-24).
+          catalog_visibility: txt(p.catalog_visibility),
           sku: txt(p.sku),
           synced_at: new Date().toISOString(),
         }

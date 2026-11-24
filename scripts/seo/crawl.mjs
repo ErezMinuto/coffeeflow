@@ -18,7 +18,7 @@
 //   node scripts/seo/crawl.mjs              full run
 //   node scripts/seo/crawl.mjs --dry-run    crawl 20 URLs, write nothing
 
-import { extractPage, isSitemapIndex, mapLimit, pageType, robotsSitemaps, sitemapLocs, toCrawlRow } from './crawl_lib.mjs'
+import { extractPage, isSitemapIndex, listingIssue, mapLimit, pageType, robotsSitemaps, sitemapLocs, toCrawlRow } from './crawl_lib.mjs'
 
 const SITE = (process.env.SITE_URL || 'https://www.minuto.co.il').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).host
@@ -29,6 +29,7 @@ const DRY = process.argv.includes('--dry-run')
 const UA = 'Mozilla/5.0 (compatible; MinutoSEOAudit/1.0; +https://www.minuto.co.il/)'
 const MAX_URLS = 4000
 const KEEP_DAYS = 60
+const MAX_LISTING_PAGES = 80   // further listing pages followed per category
 
 if (!DRY && (!SUPABASE_URL || !KEY)) { console.error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing'); process.exit(1) }
 
@@ -186,6 +187,46 @@ async function main() {
   })
   const ok = pages.filter((p) => p.status === 200).length
   console.log(`pages fetched: ${pages.length}, ok: ${ok}, not ok: ${pages.length - ok}`)
+
+  // Category listings: follow the real page links (?page=N) the way Google
+  // does, page by page (page 1 links only a window such as 1 2 3 … 6), so a
+  // product linked only from a later page counts as linked; and flag listings
+  // Google cannot page through (paging only by a JavaScript button, or a
+  // "next" page that repeats page 1).
+  const cats = pages.filter((p) => p.page_type === 'category' && p.status === 200)
+  let listingFetched = 0
+  await mapLimit(cats, 4, async (cat) => {
+    const links = new Set(cat.internal_links ?? [])
+    const seen = new Set([cat.final_url ?? cat.url])
+    const queue = [...(cat.listing_page_urls ?? [])]
+    let reached = 0
+    let nextProducts = null
+    while (queue.length && seen.size <= MAX_LISTING_PAGES) {
+      const u = queue.shift()
+      if (seen.has(u)) continue
+      seen.add(u)
+      try {
+        const r = await fetchPage(u)
+        if (r.status !== 200 || !r.html) continue
+        const x = extractPage(r.html, r.final_url, SITE_HOST)
+        reached++
+        listingFetched++
+        if (nextProducts === null) nextProducts = x.product_paths   // the first further page (page 2)
+        for (const l of x.internal_links) links.add(l)
+        for (const n of x.listing_page_urls) if (!seen.has(n)) queue.push(n)
+      } catch { /* one listing page failing does not stop the crawl */ }
+    }
+    if (!(cat.listing_page_urls ?? []).length && cat.rel_next) {
+      try {
+        const r = await fetchPage(cat.rel_next)
+        if (r.status === 200 && r.html) nextProducts = extractPage(r.html, r.final_url, SITE_HOST).product_paths
+      } catch { /* no claim without the page */ }
+    }
+    cat.internal_links = [...links].sort()
+    cat.listing_pages = reached
+    cat.listing_issue = listingIssue(cat, nextProducts)
+  })
+  console.log(`category listings: ${cats.length} categories, ${listingFetched} further pages followed, ${cats.filter((c) => c.listing_issue).length} that Google cannot page through`)
 
   if (DRY) { console.log('dry run: nothing written'); return }
 

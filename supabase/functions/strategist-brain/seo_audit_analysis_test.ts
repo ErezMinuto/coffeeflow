@@ -279,5 +279,29 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('without evidence in ctx the number check is skipped (unit callers)', noEvidence.ok)
 }
 
+// ── Discontinued products and listings Google cannot page through ──
+{
+  const live = (url: string, o: Partial<CrawlPage> = {}) => P(url, o)
+  const ps: CrawlPage[] = [
+    live('https://www.minuto.co.il/', { page_type: 'home', internal_links: ['/product-category/beans/'] }),
+    live('https://www.minuto.co.il/product-category/beans/', { page_type: 'category', listing_issue: 'no_page_links', listing_pages: 0, internal_links: ['/product/sold/'] }),
+    live('https://www.minuto.co.il/product-category/ok/', { page_type: 'category', listing_issue: null, listing_pages: 5 }),
+    live('https://www.minuto.co.il/product/sold/'),
+    live('https://www.minuto.co.il/product/gone-open/', { catalog_hidden: true }),
+    live('https://www.minuto.co.il/product/gone-closed/', { catalog_hidden: true, robots_meta: 'noindex, follow' }),
+    live('https://www.minuto.co.il/product/forgotten/'),
+  ]
+  const ids = (issue: string) => pagesWithIssue(ps, issue).map((p) => p.url.replace('https://www.minuto.co.il', ''))
+  check('a hidden product is not called an orphan', !ids('orphan').includes('/product/gone-open/') && !ids('orphan').includes('/product/gone-closed/'))
+  check('a visible product nobody links to is still an orphan', ids('orphan').includes('/product/forgotten/'))
+  check('hidden product Google can index → reported', JSON.stringify(ids('hidden_product_indexable')) === JSON.stringify(['/product/gone-open/']), JSON.stringify(ids('hidden_product_indexable')))
+  check('hidden product already noindex → not reported', !ids('hidden_product_indexable').includes('/product/gone-closed/'))
+  check('category Google cannot page through → reported', JSON.stringify(ids('listing_not_crawlable')) === JSON.stringify(['/product-category/beans/']))
+  const sig = materialSignals(ps, [], [])
+  check('one broken listing is a material signal (below the usual 5)', sig.some((x) => x.id === 'crawl:listing_not_crawlable'), sig.map((x) => x.id).join(','))
+  check('one open discontinued product is a material signal', sig.some((x) => x.id === 'crawl:hidden_product_indexable'))
+  check('crawl pages without the new fields behave as before', !pagesWithIssue(pages, 'listing_not_crawlable').length && !pagesWithIssue(pages, 'hidden_product_indexable').length)
+}
+
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')
