@@ -354,7 +354,11 @@ function PitchDetails({ s }: { s: Record<string, any> }) {
 const CHANGE_LABEL: Record<string, string> = {
   post_faq: 'FAQ במאמר', product_faq: 'FAQ במוצר', product_description: 'תיאור מוצר',
   post_content: 'תוכן מאמר', post_featured_image: 'תמונה ראשית למאמר',
+  seo_meta: 'כותרת ותיאור לגוגל', term_seo_meta: 'כותרת ותיאור לגוגל (קטגוריה)',
+  term_description: 'טקסט קטגוריה', product_status: 'סטטוס מוצר',
 }
+const SEO_FIELD_LABEL: Record<string, string> = { title: 'כותרת לגוגל', description: 'תיאור לגוגל', focus_keyword: 'מילת מפתח' }
+const PRODUCT_STATUS_LABEL: Record<string, string> = { publish: 'פורסם', draft: 'טיוטה', pending: 'ממתין לבדיקה', private: 'פרטי' }
 const CHANGE_STATUS: Record<string, string> = { applied: 'עלה לאתר', undone: 'בוטל', failed: 'נכשל', rejected: 'נדחה', applying: 'בתהליך' }
 
 /** Approve / reject / undo a live site change. Signed-in admin only: the
@@ -379,6 +383,11 @@ function ChangeValue({ type, v }: { type: string; v: unknown }) {
   }
   if (type === 'post_featured_image') return <span className="num">{Number(v) ? `מדיה #${Number(v)}` : 'ללא תמונה'}</span>
   if (type === 'post_content' && v && typeof v === 'object') return <Fields obj={v as Record<string, unknown>} />
+  if ((type === 'seo_meta' || type === 'term_seo_meta') && v && typeof v === 'object') {
+    const obj = Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, val]) => [SEO_FIELD_LABEL[k] ?? k, val === '' ? '(ברירת המחדל של Rank Math)' : val]))
+    return <Fields obj={obj} />
+  }
+  if (type === 'product_status') return <span>{PRODUCT_STATUS_LABEL[String(v)] ?? String(v ?? '')}</span>
   return <div className="whitespace-pre-wrap break-words max-h-64 overflow-y-auto" dir="auto">{String(v ?? '')}</div>
 }
 

@@ -23,6 +23,10 @@ export type ChangeTargetType =
   | 'product_description'
   | 'post_content'
   | 'post_featured_image'
+  | 'seo_meta'          // Rank Math title/description/focus keyword on a post, page or product (Phase 2)
+  | 'term_seo_meta'     // the same on a product category
+  | 'term_description'  // product category text
+  | 'product_status'    // WooCommerce product status (publish / draft / …)
 
 export type ChangeStatus = 'proposed' | 'applying' | 'applied' | 'rejected' | 'failed' | 'undone'
 
@@ -59,7 +63,7 @@ export interface ChangeContext {
   undo_of?:      string   // the applied change this write reverses
 }
 
-const TARGET_TYPES: ReadonlySet<string> = new Set(['post_faq', 'product_faq', 'product_description', 'post_content', 'post_featured_image'])
+const TARGET_TYPES: ReadonlySet<string> = new Set(['post_faq', 'product_faq', 'product_description', 'post_content', 'post_featured_image', 'seo_meta', 'term_seo_meta', 'term_description', 'product_status'])
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function isTargetType(v: unknown): v is ChangeTargetType {

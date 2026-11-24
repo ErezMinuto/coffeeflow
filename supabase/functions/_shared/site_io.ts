@@ -184,3 +184,102 @@ export async function writeProduct(env: SiteEnv, productId: number, patch: { des
   if (typeof j.id !== 'number') throw new Error(`update product ${productId}: ${JSON.stringify(j).slice(0, 300)}`)
   return { id: j.id, name: String(j.name ?? '') }
 }
+
+// ── Rank Math SEO fields (minuto-product-faq v0.6.0+) ───────────────────────
+//   seo_meta       { title?, description?, focus_keyword? } on a post, page or product (WP post id)
+//   term_seo_meta  the same on a product category (term id)
+// '' = no custom value (Rank Math uses its template). A change stores only the
+// fields it touches, before and after, like post_content.
+
+export type SeoField = 'title' | 'description' | 'focus_keyword'
+export type SeoMeta = Partial<Record<SeoField, string>>
+export const SEO_FIELDS: SeoField[] = ['title', 'description', 'focus_keyword']
+
+/** Only the SEO fields a change names, as strings; null if it names none or one is not text. */
+export function pickSeoFields(v: unknown): SeoMeta | null {
+  if (!v || typeof v !== 'object') return null
+  const out: SeoMeta = {}
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (!(SEO_FIELDS as string[]).includes(k)) return null
+    if (typeof val !== 'string') return null
+    out[k as SeoField] = val
+  }
+  return Object.keys(out).length ? out : null
+}
+
+export interface SeoInfo { id: number; name: string; url: string; meta: Record<SeoField, string> }
+
+export async function readSeoMeta(env: SiteEnv, kind: 'post' | 'product_cat', id: number): Promise<SeoInfo> {
+  const res = await env.fetchFn(`${env.wpUrl}/wp-json/minuto-faq/v1/seo/${kind}/${id}`, { headers: { Authorization: wpAuth(env) }, redirect: 'manual' })
+  if (res.status === 404) {
+    const j = await res.json().catch(() => ({})) as Record<string, unknown>
+    // rest_no_route = the plugin on the site is older than v0.6.0.
+    throw new Error(j.code === 'rest_no_route' ? 'SEO fields need minuto-product-faq v0.6.0 on the site' : `read SEO fields ${kind} ${id}: ${String(j.message ?? 'not found')}`)
+  }
+  const j = await readJson(res, `read SEO fields ${kind} ${id}`)
+  const m = (j.meta ?? {}) as Record<string, unknown>
+  return {
+    id: Number(j.id), name: String(j.name ?? ''), url: String(j.url ?? ''),
+    meta: { title: String(m.title ?? ''), description: String(m.description ?? ''), focus_keyword: String(m.focus_keyword ?? '') },
+  }
+}
+
+export async function writeSeoMeta(env: SiteEnv, kind: 'post' | 'product_cat', id: number, fields: SeoMeta): Promise<SeoInfo> {
+  const res = await env.fetchFn(`${env.wpUrl}/wp-json/minuto-faq/v1/seo/${kind}/${id}`, {
+    method: 'POST', headers: { Authorization: wpAuth(env), 'Content-Type': 'application/json' }, redirect: 'manual', body: JSON.stringify(fields),
+  })
+  const j = await readJson(res, `update SEO fields ${kind} ${id}`)
+  const m = (j.meta ?? {}) as Record<string, unknown>
+  return { id: Number(j.id), name: String(j.name ?? ''), url: String(j.url ?? ''), meta: { title: String(m.title ?? ''), description: String(m.description ?? ''), focus_keyword: String(m.focus_keyword ?? '') } }
+}
+
+/** The stored values of just these fields (for before/after). */
+export function seoSubset(meta: Record<SeoField, string>, fields: SeoMeta): SeoMeta {
+  const out: SeoMeta = {}
+  for (const k of Object.keys(fields) as SeoField[]) out[k] = meta[k] ?? ''
+  return out
+}
+
+// ── Product category text (WooCommerce) ─────────────────────────────────────
+//   term_description  string (HTML), shown on the category page
+
+export interface TermInfo { id: number; name: string; slug: string; description: string }
+
+export async function readTermDescription(env: SiteEnv, id: number): Promise<TermInfo> {
+  const res = await env.fetchFn(wooUrl(env, `products/categories/${id}`), { headers: wooHeaders(env), redirect: 'manual' })
+  const j = await readJson(res, `read category ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`read category ${id}: no id in response`)
+  return { id: j.id, name: String(j.name ?? ''), slug: String(j.slug ?? ''), description: String(j.description ?? '') }
+}
+
+export async function writeTermDescription(env: SiteEnv, id: number, description: string): Promise<TermInfo> {
+  const res = await env.fetchFn(wooUrl(env, `products/categories/${id}`), {
+    method: 'PUT', headers: wooHeaders(env, { 'Content-Type': 'application/json' }), redirect: 'manual', body: JSON.stringify({ description }),
+  })
+  const j = await readJson(res, `update category ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`update category ${id}: ${JSON.stringify(j).slice(0, 300)}`)
+  return { id: j.id, name: String(j.name ?? ''), slug: String(j.slug ?? ''), description: String(j.description ?? '') }
+}
+
+// ── Product status (WooCommerce) ────────────────────────────────────────────
+//   product_status  'publish' | 'draft' | 'pending' | 'private'
+
+export const PRODUCT_STATUSES = ['publish', 'draft', 'pending', 'private'] as const
+export type ProductStatus = typeof PRODUCT_STATUSES[number]
+export const isProductStatus = (v: unknown): v is ProductStatus => typeof v === 'string' && (PRODUCT_STATUSES as readonly string[]).includes(v)
+
+export async function readProductStatus(env: SiteEnv, id: number): Promise<{ id: number; name: string; permalink: string; status: string }> {
+  const res = await env.fetchFn(wooUrl(env, `products/${id}`), { headers: wooHeaders(env), redirect: 'manual' })
+  const j = await readJson(res, `read product ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`read product ${id}: no id in response`)
+  return { id: j.id, name: String(j.name ?? ''), permalink: String(j.permalink ?? ''), status: String(j.status ?? '') }
+}
+
+export async function writeProductStatus(env: SiteEnv, id: number, status: ProductStatus): Promise<string> {
+  const res = await env.fetchFn(wooUrl(env, `products/${id}`), {
+    method: 'PUT', headers: wooHeaders(env, { 'Content-Type': 'application/json' }), redirect: 'manual', body: JSON.stringify({ status }),
+  })
+  const j = await readJson(res, `update product ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`update product ${id}: ${JSON.stringify(j).slice(0, 300)}`)
+  return String(j.status ?? '')
+}
