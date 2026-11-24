@@ -149,7 +149,7 @@ export default function SettingsPage() {
       description: 'קמפיינים ממומנים ונתוני חיפוש אורגני (Search Console)',
       logo: GoogleLogo,
       authUrl: getGoogleAuthUrl,
-      scopes: ['Google Ads API', 'Search Console'],
+      scopes: ['Google Ads API', 'Search Console', 'Merchant Center'],
     },
   }
 

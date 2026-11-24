@@ -16,7 +16,7 @@ const SEVERITY_RANK = { NONE: 0, NOT_IMPACTED: 1, DEMOTED: 2, DISAPPROVED: 3 } a
 export type Severity = keyof typeof SEVERITY_RANK
 
 /** Why the Merchant API refused, so the caller can tell "not set up yet" from a real failure. */
-export type MerchantProblem = 'no_permission' | 'not_registered' | 'no_account' | 'error'
+export type MerchantProblem = 'no_permission' | 'api_disabled' | 'not_registered' | 'no_account' | 'error'
 
 export class MerchantError extends Error {
   constructor(public problem: MerchantProblem, message: string) { super(message) }
@@ -25,6 +25,10 @@ export class MerchantError extends Error {
 /** Classifies a Merchant API error response. */
 export function classifyMerchantError(status: number, body: string): MerchantProblem {
   if (/not registered with the merchant account/i.test(body)) return 'not_registered'
+  // The Merchant API is switched off in the Google Cloud project that owns the
+  // login (fix: enable it there). Checked before no_permission: the same 403
+  // PERMISSION_DENIED wraps it.
+  if (status === 403 && /SERVICE_DISABLED|has not been used in project|it is disabled/i.test(body)) return 'api_disabled'
   if (status === 403 && /ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes|PERMISSION_DENIED/i.test(body)) return 'no_permission'
   return 'error'
 }

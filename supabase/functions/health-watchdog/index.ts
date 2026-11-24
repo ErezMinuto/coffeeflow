@@ -226,6 +226,10 @@ const EXPECTED_FRESH_DATA: Array<{
   // Console went unsynced for 6 months before this check existed.
   { table: 'google_search_console', column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Search Console keywords (SEO agent + strategist)' },
   { table: 'google_ads',            column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Ads performance (advisor + strategist)' },
+  // Google Shopping status per product (google-sync merchant block, same
+  // twice-daily run). Not required: only the weekly SEO audit reads it, and it
+  // reports a stale sync itself (shopping coverage drops after 3 days).
+  { table: 'merchant_product_status', column: 'synced_at', max_age_hours: 36, required: false, label: 'Google Shopping status (Merchant Center, SEO audit)' },
   { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 18, saturday_max_age_hours: 36, sunday_max_age_hours: 24, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
