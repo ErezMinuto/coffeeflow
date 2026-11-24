@@ -9,8 +9,7 @@ import { selectAll } from '../_shared/select_all.ts'
 import {
   AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, materialSignals, pageKey, pagesWithIssue,
   searchTotals, searchView, summarizeShopping, valuePerSession,
-  type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal,
-} from './seo_audit_analysis.ts'
+  type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal, type PaidClicks } from './seo_audit_analysis.ts'
 
 const CRAWL_COLS = 'url, page_type, status, final_url, redirects, title, meta_description, h1, h1_count, canonical, robots_meta, x_robots_tag, word_count, schema_types, internal_links, images, images_missing_alt, response_ms, listing_pages, listing_issue'
 const DAY = 864e5
@@ -55,6 +54,28 @@ export async function categoryTextWords(): Promise<Map<string, number>> {
       return (parent && depth < 10 ? path(parent, depth + 1) : '/product-category/') + slug + '/'
     }
     for (const c of cats) out.set(pageKey(path(c)), visibleWords(c.description ?? ''))
+  } catch { /* the audit works without it */ }
+  return out
+}
+
+/**
+ * Our own Google Ads clicks per search over the Search Console window
+ * (end - 27 days .. end), so the audit does not read the clicks our own ad
+ * takes above the organic result as a CTR problem. Best effort: empty on error.
+ */
+async function paidClicks(supabase: SupabaseClient, end: string | null): Promise<PaidClicks> {
+  const out: PaidClicks = new Map()
+  if (!end) return out
+  try {
+    const start = new Date(Date.parse(end + 'T00:00:00Z') - 27 * 864e5).toISOString().slice(0, 10)
+    const rows = await selectAll<{ search_term: string; clicks: number; impressions: number }>((from, to) => supabase.from('google_search_terms').select('search_term, clicks, impressions').gte('date', start).lte('date', end).order('date').order('search_term').range(from, to), { label: 'google_search_terms', maxRows: 100_000 })
+    for (const r of rows) {
+      const k = String(r.search_term ?? '').trim().toLowerCase()
+      if (!k) continue
+      const v = out.get(k) ?? { clicks: 0, impressions: 0 }
+      v.clicks += Number(r.clicks) || 0; v.impressions += Number(r.impressions) || 0
+      out.set(k, v)
+    }
   } catch { /* the audit works without it */ }
   return out
 }
@@ -143,7 +164,7 @@ async function shoppingStatus(supabase: SupabaseClient) {
 /** What conclude_brief checks the audit against: the coverage map and the signals it must answer. */
 export async function auditContext(supabase: SupabaseClient): Promise<{ coverage: CoverageRow[]; signals: Signal[] }> {
   const [state, d] = await Promise.all([dataState(supabase), auditData(supabase)])
-  return { coverage: coverage(state), signals: materialSignals(d.pages, d.cur, d.prev) }
+  return { coverage: coverage(state), signals: materialSignals(d.pages, d.cur, d.prev, d.paid) }
 }
 
 // ── One load per tick ───────────────────────────────────────────────────────
@@ -154,7 +175,7 @@ export async function auditContext(supabase: SupabaseClient): Promise<{ coverage
 // only changes with the weekly job, so it is loaded once per invocation and
 // shared by every tool call in it.
 
-interface AuditData { crawl: { id: string; finished_at: string; urls_total: number } | null; crawlId: string | null; pages: CrawlPage[]; end: string | null; cur: QpRow[]; prev: QpRow[]; organic: Map<string, { sessions: number; conversions: number }> }
+interface AuditData { crawl: { id: string; finished_at: string; urls_total: number } | null; crawlId: string | null; pages: CrawlPage[]; end: string | null; cur: QpRow[]; prev: QpRow[]; organic: Map<string, { sessions: number; conversions: number }>; paid: PaidClicks }
 // Scoped to the request's own Supabase client (strategist-brain creates one
 // per invocation): the shared data disappears with the tick, even if the tick
 // throws, and two invocations never see each other's copy.
@@ -184,7 +205,8 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
     // Mark discontinued products (hidden from the shop in WooCommerce) before
     // anything is computed from the pages.
     for (const p of pages) if (p.page_type === 'product') p.catalog_hidden = hidden.has(pageKey(p.final_url ?? p.url))
-    return { crawl, crawlId: crawl?.id ?? null, pages, end: qp.end, cur: qp.cur, prev: qp.prev, organic }
+    const paid = await paidClicks(supabase, qp.end)
+    return { crawl, crawlId: crawl?.id ?? null, pages, end: qp.end, cur: qp.cur, prev: qp.prev, organic, paid }
   })()
   cache.set(supabase, data)
   // A failed load must not stay cached.
@@ -208,7 +230,7 @@ export function clicksByPage(rows: readonly QpRow[]): PageClicks {
 
 export async function getSeoAuditOverview(supabase: SupabaseClient) {
   const state = await dataState(supabase)
-  const { crawl, pages, end, cur, prev } = await auditData(supabase)
+  const { crawl, pages, end, cur, prev, paid } = await auditData(supabase)
   const since = new Date(Date.now() - 8 * DAY).toISOString()
   const [{ data: speed }, { data: insp }, value] = await Promise.all([
     supabase.from('page_speed').select('url, page_type, performance_score, lcp_ms, cls, tbt_ms, field_lcp_p75_ms, field_inp_p75_ms, field_cls_p75, field_category, error').gte('measured_at', since).order('measured_at', { ascending: false }).limit(12),
@@ -242,7 +264,7 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
     index_status: { inspected: inspected.length, by_coverage_state: coverageStates, not_indexed: inspected.filter((r) => !r.error && r.verdict && r.verdict !== 'PASS').slice(0, 20), canonical_mismatch: inspected.filter((r) => r.google_canonical && r.user_canonical && pageKey(r.google_canonical) !== pageKey(r.user_canonical)).slice(0, 20) },
     // Every one of these must be answered in seo_audit: inside a finding's
     // signals[] or in dismissed_signals with a reason. conclude_brief refuses otherwise.
-    signals_to_address: materialSignals(pages, cur, prev),
+    signals_to_address: materialSignals(pages, cur, prev, paid),
     issue_ids: CRAWL_ISSUES.map((d) => d.id),
     search_views: SEARCH_VIEWS,
   }
