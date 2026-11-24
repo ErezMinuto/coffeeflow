@@ -93,11 +93,16 @@ export function extractPage(html, pageUrl, siteHost) {
 
   const internal = new Set()
   let external = 0
+  const listing = new Map()   // page number → absolute URL of a further listing page of THIS page
   for (const a of root.querySelectorAll('a[href]')) {
-    const p = internalPath(a.getAttribute('href'), pageUrl, siteHost)
+    const href = a.getAttribute('href')
+    const p = internalPath(href, pageUrl, siteHost)
     if (p === null) external++
     else if (p) internal.add(p)
+    const n = listingPageNumber(href, pageUrl, siteHost)
+    if (n && n > 1 && !listing.has(n)) listing.set(n, new URL(href.trim(), pageUrl).href)
   }
+  const relNext = root.querySelector('link[rel="next"]')?.getAttribute('href')?.trim() || null
 
   const imgs = root.querySelectorAll('img')
   const missingAlt = imgs.filter((i) => !(i.getAttribute('alt') ?? '').trim()).length
@@ -121,7 +126,50 @@ export function extractPage(html, pageUrl, siteHost) {
     external_links:     external,
     images:             imgs.length,
     images_missing_alt: missingAlt,
+    // Used by the crawler only (not stored as columns):
+    listing_page_urls:  [...listing].sort((a, b) => a[0] - b[0]).map(([, u]) => u),
+    rel_next:           absUrl(relNext, pageUrl),
+    product_paths:      [...internal].filter((x) => x.startsWith('/product/')).sort(),
   }
+}
+
+/** Absolute URL, or null when missing or unparseable. */
+function absUrl(href, base) {
+  if (!href) return null
+  try { return new URL(href, base).href } catch { return null }
+}
+
+/**
+ * The page number a link points to, when it is a further listing page of the
+ * same page (same host and path, with ?page=N or a /page/N/ suffix); else null.
+ */
+export function listingPageNumber(href, pageUrl, siteHost) {
+  if (!href || SKIP_LINK.test(href.trim())) return null
+  let u, base
+  try { u = new URL(href.trim(), pageUrl); base = new URL(pageUrl) } catch { return null }
+  if (u.host.replace(/^www\./, '') !== siteHost.replace(/^www\./, '')) return null
+  const strip = (path) => decodeURIComponent(path).toLowerCase().replace(/\/page\/\d+\/?$/, '/').replace(/\/?$/, '/')
+  if (strip(u.pathname) !== strip(base.pathname)) return null
+  const q = u.searchParams.get('page')
+  if (q && /^\d{1,4}$/.test(q)) return Number(q)
+  const m = decodeURIComponent(u.pathname).match(/\/page\/(\d{1,4})\/?$/)
+  return m ? Number(m[1]) : null
+}
+
+/**
+ * Can Google page through this category's listing? From page 1's extract and
+ * the product paths of the page its rel=next points to (null if not fetched):
+ *   null                 — fine (one page, or real page links that work)
+ *   'no_page_links'      — there is a next page (rel=next) but no real link to any further page
+ *   'next_repeats_first' — the next page shows exactly the products of page 1
+ */
+export function listingIssue(page1, nextProductPaths) {
+  const hasNext = !!page1.rel_next || (page1.listing_page_urls ?? []).length > 0
+  if (!hasNext) return null
+  if (!(page1.listing_page_urls ?? []).length) return 'no_page_links'
+  const first = (page1.product_paths ?? []).join('|')
+  if (nextProductPaths && first && nextProductPaths.join('|') === first) return 'next_repeats_first'
+  return null
 }
 
 /** Run `fn` over `items` with at most `limit` in flight. Keeps input order in the result. */
@@ -146,6 +194,7 @@ export const CRAWL_ROW_COLUMNS = [
   'crawl_id', 'url', 'page_type', 'in_sitemap', 'status', 'final_url', 'redirects', 'title', 'meta_description',
   'h1', 'h1_count', 'canonical', 'robots_meta', 'x_robots_tag', 'lang', 'word_count', 'schema_types',
   'internal_links', 'external_links', 'images', 'images_missing_alt', 'html_bytes', 'response_ms', 'error',
+  'listing_pages', 'listing_issue',
 ]
 
 export function toCrawlRow(page) {

@@ -71,6 +71,12 @@ export interface CrawlPage {
   images: number | null
   images_missing_alt: number | null
   response_ms: number | null
+  /** category pages: further listing pages (?page=N) the crawler reached through real links */
+  listing_pages?: number | null
+  /** category pages: no_page_links | next_repeats_first — Google cannot page through the listing */
+  listing_issue?: string | null
+  /** product pages: hidden from the shop in WooCommerce (catalog visibility 'hidden'), i.e. discontinued */
+  catalog_hidden?: boolean
 }
 
 /** How many OTHER crawled pages link to each page. */
@@ -121,8 +127,14 @@ export const CRAWL_ISSUES: IssueDef[] = [
   { id: 'missing_article_schema', area: 'structured_data', label: 'blog post without Article markup',                        test: (p) => ok(p) && p.page_type === 'post' && !has(p, 'Article', 'BlogPosting', 'NewsArticle') },
   { id: 'missing_breadcrumb',    area: 'structured_data', label: 'no BreadcrumbList markup',                                 test: (p) => ok(p) && ['product', 'category', 'post'].includes(p.page_type ?? '') && !has(p, 'BreadcrumbList') },
   { id: 'images_missing_alt',    area: 'images_video',    label: 'images without alt text',                                  test: (p) => ok(p) && (p.images_missing_alt ?? 0) > 0 },
-  { id: 'orphan',                area: 'internal_links',  label: 'no other page links to it',                                test: (p, c) => ok(p) && p.page_type !== 'home' && (c.inlinks.get(pageKey(p.final_url ?? p.url)) ?? 0) === 0 },
+  // A hidden (discontinued) product is meant to have no links: it is reported by hidden_product_indexable instead.
+  { id: 'orphan',                area: 'internal_links',  label: 'no other page links to it',                                test: (p, c) => ok(p) && p.page_type !== 'home' && !p.catalog_hidden && (c.inlinks.get(pageKey(p.final_url ?? p.url)) ?? 0) === 0 },
+  { id: 'hidden_product_indexable', area: 'crawl_index',  label: 'discontinued product (hidden from the shop) that Google can still index', test: (p) => ok(p) && p.page_type === 'product' && p.catalog_hidden === true && !noindex(p) },
+  { id: 'listing_not_crawlable', area: 'category_pages',  label: 'category whose further pages Google cannot reach (paging only by a JavaScript button, or a "next" page that repeats page 1)', test: (p) => ok(p) && p.page_type === 'category' && !!p.listing_issue },
 ]
+
+/** Crawl issues that are material at any count: one broken listing hides most of a category's products. */
+const ALWAYS_MATERIAL = new Set(['listing_not_crawlable', 'hidden_product_indexable'])
 
 function duplicates(values: Array<string | null>): Set<string> {
   const seen = new Map<string, number>()
@@ -421,7 +433,7 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   }
   // 6. Crawl issues on many pages.
   for (const i of crawlIssues(pages).by_issue) {
-    if (i.count < 5) continue
+    if (i.count < 5 && !ALWAYS_MATERIAL.has(i.id)) continue
     // The page-type mix is part of the signal, so it cannot be misread
     // (e.g. "63 noindex pages" were taken for cart/checkout; 55 were products).
     const mix = Object.entries(i.by_type).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${n} ${t}`).join(', ')

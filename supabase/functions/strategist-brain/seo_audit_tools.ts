@@ -11,7 +11,7 @@ import {
   type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal,
 } from './seo_audit_analysis.ts'
 
-const CRAWL_COLS = 'url, page_type, status, final_url, redirects, title, meta_description, h1, h1_count, canonical, robots_meta, x_robots_tag, word_count, schema_types, internal_links, images, images_missing_alt, response_ms'
+const CRAWL_COLS = 'url, page_type, status, final_url, redirects, title, meta_description, h1, h1_count, canonical, robots_meta, x_robots_tag, word_count, schema_types, internal_links, images, images_missing_alt, response_ms, listing_pages, listing_issue'
 const DAY = 864e5
 const isoDay = (t: number) => new Date(t).toISOString().slice(0, 10)
 
@@ -23,6 +23,12 @@ async function latestCrawl(supabase: SupabaseClient): Promise<{ id: string; fini
 
 async function crawlPages(supabase: SupabaseClient, crawlId: string): Promise<CrawlPage[]> {
   return await selectAll<CrawlPage>((from, to) => supabase.from('site_crawl_pages').select(CRAWL_COLS).eq('crawl_id', crawlId).order('url').range(from, to), { label: 'site_crawl_pages', maxRows: 10_000 })
+}
+
+/** Product pages hidden from the shop in WooCommerce (catalog visibility 'hidden'), as page keys. */
+async function hiddenProductKeys(supabase: SupabaseClient): Promise<Set<string>> {
+  const rows = await selectAll<{ permalink: string | null }>((from, to) => supabase.from('woo_products').select('permalink').eq('catalog_visibility', 'hidden').order('woo_id').range(from, to), { label: 'woo_products hidden' })
+  return new Set(rows.map((r) => pageKey(r.permalink)).filter(Boolean))
 }
 
 async function queryPageWindows(supabase: SupabaseClient): Promise<{ end: string | null; cur: QpRow[]; prev: QpRow[] }> {
@@ -124,11 +130,15 @@ function auditData(supabase: SupabaseClient): Promise<AuditData> {
   if (hit) return hit
   const data = (async (): Promise<AuditData> => {
     const crawl = await latestCrawl(supabase)
-    const [pages, qp, organic] = await Promise.all([
+    const [pages, qp, organic, hidden] = await Promise.all([
       crawl ? crawlPages(supabase, crawl.id) : Promise.resolve([] as CrawlPage[]),
       queryPageWindows(supabase),
       organicSessionsByPage(supabase),
+      hiddenProductKeys(supabase),
     ])
+    // Mark discontinued products (hidden from the shop in WooCommerce) before
+    // anything is computed from the pages.
+    for (const p of pages) if (p.page_type === 'product') p.catalog_hidden = hidden.has(pageKey(p.final_url ?? p.url))
     return { crawl, crawlId: crawl?.id ?? null, pages, end: qp.end, cur: qp.cur, prev: qp.prev, organic }
   })()
   cache.set(supabase, data)
@@ -208,6 +218,8 @@ export async function getSeoIssuePages(supabase: SupabaseClient, input: { issue?
       meta_description_length: (p.meta_description ?? '').length, h1: p.h1, word_count: p.word_count, canonical: p.canonical,
       search_clicks_28d: clicks.get(k)?.clicks ?? 0, search_impressions_28d: clicks.get(k)?.impressions ?? 0,
       organic_sessions_28d: organic.get(k)?.sessions ?? 0,
+      ...(p.page_type === 'category' ? { listing_pages: p.listing_pages ?? null, listing_issue: p.listing_issue ?? null } : {}),
+      ...(p.catalog_hidden ? { catalog_hidden: true } : {}),
     }
   }).sort((a, b) => (b.organic_sessions_28d - a.organic_sessions_28d) || (b.search_impressions_28d - a.search_impressions_28d))
   return { issue, label: CRAWL_ISSUES.find((d) => d.id === issue)!.label, total: rows.length, pages: rows.slice(0, limit), sorted_by: 'organic sessions, then search impressions (money first)' }
