@@ -1,8 +1,7 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
 import {
   AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
-  searchTotals, searchView, summarizeShopping, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow,
-} from './seo_audit_analysis.ts'
+  searchTotals, searchView, summarizeShopping, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow, sitelinkRows } from './seo_audit_analysis.ts'
 import { clicksByPage } from './seo_audit_tools.ts'
 
 let failures = 0
@@ -263,6 +262,30 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('without word data the lock still works (no word facts)', !!st?.must_address && !st.must_address.includes('words of its own text'))
   const loss = materialSignals(pages, [Q('x', beans, 10, 500, 5)], [Q('x', beans, 80, 500, 5)])
   check('a coffee-beans page losing clicks is locked', !!loss.find((x) => x.id.startsWith('page_loss:' + PRIORITY_CATEGORY_PATH))?.must_address, loss.map((x) => x.id).join(','))
+}
+
+// ── Sitelinks and our own brand ad (real case, 28 days to 2026-11-23) ──
+{
+  const H = 'https://www.minuto.co.il'
+  const brand = [Q('מינוטו קפה', H + '/', 38, 600, 2.0), Q('מינוטו קפה', H + '/about/', 2, 585, 2.2), Q('מינוטו קפה', H + '/shop/', 5, 583, 2.0),
+    Q('מינוטו קפה', H + '/contact/', 1, 577, 2.1), Q('מינוטו קפה', H + encodeURI('/product-category/פולי-קפה/'), 3, 582, 2.1)]
+  brand.push(Q('מינוטו קפה', H + encodeURI('/product/פולי-קפה-טרי-ספשלטי-קפה-מינוטו-אינטנסו/'), 0, 355, 2.6), Q('מינוטו קפה', H + encodeURI('/product/פולי-קפה-טרי-ספשלטי-קפה-מינוטו-פרסטיז-mi/'), 0, 312, 2.0))
+  const links = sitelinkRows(brand)
+  check('sitelinks: about/shop/contact/category and rotating product links under the homepage are sitelinks', links.size === 6 && links.has('מינוטו קפה|/about/') && links.has('מינוטו קפה|/product/פולי-קפה-טרי-ספשלטי-קפה-מינוטו-אינטנסו/') && !links.has('מינוטו קפה|/'), [...links].join(','))
+  check('sitelinks: no homepage row → none', sitelinkRows(brand.slice(1)).size === 0)
+  check('sitelinks: rarely shown pages (<20% of homepage impressions) are not sitelinks', sitelinkRows([Q('x', H + '/', 10, 600, 2), Q('x', H + '/a/', 1, 100, 2), Q('x', H + '/b/', 1, 90, 2.1)]).size === 0)
+  check('sitelinks: a page at a different position is a separate result', sitelinkRows([Q('x', H + '/', 10, 600, 2), Q('x', H + '/a/', 1, 500, 4), Q('x', H + '/b/', 1, 550, 3.5)]).size === 0)
+  const sig = materialSignals(pages, brand, [])
+  check('sitelinks do not raise a cannibalization signal', !sig.some((x) => x.id === 'cannibal:מינוטו קפה'), sig.map((x) => x.id).join(','))
+  check('sitelinks do not raise CTR gaps for about/shop/contact', !sig.some((x) => x.id.startsWith('ctr_gap:מינוטו קפה|/about/') || x.id.startsWith('ctr_gap:מינוטו קפה|/contact/')))
+  check('without ad data the homepage CTR gap is still raised (90 expected, 38 got)', sig.some((x) => x.id === 'ctr_gap:מינוטו קפה|/'), sig.map((x) => x.id).join(','))
+  const withAd = materialSignals(pages, brand, [], new Map([['מינוטו קפה', { clicks: 199, impressions: 626 }]]))
+  check('our own ad\'s 199 clicks cover the homepage gap → no CTR signal', !withAd.some((x) => x.id === 'ctr_gap:מינוטו קפה|/'), withAd.map((x) => x.id).join(','))
+  const small = materialSignals(pages, [Q('y', H + '/p/', 10, 1000, 2)], [], new Map([['y', { clicks: 20, impressions: 50 }]]))
+  const g = small.find((x) => x.id === 'ctr_gap:y|/p/')
+  check('a gap bigger than our ad clicks stays, net of them, and says so', !!g && g.size === 120 && g.summary.includes('own Google Ads ad'), JSON.stringify(g))
+  const cann = searchView('cannibalization', [...brand, Q('מינוטו קפה', H + '/blog/x/', 5, 300, 6)], []) as Array<{ query: string; pages: unknown[] }>
+  check('real competing page next to sitelinks still counts as cannibalization', cann.some((c) => c.query === 'מינוטו קפה' && c.pages.length === 2), JSON.stringify(cann))
 }
 
 // ── Numbers in a dismissal must come from the data ──

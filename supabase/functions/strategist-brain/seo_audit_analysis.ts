@@ -222,6 +222,34 @@ export function searchTotals(cur: QpRow[], prev: QpRow[]) {
   }
 }
 
+/** Our own Google Ads clicks per search over the same window (exact search text, lower-cased). */
+export type PaidClicks = Map<string, { clicks: number; impressions: number }>
+
+/**
+ * Sitelinks: for a search where our homepage shows, the extra links Google
+ * prints under it (about, shop, contact, a category) each count their own
+ * impression at the homepage's position: their position matches it, and they
+ * show on a good share of its searches (Google rotates which ones it prints). Those rows are
+ * one result, not pages competing with each other, and their low clicks are
+ * not a CTR problem. Returns "query|pageKey" for every sitelink row (the
+ * homepage row itself is not included).
+ */
+export function sitelinkRows(cur: readonly QpRow[]): Set<string> {
+  const out = new Set<string>()
+  for (const [query, rows] of byKey(cur as QpRow[], (r) => r.query)) {
+    const home = rows.find((r) => pageKey(r.page) === '/')
+    if (!home || home.impressions < 30) continue
+    // Same position as the homepage (two separate results cannot share one),
+    // and shown on a good share of its searches (Google rotates sitelinks, so
+    // some appear on only part of them).
+    const links = rows.filter((r) => pageKey(r.page) !== '/' &&
+      r.impressions >= home.impressions * 0.2 && r.impressions <= home.impressions * 1.25 &&
+      Math.abs(r.position - home.position) <= 0.7)
+    if (links.length >= 2) for (const r of links) out.add(`${query}|${pageKey(r.page)}`)
+  }
+  return out
+}
+
 export function searchView(view: SearchView, cur: QpRow[], prev: QpRow[], limit = 25): unknown[] {
   if (view === 'page_losses' || view === 'query_losses') {
     const key = view === 'page_losses' ? (r: QpRow) => pageKey(r.page) : (r: QpRow) => r.query
@@ -247,7 +275,8 @@ export function searchView(view: SearchView, cur: QpRow[], prev: QpRow[], limit 
     return out.filter((r) => (r.change as number) < 0).sort((a, b) => (a.change as number) - (b.change as number)).slice(0, limit)
   }
   if (view === 'ctr_gaps') {
-    return cur.filter((r) => r.position > 0 && r.position <= 10 && r.impressions >= 50)
+    const links = sitelinkRows(cur)
+    return cur.filter((r) => r.position > 0 && r.position <= 10 && r.impressions >= 50 && !links.has(`${r.query}|${pageKey(r.page)}`))
       .map((r) => {
         const expected = expectedCtr(r.position) * r.impressions
         return { query: r.query, page: pageKey(r.page), position: Math.round(r.position * 10) / 10, impressions: r.impressions, clicks: r.clicks, expected_clicks: Math.round(expected), click_gap: Math.round(expected - r.clicks) }
@@ -257,7 +286,10 @@ export function searchView(view: SearchView, cur: QpRow[], prev: QpRow[], limit 
   }
   if (view === 'cannibalization') {
     const out: unknown[] = []
-    for (const [query, rows] of byKey(cur, (r) => r.query)) {
+    const links = sitelinkRows(cur)
+    for (const [query, all] of byKey(cur, (r) => r.query)) {
+      // Sitelinks are part of the homepage result, not competing pages.
+      const rows = all.filter((r) => !links.has(`${query}|${pageKey(r.page)}`))
       const total = sum(rows, (r) => r.impressions)
       if (total < 30) continue
       const pages = byKey(rows, (r) => pageKey(r.page))
@@ -470,7 +502,7 @@ function priorityLock(query: string | null, page: string | null, rank: Map<strin
 const TYPE_AREA: Record<string, AuditArea> = { category: 'category_pages', product: 'product_pages', post: 'content', home: 'brand', page: 'on_page' }
 const areaOfType = (t: string | null | undefined): AuditArea => TYPE_AREA[t ?? ''] ?? 'keyword_map'
 
-export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[]): Signal[] {
+export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[], paid?: PaidClicks): Signal[] {
   const out: Signal[] = []
   const typeOf = new Map(pages.map((p) => [pageKey(p.final_url ?? p.url), p.page_type ?? 'other']))
   const rank = priorityCategoryRank(cur)
@@ -498,7 +530,13 @@ export function materialSignals(pages: CrawlPage[], cur: QpRow[], prev: QpRow[])
   }
   // 3. First-page positions earning far fewer clicks than they should.
   for (const r of (searchView('ctr_gaps', cur, prev, 8) as Array<{ query: string; page: string; position: number; clicks: number; expected_clicks: number; click_gap: number }>)) {
-    if (r.click_gap >= 30) out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: r.click_gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected`, must_address: priorityLock(r.query, r.page, rank, words) })
+    // Our own ad on the same search sits above the organic result and takes
+    // clicks it would otherwise get: count them before calling it a CTR gap.
+    const ad = paid?.get(r.query.trim().toLowerCase())
+    const gap = r.click_gap - (ad?.clicks ?? 0)
+    if (gap < 30) continue
+    const adNote = ad ? `; our own Google Ads ad on this search also got ${ad.clicks} clicks, already counted against the gap` : ''
+    out.push({ id: `ctr_gap:${r.query}|${r.page}`, kind: 'ctr_gap', area: 'on_page', size: gap, summary: `"${r.query}" → ${r.page}: position ${r.position}, ${r.clicks} clicks vs ~${r.expected_clicks} expected${adNote}`, must_address: priorityLock(r.query, r.page, rank, words) })
   }
   // 4. One search split across several of our pages.
   for (const r of (searchView('cannibalization', cur, prev, 5) as Array<{ query: string; impressions: number; pages: unknown[] }>)) {
