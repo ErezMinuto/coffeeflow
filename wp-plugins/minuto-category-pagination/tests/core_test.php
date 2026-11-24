@@ -55,7 +55,9 @@ $nav = mcp_nav_html( $cat, 4, 7 );
 check( 'one page → no nav', '' === mcp_nav_html( $cat, 1, 1 ) );
 check( 'nav links page 1 to the category itself', false !== strpos( $nav, 'href="' . $cat . '"' ) );
 check( 'nav links page 7 as ?page=7', false !== strpos( $nav, 'href="' . $cat . '?page=7"' ) );
-check( 'current page is not a link', false !== strpos( $nav, 'aria-current="page">4<' ) && false === strpos( $nav, '?page=4"' ) );
+check( 'current page is marked', false !== strpos( $nav, 'href="' . $cat . '?page=4" data-page="4" aria-current="page">4<' ) );
+check( 'other pages are not marked', 1 === substr_count( $nav, 'aria-current' ) );
+check( 'every number carries data-page', 7 === substr_count( $nav, 'data-page=' ) );
 check( 'URLs are escaped', false !== strpos( mcp_nav_html( 'https://x/"><script>/', 1, 2 ), '&quot;&gt;&lt;script&gt;' ) );
 
 // rel links

@@ -103,10 +103,11 @@ function mcp_nav_html( $term_url, $current, $total ) {
 	foreach ( mcp_page_numbers( $current, $total ) as $n ) {
 		if ( null === $n ) {
 			$items[] = '<span class="mcp-gap" aria-hidden="true">…</span>';
-		} elseif ( $n === (int) $current ) {
-			$items[] = '<span class="mcp-current" aria-current="page">' . $n . '</span>';
 		} else {
-			$items[] = '<a href="' . $esc( mcp_page_url( $term_url, $n ) ) . '">' . $n . '</a>';
+			// Every number is a link (the current one too, marked aria-current), so the
+			// page script can move the highlight when the theme's own button changes page.
+			$cur     = $n === (int) $current ? ' aria-current="page"' : '';
+			$items[] = '<a href="' . $esc( mcp_page_url( $term_url, $n ) ) . '" data-page="' . $n . '"' . $cur . '>' . $n . '</a>';
 		}
 	}
 	return '<nav class="mcp-pagination" aria-label="עמודי הקטגוריה" dir="rtl"><span class="mcp-label">עמודים:</span> ' . implode( ' ', $items ) . '</nav>';

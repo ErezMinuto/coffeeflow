@@ -57,7 +57,7 @@ function mcp_found_products( $term_id ) {
 				'relation' => 'AND',
 				array( 'taxonomy' => 'product_visibility', 'field' => 'name', 'terms' => 'exclude-from-catalog', 'operator' => 'NOT IN' ),
 				array( 'taxonomy' => 'product_visibility', 'field' => 'name', 'terms' => 'exclude-from-search', 'operator' => 'NOT IN' ),
-				array( 'taxonomy' => 'product_cat', 'field' => 'id', 'terms' => (int) $term_id ),
+				array( 'taxonomy' => 'product_cat', 'field' => 'term_id', 'terms' => (int) $term_id ),
 			),
 		)
 	);
@@ -116,13 +116,26 @@ add_filter(
 	},
 	20
 );
+// Rank Math passes the whole <link> tag to these filters (class-head.php,
+// adjacent_rel_link) and prints the result through wp_kses. It prints "prev"
+// only when WordPress's own paged is 2+, which is never the case on ?page=N,
+// so the plugin prints "prev" itself (below) and blanks Rank Math's.
 add_filter(
 	'rank_math/frontend/prev_rel_link',
 	function ( $link ) {
-		$c = mcp_context();
-		return $c ? mcp_rel_links( $c['url'], $c['current'], $c['total'] )['prev'] : $link;
+		return mcp_context() ? '' : $link;
 	},
 	20
+);
+add_action(
+	'rank_math/head',
+	function () {
+		$c = mcp_context();
+		if ( $c && $c['current'] > 1 ) {
+			echo mcp_rel_links( $c['url'], $c['current'], $c['total'] )['prev'] . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in mcp_rel_links
+		}
+	},
+	22
 );
 
 // ── 2. Real page links under the grid ───────────────────────────────────────
@@ -141,9 +154,9 @@ add_action(
 		if ( '' === $html ) {
 			return;
 		}
-		echo '<style>.mcp-pagination{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:center;margin:1.5rem auto;padding:0 1rem;font-size:.95rem;box-sizing:border-box;max-width:100%}.mcp-pagination a,.mcp-pagination .mcp-current{min-width:2.25rem;padding:.35rem .6rem;border:1px solid currentColor;border-radius:.4rem;text-align:center;text-decoration:none;color:inherit}.mcp-pagination .mcp-current{font-weight:700;opacity:.6}.mcp-pagination .mcp-gap{opacity:.6}</style>';
+		echo '<style>.mcp-pagination{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:center;margin:1.5rem auto;padding:0 1rem;font-size:.95rem;box-sizing:border-box;max-width:100%}.mcp-pagination a{min-width:2.25rem;padding:.35rem .6rem;border:1px solid currentColor;border-radius:.4rem;text-align:center;text-decoration:none;color:inherit}.mcp-pagination [aria-current=page]{font-weight:700;opacity:.6}.mcp-pagination .mcp-gap{opacity:.6}</style>';
 		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built and escaped in mcp_nav_html
-		echo '<script>(function(){var nav=document.querySelector(".mcp-pagination");if(!nav)return;var els=document.querySelectorAll("[wire\\\\:snapshot]");for(var i=0;i<els.length;i++){var s=els[i].getAttribute("wire:snapshot")||"";if(s.indexOf("\\"name\\":\\"products-grid\\"")!==-1){els[i].insertAdjacentElement("afterend",nav);return;}}})();</script>';
+		echo '<script>(function(){var nav=document.querySelector(".mcp-pagination");if(!nav)return;var els=document.querySelectorAll("[wire\\\\:snapshot]");for(var i=0;i<els.length;i++){var s=els[i].getAttribute("wire:snapshot")||"";if(s.indexOf("\\"name\\":\\"products-grid\\"")!==-1){els[i].insertAdjacentElement("afterend",nav);break;}}function sync(){var p=parseInt(new URLSearchParams(location.search).get("page")||"1",10)||1;nav.querySelectorAll("[data-page]").forEach(function(a){if(parseInt(a.getAttribute("data-page"),10)===p){a.setAttribute("aria-current","page");}else{a.removeAttribute("aria-current");}});}window.addEventListener("popstate",sync);document.addEventListener("livewire:init",function(){if(window.Livewire&&Livewire.hook){Livewire.hook("commit",function(o){o.succeed(function(){setTimeout(sync,0);});});}});})();</script>';
 	},
 	5
 );
