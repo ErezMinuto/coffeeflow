@@ -165,6 +165,11 @@ serve(async (req) => {
       stats.pages++
       stats.scanned += arr.length
 
+      // One upsert per page (50 rows): one row at a time took ~6.5 s a page, so a
+      // run stopped at its budget after 750 products and never reached the rest
+      // (measured 2026-11-24). A failed batch falls back to row by row, so one bad
+      // row still cannot block the others.
+      const pageRows: Array<Record<string, unknown> & { woo_id: number }> = []
       for (const p of arr) {
         const wooId = Number(p.id)
         if (!wooId) continue
@@ -195,9 +200,20 @@ serve(async (req) => {
           sku: txt(p.sku),
           synced_at: new Date().toISOString(),
         }
-        const { error: upErr } = await sb.from('woo_products').upsert(row, { onConflict: 'user_id,woo_id' })
-        if (upErr) { stats.errors.push(`upsert ${wooId}: ${upErr.message}`); continue }
-        stats.upserted++
+        pageRows.push(row)
+      }
+      if (pageRows.length) {
+        const { error: batchErr } = await sb.from('woo_products').upsert(pageRows, { onConflict: 'user_id,woo_id' })
+        if (!batchErr) {
+          stats.upserted += pageRows.length
+        } else {
+          log.warn('upsert.batch_fallback', `page ${page}: batch upsert failed, retrying row by row`, { page, rows: pageRows.length, error: batchErr.message })
+          for (const row of pageRows) {
+            const { error: upErr } = await sb.from('woo_products').upsert(row, { onConflict: 'user_id,woo_id' })
+            if (upErr) { stats.errors.push(`upsert ${row.woo_id}: ${upErr.message}`); continue }
+            stats.upserted++
+          }
+        }
       }
 
       // Stop early once we've covered all the backfill candidates AND we're
