@@ -21,7 +21,9 @@
  * (see _shared/site_change_log.ts). Every write saves the description it
  * replaces in public.site_change_log first; no backup → no write. With
  * change.undo_of, "description" (the whole text) may be sent instead of
- * replacements, to restore what a logged change replaced.
+ * replacements, to restore what a logged change replaced. With
+ * change.change_id (an approved proposal) the whole text may be sent too, and
+ * must equal that proposal's stored text.
  *
  * On dry_run=true, returns the same shape with written:false and includes
  * description_after for inspection — no WC PUT is issued.
@@ -36,8 +38,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
-import { beginChange, finishChange, parseChangeContext } from "../_shared/site_change_log.ts";
+import { beginChange, finishChange, getChange, parseChangeContext } from "../_shared/site_change_log.ts";
 import { readProduct, siteEnv } from "../_shared/site_io.ts";
+import { wholeDescription } from "./whole.ts";
 
 const WOO_URL = (Deno.env.get("WOO_URL") || "").replace(/\/+$/, "");
 const WOO_KEY = Deno.env.get("WOO_KEY") || "";
@@ -156,9 +159,14 @@ serve(async (req) => {
   }
 
   const ctx = parseChangeContext(body.change);
-  // A whole description (instead of find/replace) is accepted only to undo a
-  // logged change: it restores the exact text that change replaced.
-  const restoreTo = ctx.undo_of && typeof body.description === "string" ? body.description : null;
+  // A whole description (instead of find/replace) is accepted only
+  //  - to undo a logged change: it restores the exact text that change replaced;
+  //  - to apply an approved proposal (the owner clicked approve in the
+  //    dashboard): it must be exactly the text that pending proposal holds, so
+  //    this path cannot write anything the owner did not see.
+  const whole = await wholeDescription(body.description, ctx, productId, getChange);
+  if ("error" in whole) return json(409, { error: whole.error });
+  const restoreTo = whole.text;
   const replacements = restoreTo === null ? validateReplacements(body.replacements) : [];
   if (!replacements) {
     return json(400, { error: "replacements must be a non-empty array of { find, replace } objects (find non-empty string)" });
