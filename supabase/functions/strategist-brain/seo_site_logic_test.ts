@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/strategist-brain/seo_site_logic_test.ts
-import { classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
+import { WIDE_DASH, hasWideDash, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -24,6 +24,13 @@ check('Hebrew counted in characters, not bytes', seoProblems({ title: 'א'.repea
 check('too short description refused', seoProblems({ description: 'קצר מדי' }).length === 1)
 check('HTML in a title refused', seoProblems({ title: '<b>פולי קפה טריים מינוטו</b>' }).some((p) => p.includes('plain text')))
 check('nothing given refused', seoProblems({}).length === 1)
+
+check('wide dash in a title refused', seoProblems({ title: 'פולי קפה טריים – קלייה מקומית | מינוטו' }).some((p) => p.includes('wide dashes')))
+check('em dash in a description refused', seoProblems({ description: 'פולי קפה ספשלטי טריים בקלייה מקומית ברחובות — חד-זני מאתיופיה, קניה וקולומביה ותערובות בית.' }).some((p) => p.includes('wide dashes')))
+check('plain hyphen is fine', seoProblems({ title: 'פולי קפה חד-זני טריים | מינוטו' }).length === 0)
+check('wide dash written as an HTML entity is caught', hasWideDash('a &ndash; b') && hasWideDash('a &#8212; b') && hasWideDash('a &#x2013; b') && !hasWideDash('a - b &amp; c'))
+check('entity dash in a title refused', seoProblems({ title: 'פולי קפה טריים &mdash; קלייה מקומית | מינוטו' }).some((p) => p.includes('wide dashes')))
+check('WIDE_DASH matches en and em dash, not hyphen', WIDE_DASH.test('a–b') && WIDE_DASH.test('a—b') && !WIDE_DASH.test('a-b'))
 
 // ── category text ──
 const dirty = '<p class="x" onclick="evil()">פולי <strong>קפה</strong></p><script>alert(1)</script><a href="https://evil.com">x</a><a href="/product-category/a/">ok</a><img src=x onerror=1><h2 style="c">כותרת</h2>'

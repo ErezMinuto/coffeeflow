@@ -41,6 +41,16 @@ export function isSiteLink(href: string): boolean {
   return /^https:\/\/(www\.)?minuto\.co\.il\//i.test(h)
 }
 
+/**
+ * Wide dashes (– — and their kin). The owner wants none in site text: write a
+ * comma, a colon or a plain hyphen (-) instead.
+ */
+export const WIDE_DASH = /[\u2012-\u2015\u2E3A\u2E3B\uFE58\uFE63]/
+const WIDE_DASH_ENTITY = /&(ndash|mdash|horbar|dash);|&#0*(8210|8211|8212|8213);|&#x0*(2012|2013|2014|2015);/i
+/** True when the text has a wide dash, written as the character or as an HTML entity (&ndash; &#8211; …). */
+export function hasWideDash(s: string): boolean { return WIDE_DASH.test(s) || WIDE_DASH_ENTITY.test(s) }
+export const WIDE_DASH_RULE = 'no wide dashes (– or —) in site text: use a comma, a colon or a plain hyphen (-)'
+
 /** Problems with proposed SEO fields ([] = fine). Only the fields given are checked. */
 export function seoProblems(f: { title?: unknown; description?: unknown; focus_keyword?: unknown }): string[] {
   const out: string[] = []
@@ -52,6 +62,7 @@ export function seoProblems(f: { title?: unknown; description?: unknown; focus_k
     const n = chars(v.trim()), lim = SEO_LIMITS[k]
     if (n < lim.min || n > lim.max) out.push(`${k} is ${n} characters; keep it between ${lim.min} and ${lim.max}`)
     if (/<[^>]+>/.test(v)) out.push(`${k} must be plain text (no HTML)`)
+    if (hasWideDash(v)) out.push(`${k}: ${WIDE_DASH_RULE}`)
   }
   return out
 }

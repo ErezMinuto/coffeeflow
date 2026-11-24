@@ -12,8 +12,7 @@ import {
   readPost, readProductStatus, readSeoMeta, readTermDescription, siteEnv, type SeoMeta,
 } from '../_shared/site_io.ts'
 import {
-  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords,
-} from './seo_site_logic.ts'
+  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE } from './seo_site_logic.ts'
 
 interface Ctx { runId: string }
 
@@ -116,6 +115,7 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
   }
   if (input.category_text !== undefined) {
     if (r.kind !== 'category') return { error: 'category_text is only for product category addresses' }
+    if (hasWideDash(String(input.category_text ?? ''))) return { error: `category_text: ${WIDE_DASH_RULE}` }
     const c = cleanCategoryText(String(input.category_text ?? ''))
     if (c.words < CATEGORY_TEXT_WORDS.min || c.words > CATEGORY_TEXT_WORDS.max) return { error: `category_text has ${c.words} words; write between ${CATEGORY_TEXT_WORDS.min} and ${CATEGORY_TEXT_WORDS.max}` }
     const cur = (await readTermDescription(env, r.id)).description
