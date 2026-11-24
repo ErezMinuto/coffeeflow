@@ -254,6 +254,13 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   const s3 = materialSignals(pages, [Q('פולי קפה ברזיל', blog, 1, 900, 9), Q('פולי קפה ברזיל', sub, 40, 900, 2)], [])
   check('a beans sub-category in the top 3 counts as the category', s3.filter((x) => x.id.includes('ברזיל')).every((x) => !x.must_address))
   check('English "coffee beans" search is priority too', !!materialSignals(pages, [Q('Coffee Beans Israel', blog, 1, 900, 9)], []).find((x) => x.id.startsWith('striking:'))?.must_address)
+  // The lock states how much text the category has next to the page Google shows instead.
+  const withWords: CrawlPage[] = [...pages,
+    { url: beans, final_url: beans, status: 200, page_type: 'category', word_count: 900, category_text_words: 43 } as CrawlPage,
+    { url: blog, final_url: blog, status: 200, page_type: 'post', word_count: 748 } as CrawlPage]
+  const sw = materialSignals(withWords, real, []).find((x) => x.id.startsWith('striking:פולי קפה|/blog/'))
+  check('lock names the category text words and the competing page words', !!sw?.must_address && sw.must_address.includes('43 words of its own text') && sw.must_address.includes('748 words'), sw?.must_address ?? '')
+  check('without word data the lock still works (no word facts)', !!st?.must_address && !st.must_address.includes('words of its own text'))
   const loss = materialSignals(pages, [Q('x', beans, 10, 500, 5)], [Q('x', beans, 80, 500, 5)])
   check('a coffee-beans page losing clicks is locked', !!loss.find((x) => x.id.startsWith('page_loss:' + PRIORITY_CATEGORY_PATH))?.must_address, loss.map((x) => x.id).join(','))
 }
