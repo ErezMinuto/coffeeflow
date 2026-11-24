@@ -285,6 +285,53 @@ export function valuePerSession(webRevenueIls: number, sessions: number): number
   return Math.round((webRevenueIls / sessions) * 100) / 100
 }
 
+// ── Google Shopping (Merchant Center) ───────────────────────────────────────
+
+export interface MerchantStatusRow {
+  offer_id: string; title: string | null; link: string | null; worst_severity: string
+  approved_anywhere: boolean; disapproved_anywhere: boolean; synced_at: string
+  item_issues: Array<{ code: string | null; severity: string | null; description: string | null; attribute: string | null }>
+}
+
+const SEVERITY_ORDER: Record<string, number> = { DISAPPROVED: 0, DEMOTED: 1, NOT_IMPACTED: 2 }
+
+/**
+ * Merchant Center status in the shape the audit reads: totals, then each issue
+ * Google lists (worst first, then most products), with example products and
+ * their shop links so a finding can name the page to fix. Null when there are
+ * no rows (never synced).
+ */
+export function summarizeShopping(rows: readonly MerchantStatusRow[], examples = 5) {
+  if (rows.length === 0) return null
+  const issues = new Map<string, { code: string; severity: string; description: string | null; attribute: string | null; products: number; examples: Array<{ offer_id: string; title: string | null; link: string | null }> }>()
+  for (const r of rows) {
+    const seen = new Set<string>()
+    for (const i of r.item_issues ?? []) {
+      const key = `${i.code ?? 'unknown'}|${i.severity ?? 'SEVERITY_UNSPECIFIED'}`
+      if (seen.has(key)) continue   // one product counts once per issue, across destinations
+      seen.add(key)
+      const v = issues.get(key) ?? { code: i.code ?? 'unknown', severity: i.severity ?? 'SEVERITY_UNSPECIFIED', description: i.description, attribute: i.attribute, products: 0, examples: [] }
+      v.products++
+      if (v.examples.length < examples) v.examples.push({ offer_id: r.offer_id, title: r.title, link: r.link })
+      issues.set(key, v)
+    }
+  }
+  const sorted = [...issues.values()].sort((a, b) => ((SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3)) || (b.products - a.products))
+  return {
+    synced_at: rows.reduce((m, r) => (r.synced_at > m ? r.synced_at : m), rows[0].synced_at),
+    products: rows.length,
+    approved_somewhere: rows.filter((r) => r.approved_anywhere).length,
+    disapproved_somewhere: rows.filter((r) => r.disapproved_anywhere).length,
+    by_worst_issue: {
+      disapproved: rows.filter((r) => r.worst_severity === 'DISAPPROVED').length,
+      demoted: rows.filter((r) => r.worst_severity === 'DEMOTED').length,
+      warning_only: rows.filter((r) => r.worst_severity === 'NOT_IMPACTED').length,
+      none: rows.filter((r) => r.worst_severity === 'NONE').length,
+    },
+    issues: sorted.slice(0, 25),
+  }
+}
+
 // ── Coverage: which areas the audit can see this week ───────────────────────
 
 export interface DataState {
@@ -298,6 +345,9 @@ export interface DataState {
   ads_synced_at:      string | null
   ai_probe_at:        string | null
   orders_synced_at:   string | null
+  // Merchant Center (google-sync merchant block). Optional: absent = never synced.
+  merchant_synced_at?: string | null
+  merchant_products?:  number
 }
 
 export type CoverageStatus = 'covered' | 'partial' | 'blind'
@@ -325,7 +375,9 @@ export function coverage(s: DataState, now = Date.now()): CoverageRow[] {
     row('on_page', crawl ? 'covered' : 'blind', crawl ? 'titles, Google descriptions, H1s, canonicals on every page' : 'nothing', crawl ? null : needCrawl),
     row('category_pages', crawl && qp ? 'covered' : crawl || qp ? 'partial' : 'blind', 'category content, markup, searches and traffic', crawl && qp ? null : `${crawl ? '' : needCrawl}${!crawl && !qp ? '; ' : ''}${qp ? '' : needQp}`),
     row('product_pages', crawl && qp ? 'covered' : crawl || qp ? 'partial' : 'blind', 'product content, markup, searches and traffic', crawl && qp ? null : `${crawl ? '' : needCrawl}${!crawl && !qp ? '; ' : ''}${qp ? '' : needQp}`),
-    row('shopping', 'blind', 'nothing', 'Merchant Center status: the Google login needs the Shopping (Content API) permission'),
+    fresh(s.merchant_synced_at ?? null, 3, now) && (s.merchant_products ?? 0) > 0
+      ? row('shopping', 'covered', `Google Shopping status of ${s.merchant_products} products in Merchant Center: approved, demoted or disapproved, and every issue Google lists`)
+      : row('shopping', 'blind', 'nothing', s.merchant_synced_at ? 'a Merchant Center sync from the last 3 days (google-sync, mode performance or merchant)' : 'Merchant Center status: the owner reconnects Google in the dashboard with the Shopping permission, then the one-time google-sync merchant_register call'),
     row('content', crawl && qp ? 'covered' : crawl || qp ? 'partial' : 'blind', 'blog posts: length, searches, losses, posts competing for the same search', crawl && qp ? null : needQp),
     row('internal_links', crawl ? 'covered' : 'blind', crawl ? 'every internal link between sitemap pages, inlinks and orphans' : 'nothing', crawl ? null : needCrawl),
     row('images_video', crawl ? 'partial' : 'blind', crawl ? 'images and missing alt text per page' : 'nothing', 'image file sizes and video (YouTube) data'),

@@ -1,7 +1,7 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
 import {
   AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
-  searchTotals, searchView, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow,
+  searchTotals, searchView, summarizeShopping, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow,
 } from './seo_audit_analysis.ts'
 import { clicksByPage } from './seo_audit_tools.ts'
 
@@ -87,6 +87,32 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   const stale = coverage({ crawl_finished_at: '2026-11-10T03:00:00Z', query_page_end: '2026-11-29', speed_ok: 0, speed_refused: 4, inspect_ok: 0, inspect_failed: 0, ga4_synced_at: null, ads_synced_at: null, ai_probe_at: null, orders_synced_at: null }, now)
   check('a 20-day-old crawl counts as blind', stale.find((r) => r.area === 'on_page')?.status === 'blind')
   check('refused speed checks say to add the API key', (stale.find((r) => r.area === 'speed_mobile')?.missing ?? '').includes('PAGESPEED_API_KEY'))
+}
+
+// ── Google Shopping (Merchant Center) ──
+{
+  const now = Date.parse('2026-11-30T09:00:00Z')
+  const blank = { crawl_finished_at: null, query_page_end: null, speed_ok: 0, speed_refused: 0, inspect_ok: 0, inspect_failed: 0, ga4_synced_at: null, ads_synced_at: null, ai_probe_at: null, orders_synced_at: null }
+  const shop = (s: Record<string, unknown>) => coverage({ ...blank, ...s }, now).find((r) => r.area === 'shopping')!
+  check('shopping: fresh sync with products → covered', shop({ merchant_synced_at: '2026-11-30T03:00:00Z', merchant_products: 40 }).status === 'covered')
+  check('shopping: never synced → blind, says to reconnect', shop({}).status === 'blind' && (shop({}).missing ?? '').includes('reconnects Google'))
+  check('shopping: 5-day-old sync → blind, asks for a fresh sync', shop({ merchant_synced_at: '2026-11-25T03:00:00Z', merchant_products: 40 }).status === 'blind' && (shop({ merchant_synced_at: '2026-11-25T03:00:00Z', merchant_products: 40 }).missing ?? '').includes('last 3 days'))
+  check('shopping: fresh but zero products → blind', shop({ merchant_synced_at: '2026-11-30T03:00:00Z', merchant_products: 0 }).status === 'blind')
+
+  check('summarizeShopping: no rows → null', summarizeShopping([]) === null)
+  const iss = (code: string, severity: string) => ({ code, severity, description: code, attribute: null })
+  const r = (id: string, worst: string, issues: ReturnType<typeof iss>[], approved = true, disapproved = false) => ({ offer_id: id, title: id, link: `https://minuto.co.il/p/${id}`, worst_severity: worst, approved_anywhere: approved, disapproved_anywhere: disapproved, item_issues: issues, synced_at: '2026-11-30T03:00:00Z' })
+  const sum = summarizeShopping([
+    r('a', 'NOT_IMPACTED', [iss('missing_gtin', 'NOT_IMPACTED'), iss('missing_gtin', 'NOT_IMPACTED')]),
+    r('b', 'DISAPPROVED', [iss('price_mismatch', 'DISAPPROVED'), iss('missing_gtin', 'NOT_IMPACTED')], false, true),
+    r('c', 'NOT_IMPACTED', [iss('missing_gtin', 'NOT_IMPACTED')]),
+    r('d', 'NONE', []),
+  ])!
+  check('summarizeShopping: totals', sum.products === 4 && sum.approved_somewhere === 3 && sum.disapproved_somewhere === 1)
+  check('summarizeShopping: by worst issue', sum.by_worst_issue.disapproved === 1 && sum.by_worst_issue.warning_only === 2 && sum.by_worst_issue.none === 1)
+  check('summarizeShopping: disapproval ranks before a more common warning', sum.issues[0].code === 'price_mismatch' && sum.issues[1].code === 'missing_gtin')
+  check('summarizeShopping: a product counts once per issue across destinations', sum.issues[1].products === 3)
+  check('summarizeShopping: examples carry the shop link', sum.issues[0].examples[0].link === 'https://minuto.co.il/p/b')
 }
 
 // ── seo_audit validation ──
