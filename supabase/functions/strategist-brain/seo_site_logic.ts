@@ -109,6 +109,14 @@ export function visibleWords(html: string): number {
 
 export const CATEGORY_TEXT_WORDS = { min: 120, max: 900 }
 
+/**
+ * Prices in page text. The product page shows the price (and the price per
+ * 100 g) itself; a price written into a description or FAQ duplicates it and
+ * goes stale the day the price changes.
+ */
+export const PRICE_IN_TEXT = /₪|(^|[^\u0590-\u05FF])(ש["״]ח|שקלים|שקל)(?![\u0590-\u05FF])|מחיר ל-?\s*\d/
+export const PRICE_RULE = 'no prices in page text (the product page already shows the price and the price per 100 g)'
+
 export const PRODUCT_TEXT_WORDS = { min: 150, max: 700 }
 export const PRODUCT_FAQ = { min: 3, max: 8, q: { min: 8, max: 160 }, a: { min: 30, max: 700 } }
 
@@ -127,6 +135,7 @@ export function faqProblems(pairs: unknown): string[] {
     if ([...a].length < PRODUCT_FAQ.a.min || [...a].length > PRODUCT_FAQ.a.max) out.push(`answer ${n} is ${[...a].length} characters; keep it ${PRODUCT_FAQ.a.min}–${PRODUCT_FAQ.a.max}`)
     if (/<[^>]+>/.test(q + a)) out.push(`question ${n}: plain text only (no HTML)`)
     if (hasWideDash(q + ' ' + a)) out.push(`question ${n}: ${WIDE_DASH_RULE}`)
+    if (PRICE_IN_TEXT.test(q + ' ' + a)) out.push(`question ${n}: ${PRICE_RULE}`)
     const key = q.replace(/\s+/g, ' ').toLowerCase()
     if (key && seen.has(key)) out.push(`question ${n} repeats an earlier question`)
     seen.add(key)

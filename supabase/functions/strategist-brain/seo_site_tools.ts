@@ -12,7 +12,7 @@ import {
   cleanFaq, readPost, readProduct, readProductStatus, readSeoMeta, readTermDescription, siteEnv, type SeoMeta, type SiteEnv,
 } from '../_shared/site_io.ts'
 import {
-  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, faqProblems, numbersNotInCatalog } from './seo_site_logic.ts'
+  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, faqProblems, numbersNotInCatalog, PRICE_IN_TEXT, PRICE_RULE } from './seo_site_logic.ts'
 
 interface Ctx { runId: string }
 
@@ -135,6 +135,7 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
   if (input.category_text !== undefined) {
     if (r.kind !== 'category') return { error: 'category_text is only for product category addresses' }
     if (hasWideDash(String(input.category_text ?? ''))) return { error: `category_text: ${WIDE_DASH_RULE}` }
+    if (PRICE_IN_TEXT.test(String(input.category_text ?? ''))) return { error: `category_text: ${PRICE_RULE}` }
     const c = cleanCategoryText(String(input.category_text ?? ''))
     if (c.words < CATEGORY_TEXT_WORDS.min || c.words > CATEGORY_TEXT_WORDS.max) return { error: `category_text has ${c.words} words; write between ${CATEGORY_TEXT_WORDS.min} and ${CATEGORY_TEXT_WORDS.max}` }
     const cur = (await readTermDescription(env, r.id)).description
@@ -156,6 +157,7 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
     if (input.product_description !== undefined) {
       const raw = String(input.product_description ?? '')
       if (hasWideDash(raw)) return { error: `product_description: ${WIDE_DASH_RULE}` }
+      if (PRICE_IN_TEXT.test(raw)) return { error: `product_description: ${PRICE_RULE}` }
       const c = cleanCategoryText(raw)
       if (c.words < PRODUCT_TEXT_WORDS.min || c.words > PRODUCT_TEXT_WORDS.max) return { error: `product_description has ${c.words} words; write between ${PRODUCT_TEXT_WORDS.min} and ${PRODUCT_TEXT_WORDS.max}` }
       const extra = numbersNotInCatalog(c.html, catalog)
