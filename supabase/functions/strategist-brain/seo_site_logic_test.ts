@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/strategist-brain/seo_site_logic_test.ts
-import { WIDE_DASH, hasWideDash, faqProblems, numbersNotInCatalog, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
+import { WIDE_DASH, PRICE_IN_TEXT, hasWideDash, faqProblems, numbersNotInCatalog, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -65,6 +65,11 @@ const catalog = 'פולי קפה מדרום אמריקה והודו, 80% ערב�
 check('catalog numbers are allowed', numbersNotInCatalog('<p>80% ערביקה, 20% רובוסטה, שקית 330 גרם</p>', catalog).length === 0)
 check('an invented number is caught', numbersNotInCatalog('<p>נקלה לפני 48 שעות, טרי ל-6 שבועות</p>', catalog).join(',') === '48,6')
 check('17.88 and 17,88 both match the catalog', numbersNotInCatalog('17,88 ₪ ל-100 גרם', catalog).length === 0)
+
+check('price per 100 g line is a price', PRICE_IN_TEXT.test('<p>שקית 330 גרם. מחיר ל-100 גר׳: 17.88 ₪</p>'))
+check('a shekel amount in a FAQ answer refused', faqProblems([...goodFaq.slice(0, 2), { q: 'כמה זה עולה?', a: 'השקית עולה 59 ש"ח, ומשלוח חינם מעל סכום מסוים.' }]).some((p) => p.includes('no prices')))
+check('"משקל" (weight) is not a price', !PRICE_IN_TEXT.test('<p>משקל השקית 330 גרם</p>') && PRICE_IN_TEXT.test('<p>עולה 59 שקלים</p>') && PRICE_IN_TEXT.test('<p>רק שקל לגרם</p>'))
+check('plain text with numbers but no price is fine', !PRICE_IN_TEXT.test('<p>80% ערביקה, שקית 330 גרם, גובה 1700 מטר</p>'))
 
 // ── internal links ──
 const post = '<h2>מה זה פולי קפה</h2><p>כאן תמצאו <a href="/x/">פולי קפה</a> ועוד מידע על פולי קפה טריים.</p>'
