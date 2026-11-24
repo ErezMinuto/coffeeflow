@@ -26,8 +26,32 @@ import { addKeywordRow, type KeywordTotals } from './keyword_agg.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Every outbound call gets a deadline. Without one, a Google request that
+// never answers leaves the background task awaiting forever until the
+// platform kills the worker — no catch block runs, sync_log stays 'running',
+// and system_logs shows only run.start (seen 2026-11-19 10:45 UTC).
+// Healthy runs finish all 14 blocks in ~90 s, so these are generous.
+const TOKEN_TIMEOUT_MS = 20_000
+const GAQL_TIMEOUT_MS  = 60_000   // per page; covers reading the body too
+
+// Stop starting new blocks once the run nears the 400 s wall clock, so the
+// run ends with a logged error and a closed sync_log row instead of a kill.
+const RUN_BUDGET_MS = 340_000
+
+async function fetchWithTimeout(url: string, init: RequestInit, ms: number, label: string) {
+  try {
+    const res = await fetch(url, { ...init, signal: AbortSignal.timeout(ms) })
+    return { res, text: await res.text() }
+  } catch (e: any) {
+    if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
+      throw new Error(`[${label}] no response within ${ms / 1000}s`)
+    }
+    throw e
+  }
+}
+
 async function refreshGoogleToken(refreshToken: string): Promise<string> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const { text } = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -36,8 +60,10 @@ async function refreshGoogleToken(refreshToken: string): Promise<string> {
       client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
       grant_type: 'refresh_token',
     }),
-  })
-  const data = await res.json()
+  }, TOKEN_TIMEOUT_MS, 'token_refresh')
+  let data: any
+  try { data = JSON.parse(text) }
+  catch { throw new Error(`Token refresh: non-JSON response: ${text.slice(0, 200)}`) }
   if (data.error) throw new Error(`Token refresh failed: ${data.error_description || data.error}`)
   return data.access_token
 }
@@ -56,8 +82,8 @@ async function gaqlSearch(
   while (true) {
     const body: any = { query }
     if (pageToken) body.pageToken = pageToken
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
-    const raw = await res.text()
+    const { res, text: raw } = await fetchWithTimeout(
+      url, { method: 'POST', headers, body: JSON.stringify(body) }, GAQL_TIMEOUT_MS, label)
     let data: any
     try { data = JSON.parse(raw) }
     catch { throw new Error(`[${label}] non-JSON response (${res.status}): ${raw.slice(0, 200)}`) }
@@ -140,6 +166,41 @@ serve(async (req) => {
   const log = createLogger('google-sync')
   log.info('run.start', `google sync started (${mode})`, { mode, sync_id: syncId })
 
+  // Progress trail. Each step logs block.done for the step before it (with its
+  // duration) and block.start for itself, and stamps sync_log.stats.phase, so
+  // a run killed mid-flight still shows exactly which step it was in. It also
+  // enforces RUN_BUDGET_MS: past the budget it throws. Inside a block that
+  // lands in the block's own catch, so every remaining block is skipped with a
+  // recorded error and the run closes as 'partial'; before the first block
+  // (token_refresh) it reaches the outer catch and closes as 'error'.
+  const runStartMs = Date.now()
+  let curPhase: string | null = null
+  let curPhaseStart = runStartMs
+  const phaseMs: Record<string, number> = {}
+  stats.phase_ms = phaseMs
+  const endPhase = () => {
+    if (!curPhase) return
+    const ms = Date.now() - curPhaseStart
+    phaseMs[curPhase] = ms
+    log.info('block.done', `${curPhase} done in ${ms}ms`, { block: curPhase, ms })
+    curPhase = null
+  }
+  const phase = async (name: string) => {
+    endPhase()
+    const elapsed = Date.now() - runStartMs
+    if (elapsed > RUN_BUDGET_MS) {
+      throw new Error(`run budget exceeded (${Math.round(elapsed / 1000)}s) before ${name}; stopping so the run closes cleanly`)
+    }
+    curPhase = name
+    curPhaseStart = Date.now()
+    log.info('block.start', `${name} started`, { block: name, elapsed_ms: elapsed })
+    try {
+      await supabase.from('sync_log')
+        .update({ stats: { mode, phase: name, elapsed_ms: elapsed } })
+        .eq('id', syncId)
+    } catch { /* progress stamp is best-effort; never fail the sync over it */ }
+  }
+
   // Background work — wrapped in a try/catch so we ALWAYS update the row
   // (otherwise the frontend would poll forever on a crashed sync).
   // @ts-ignore — EdgeRuntime is provided by Supabase Deno runtime
@@ -152,6 +213,7 @@ serve(async (req) => {
       .from('oauth_tokens').select('*').eq('platform', 'google').single()
     if (!tokenRow) throw new Error('Google not connected')
 
+    await phase('token_refresh')
     const accessToken = await refreshGoogleToken(tokenRow.refresh_token)
     await supabase.from('oauth_tokens').update({
       access_token: accessToken,
@@ -190,6 +252,7 @@ serve(async (req) => {
             customer.manager
           FROM customer
         `
+        await phase('customer')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'customer')
         for (const r of rows) {
           const c = r.customer ?? {}
@@ -237,6 +300,7 @@ serve(async (req) => {
           FROM campaign
           WHERE campaign.status != 'REMOVED'
         `
+        await phase('campaign_settings')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'campaign_settings')
         for (const r of rows) {
           const c = r.campaign ?? {}
@@ -284,6 +348,7 @@ serve(async (req) => {
           WHERE ad_group.status != 'REMOVED'
             AND campaign.status != 'REMOVED'
         `
+        await phase('ad_group_settings')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_group_settings')
         for (const r of rows) {
           const ag = r.adGroup ?? {}
@@ -321,6 +386,7 @@ serve(async (req) => {
           FROM user_list
           WHERE user_list.membership_status = 'OPEN'
         `
+        await phase('user_list')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'user_list')
         for (const r of rows) {
           const u = r.userList ?? {}
@@ -361,6 +427,7 @@ serve(async (req) => {
           FROM conversion_action
           WHERE conversion_action.status = 'ENABLED'
         `
+        await phase('conversion_action')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'conversion_action')
         for (const r of rows) {
           const ca = r.conversionAction ?? {}
@@ -416,6 +483,7 @@ serve(async (req) => {
           ORDER BY metrics.cost_micros DESC
           LIMIT 500
         `
+        await phase('campaign_daily')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'campaign_daily')
         for (const r of rows) {
           const cost = (r.metrics.costMicros || 0) / 1_000_000
@@ -484,6 +552,7 @@ serve(async (req) => {
             AND campaign.status != 'REMOVED'
             AND segments.date BETWEEN '${since14}' AND '${today}'
         `
+        await phase('ad_creatives')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_creatives')
         const adStrengthMap: Record<string, string> = {
           EXCELLENT: 'מצוין', GOOD: 'טוב', AVERAGE: 'ממוצע',
@@ -538,6 +607,7 @@ serve(async (req) => {
           ORDER BY metrics.cost_micros DESC
           LIMIT 2000
         `
+        await phase('keywords_daily')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'keywords_daily')
         // Aggregate per-keyword for the legacy keyword_ideas table (top-100).
         const kwAgg = new Map<string, KeywordTotals>()
@@ -611,6 +681,7 @@ serve(async (req) => {
           ORDER BY metrics.cost_micros DESC
           LIMIT 2000
         `
+        await phase('search_terms')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'search_terms')
         for (const r of rows) {
           const term = r.searchTermView?.searchTerm ?? ''
@@ -653,6 +724,7 @@ serve(async (req) => {
             AND segments.date BETWEEN '${since14}' AND '${today}'
           ORDER BY metrics.cost_micros DESC
         `
+        await phase('ad_group_daily')
         const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_group_daily')
         for (const r of rows) {
           await supabase.from('google_ad_group_daily').upsert({
@@ -689,6 +761,7 @@ serve(async (req) => {
       //         total time ~= max(any one day) ≈ 5s. Order-independent
       //         since each day upserts on the unique gclid key.
       try {
+        await phase('click_view')
         const runDay = async (d: number) => {
           const targetDate = daysAgo(d)
           const q = `
@@ -750,6 +823,8 @@ serve(async (req) => {
       }
     }
 
+      endPhase()
+
       // ── Log final result ────────────────────────────────────────────────
       // UPDATE the row we inserted at the start of the request, instead of
       // INSERT-ing a new one. The 'running' row's id was returned to the
@@ -773,7 +848,7 @@ serve(async (req) => {
         { total_records: totalRecords, sync_id: syncId, errors: stats.errors })
 
     } catch (err: any) {
-      log.error('run.fatal', 'sync aborted', { sync_id: syncId, stats }, err)
+      log.error('run.fatal', 'sync aborted', { sync_id: syncId, phase: curPhase, stats }, err)
       await supabase.from('sync_log').update({
         status: 'error',
         error_msg: err.message,
