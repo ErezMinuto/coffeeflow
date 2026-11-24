@@ -145,3 +145,17 @@ test('an unparseable rel=next does not break the page', () => {
   assert.equal(p.rel_next, null)
   assert.deepEqual(p.product_paths, ['/product/a/'])
 })
+
+test('blog listings are not posts', () => {
+  assert.equal(pageType('https://www.minuto.co.il/blog/'), 'listing')
+  assert.equal(pageType('https://www.minuto.co.il/blog/category/%D7%9E%D7%9B%D7%95%D7%A0%D7%95%D7%AA/'), 'listing')
+  assert.equal(pageType('https://www.minuto.co.il/blog/tag/x/'), 'listing')
+  assert.equal(pageType('https://www.minuto.co.il/blog/some-post/'), 'post')
+  assert.equal(pageType('https://www.minuto.co.il/blog/category-guide-to-beans/'), 'post', 'a post whose slug starts with "category" is still a post')
+})
+
+test('blog /page/N/ links count as listing pages of the blog', () => {
+  assert.equal(listingPageNumber('https://www.minuto.co.il/blog/page/3/', 'https://www.minuto.co.il/blog/', HOST), 3)
+  assert.equal(listingPageNumber('https://www.minuto.co.il/blog/page/4/', 'https://www.minuto.co.il/blog/page/3/', HOST), 4)
+  assert.equal(listingPageNumber('https://www.minuto.co.il/blog/some-post/', 'https://www.minuto.co.il/blog/', HOST), null)
+})

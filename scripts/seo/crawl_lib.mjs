@@ -34,6 +34,8 @@ export function pageType(url, sitemapUrl = '') {
   if (path === '/' || path === '') return 'home'
   if (sm.includes('product_cat') || path.startsWith('/product-category/')) return 'category'
   if (/\/product-sitemap/.test(sm) || path.startsWith('/product/')) return 'product'
+  // The blog's own listings (index, category and tag archives) are not posts.
+  if (path === '/blog/' || path === '/blog' || /^\/blog\/(category|tag)\//.test(path)) return 'listing'
   if (sm.includes('post-sitemap') || path.startsWith('/blog/')) return 'post'
   if (sm.includes('page-sitemap')) return 'page'
   return 'other'
