@@ -69,7 +69,8 @@ export function getGoogleAuthUrl(): string {
   const params = new URLSearchParams({
     client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
     redirect_uri: `${window.location.origin}/auth/google/callback`,
-    scope: 'https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/webmasters.readonly',
+    // content = Merchant Center (Google Shopping), read by google-sync's merchant block.
+    scope: 'https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/content',
     response_type: 'code',
     access_type: 'offline',
     prompt: 'consent',

@@ -14,6 +14,16 @@
  *
  *   all (default) — both. Preserves the backwards-compatible cron behavior.
  *
+ *   merchant     — Merchant Center (Google Shopping) product status only. It
+ *                  also runs with performance and all, so the twice-daily
+ *                  cron keeps merchant_product_status fresh.
+ *
+ *   merchant_register — one-time link of this Google Cloud project to the
+ *                  Merchant Center account (Merchant API registerGcp). The
+ *                  Merchant API refuses every other call until it is done.
+ *                  Never runs on its own; call it once, by hand, after the
+ *                  owner reconnects Google with the Shopping permission.
+ *
  * The split exists so the doctor's pre-run performance sync is fast (doesn't
  * re-fetch config that rarely changes) and the settings tables stay a stable
  * source of truth for all campaign/ad-group/audience configuration.
@@ -23,6 +33,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger } from '../_shared/logger.ts'
 import { addKeywordRow, type KeywordTotals } from './keyword_agg.ts'
+import { MerchantError, listProducts, productRow, registerGcp, resolveAccountId } from './merchant.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -93,6 +104,12 @@ serve(async (req) => {
   const mode = (urlObj.searchParams.get('mode') ?? 'all').toLowerCase()
   const runSettings    = mode === 'settings'    || mode === 'all'
   const runPerformance = mode === 'performance' || mode === 'all'
+  const runMerchant    = mode === 'merchant'    || mode === 'performance' || mode === 'all'
+  const runRegister    = mode === 'merchant_register'
+  if (!runSettings && !runPerformance && !runMerchant && !runRegister) {
+    return new Response(JSON.stringify({ error: `unknown mode '${mode}'` }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
   // How many days of click_view (gclid → campaign) to fetch. Default 30: a
   // machine or grinder purchase can land weeks after the click. Up to 90 (the
   // API's click_view retention) for a one-off backfill.
@@ -105,6 +122,7 @@ serve(async (req) => {
     ad_group_daily_rows: 0, click_mapping_rows: 0,
     account_settings_rows: 0, campaign_settings_rows: 0, ad_group_settings_rows: 0,
     audience_rows: 0, conversion_action_rows: 0,
+    merchant_rows: 0, merchant_status: null as string | null,
     errors: [] as string[],
   }
 
@@ -146,7 +164,7 @@ serve(async (req) => {
   EdgeRuntime.waitUntil((async () => {
     try {
     const devToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN')
-    if (!devToken) throw new Error('GOOGLE_DEVELOPER_TOKEN not set')
+    if (!devToken && (runSettings || runPerformance)) throw new Error('GOOGLE_DEVELOPER_TOKEN not set')
 
     const { data: tokenRow } = await supabase
       .from('oauth_tokens').select('*').eq('platform', 'google').single()
@@ -162,7 +180,7 @@ serve(async (req) => {
     const apiUrl = `https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:search`
     const apiHeaders = {
       'Authorization':    `Bearer ${accessToken}`,
-      'developer-token':  devToken,
+      'developer-token':  devToken ?? '',
       'Content-Type':     'application/json',
     }
 
@@ -750,6 +768,51 @@ serve(async (req) => {
       }
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // MERCHANT CENTER — Google Shopping product status (merchant.ts)
+    // ════════════════════════════════════════════════════════════════════════
+    // "Not set up yet" (login without the Shopping permission, project not
+    // registered) is recorded in stats.merchant_status, not as an error, so
+    // the Ads sync does not turn 'partial' every run until the owner connects.
+    if (runMerchant || runRegister) {
+      try {
+        const accountId = await resolveAccountId(accessToken, Deno.env.get('GOOGLE_MERCHANT_ID'))
+        if (runRegister) {
+          const reg = await registerGcp(accessToken, accountId)
+          stats.merchant_status = `registered (${reg.gcpIds.length} project id${reg.gcpIds.length === 1 ? '' : 's'})`
+          log.info('merchant.registered', 'Google Cloud project registered with Merchant Center', { gcp_ids: reg.gcpIds.length })
+        } else {
+          const runStamp = new Date().toISOString()
+          const products = await listProducts(accessToken, accountId)
+          const rows = products.map((p) => productRow(p, accountId)).filter((r) => r !== null)
+            .map((r) => ({ ...r, synced_at: runStamp }))
+          for (let i = 0; i < rows.length; i += 500) {
+            const { error } = await supabase.from('merchant_product_status').upsert(rows.slice(i, i + 500), { onConflict: 'product_name' })
+            if (error) throw new Error(`merchant_product_status upsert: ${error.message}`)
+          }
+          stats.merchant_rows = rows.length
+          // Products gone from Merchant Center since the last full listing.
+          // Only after a non-empty listing: an empty answer is more likely a
+          // glitch than every product removed at once.
+          if (rows.length > 0) {
+            const { error } = await supabase.from('merchant_product_status').delete()
+              .eq('account_id', accountId).lt('synced_at', runStamp)
+            if (error) throw new Error(`merchant_product_status prune: ${error.message}`)
+          }
+          stats.merchant_status = 'ok'
+        }
+      } catch (e: any) {
+        if (e instanceof MerchantError && e.problem !== 'error') {
+          stats.merchant_status = e.problem
+          log.warn('merchant.not_ready', `Merchant Center not ready: ${e.problem}`, { problem: e.problem })
+        } else {
+          log.error('block.merchant.fail', 'merchant block failed', { block: 'merchant' }, e)
+          stats.merchant_status = 'error'
+          stats.errors.push(`merchant: ${e.message}`)
+        }
+      }
+    }
+
       // ── Log final result ────────────────────────────────────────────────
       // UPDATE the row we inserted at the start of the request, instead of
       // INSERT-ing a new one. The 'running' row's id was returned to the
@@ -758,6 +821,7 @@ serve(async (req) => {
         + stats.search_term_rows + stats.ad_group_daily_rows + stats.click_mapping_rows
         + stats.account_settings_rows + stats.campaign_settings_rows
         + stats.ad_group_settings_rows + stats.audience_rows + stats.conversion_action_rows
+        + stats.merchant_rows
 
       await supabase.from('sync_log').update({
         status:    stats.errors.length ? 'partial' : 'success',
