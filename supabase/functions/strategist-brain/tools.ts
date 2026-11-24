@@ -35,6 +35,7 @@ import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
 import { SEO_AUDIT_TOOL_DEFS, dispatchSeoAuditTool } from './seo_audit_tools.ts'
+import { SEO_SITE_TOOL_DEFS, dispatchSeoSiteTool } from './seo_site_tools.ts'
 import { AUDIT_AREAS, AUDIT_AREA_KEYS, normaliseSeoAudit, type CoverageRow, type SeoAudit, type Signal } from './seo_audit_analysis.ts'
 
 export type BrainToolDefinition = ToolDefinition
@@ -895,6 +896,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
   // Weekly whole-site SEO audit (seo_audit_tools.ts).
   ...(SEO_AUDIT_TOOL_DEFS as unknown as BrainToolDefinition[]),
+  // Phase 2 hands: read editable fields and file proposals (seo_site_tools.ts).
+  ...(SEO_SITE_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
 
 async function getKeywordResearch(supabase: SupabaseClient, input: { limit?: number }) {
@@ -941,7 +944,9 @@ export async function dispatchTool(
       case 'emit_innovation_pitch':       return { result: await handleEmitInnovationPitch(supabase, ctx, input as unknown as PitchInput) }
       default: {
         const seo = await dispatchSeoAuditTool(supabase, name, input)
-        return seo === undefined ? { result: { error: `unknown tool: ${name}` } } : { result: seo }
+        if (seo !== undefined) return { result: seo }
+        const site = await dispatchSeoSiteTool(supabase, ctx, name, input)
+        return site === undefined ? { result: { error: `unknown tool: ${name}` } } : { result: site }
       }
     }
   } catch (e) {
