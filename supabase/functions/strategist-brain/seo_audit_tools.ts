@@ -7,7 +7,7 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.
 import { selectAll } from '../_shared/select_all.ts'
 import {
   AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, materialSignals, pageKey, pagesWithIssue,
-  searchTotals, searchView, valuePerSession,
+  searchTotals, searchView, summarizeShopping, valuePerSession,
   type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal,
 } from './seo_audit_analysis.ts'
 
@@ -82,7 +82,7 @@ async function dataState(supabase: SupabaseClient): Promise<DataState> {
     const { count } = await f(supabase.from(table).select('*', { count: 'exact', head: true }))
     return count ?? 0
   }
-  const [crawl, qp, ga4, ads, ai, orders, speedOk, speedRefused, inspOk, inspFail] = await Promise.all([
+  const [crawl, qp, ga4, ads, ai, orders, speedOk, speedRefused, inspOk, inspFail, merchantAt, merchantN] = await Promise.all([
     one('site_crawls', 'finished_at', (q) => q.eq('status', 'done')),
     one('gsc_query_page', 'period_end'),
     one('ga4_pages_daily', 'synced_at'),
@@ -93,8 +93,17 @@ async function dataState(supabase: SupabaseClient): Promise<DataState> {
     count('page_speed', (q) => q.gte('measured_at', since).not('error', 'is', null)),
     count('gsc_url_inspection', (q) => q.gte('inspected_at', since).is('error', null)),
     count('gsc_url_inspection', (q) => q.gte('inspected_at', since).not('error', 'is', null)),
+    one('merchant_product_status', 'synced_at').catch(() => null),
+    count('merchant_product_status', (q) => q).catch(() => 0),
   ])
-  return { crawl_finished_at: crawl, query_page_end: qp, ga4_synced_at: ga4, ads_synced_at: ads, ai_probe_at: ai, orders_synced_at: orders, speed_ok: speedOk, speed_refused: speedRefused, inspect_ok: inspOk, inspect_failed: inspFail }
+  return { crawl_finished_at: crawl, query_page_end: qp, ga4_synced_at: ga4, ads_synced_at: ads, ai_probe_at: ai, orders_synced_at: orders, speed_ok: speedOk, speed_refused: speedRefused, inspect_ok: inspOk, inspect_failed: inspFail, merchant_synced_at: merchantAt, merchant_products: merchantN }
+}
+
+/** Google Shopping (Merchant Center) status, summarised for the overview. Null when never synced. */
+async function shoppingStatus(supabase: SupabaseClient) {
+  const rows = await selectAll<{ offer_id: string; title: string | null; link: string | null; worst_severity: string; approved_anywhere: boolean; disapproved_anywhere: boolean; item_issues: Array<{ code: string | null; severity: string | null; description: string | null; attribute: string | null }>; synced_at: string }>((from, to) =>
+    supabase.from('merchant_product_status').select('offer_id, title, link, worst_severity, approved_anywhere, disapproved_anywhere, item_issues, synced_at').order('product_name').range(from, to), { label: 'merchant_product_status', maxRows: 20_000 })
+  return summarizeShopping(rows)
 }
 
 /** What conclude_brief checks the audit against: the coverage map and the signals it must answer. */
@@ -193,6 +202,7 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
     crawl: crawl ? { finished_at: crawl.finished_at, pages: pages.length, ...crawlIssues(pages) } : { error: 'no finished crawl yet — the weekly job has not run' },
     search: end ? { window_end: end, window_days: 28, ...searchTotals(cur, prev), by_page_type: byType } : { error: 'no Search Console per search + page data yet' },
     page_speed: speed ?? [],
+    shopping: await shoppingStatus(supabase).catch((e) => ({ error: `unavailable: ${e instanceof Error ? e.message : String(e)}` })),
     index_status: { inspected: inspected.length, by_coverage_state: coverageStates, not_indexed: inspected.filter((r) => !r.error && r.verdict && r.verdict !== 'PASS').slice(0, 20), canonical_mismatch: inspected.filter((r) => r.google_canonical && r.user_canonical && pageKey(r.google_canonical) !== pageKey(r.user_canonical)).slice(0, 20) },
     // Every one of these must be answered in seo_audit: inside a finding's
     // signals[] or in dismissed_signals with a reason. conclude_brief refuses otherwise.
@@ -256,7 +266,7 @@ export async function getPageReport(supabase: SupabaseClient, input: { url?: str
 export const SEO_AUDIT_TOOL_DEFS = [
   {
     name: 'get_seo_audit_overview',
-    description: `START HERE for the weekly SEO audit. One call returns: data freshness and a COVERAGE map of all ${Object.keys(AUDIT_AREAS).length} SEO areas the owner requires (covered / partial / blind — an area the map marks blind can only get the verdict 'blind'); signals_to_address — every material signal in the data, each of which your seo_audit must answer (inside a finding's signals[] or in dismissed_signals with a reason); every crawl issue with counts and example URLs; Search Console clicks/impressions now vs the previous 28 days, split by page type; page speed; Google index status; and visit_value (web revenue per session) for putting a money figure on each finding.`,
+    description: `START HERE for the weekly SEO audit. One call returns: data freshness and a COVERAGE map of all ${Object.keys(AUDIT_AREAS).length} SEO areas the owner requires (covered / partial / blind — an area the map marks blind can only get the verdict 'blind'); signals_to_address — every material signal in the data, each of which your seo_audit must answer (inside a finding's signals[] or in dismissed_signals with a reason); every crawl issue with counts and example URLs; Search Console clicks/impressions now vs the previous 28 days, split by page type; page speed; Google index status; shopping — Google Shopping (Merchant Center) status per product, each issue Google lists with example products and their links (null until Merchant Center is connected); and visit_value (web revenue per session) for putting a money figure on each finding.`,
     input_schema: { type: 'object', properties: {} },
   },
   {
