@@ -109,6 +109,43 @@ export function visibleWords(html: string): number {
 
 export const CATEGORY_TEXT_WORDS = { min: 120, max: 900 }
 
+export const PRODUCT_TEXT_WORDS = { min: 150, max: 700 }
+export const PRODUCT_FAQ = { min: 3, max: 8, q: { min: 8, max: 160 }, a: { min: 30, max: 700 } }
+
+/** Problems with a proposed product FAQ ([] = fine): 3–8 plain-text pairs, each a real question with a real answer. */
+export function faqProblems(pairs: unknown): string[] {
+  if (!Array.isArray(pairs)) return ['product_faq must be a list of {q, a}']
+  const out: string[] = []
+  if (pairs.length < PRODUCT_FAQ.min || pairs.length > PRODUCT_FAQ.max) out.push(`product_faq has ${pairs.length} questions; give ${PRODUCT_FAQ.min}–${PRODUCT_FAQ.max}`)
+  const seen = new Set<string>()
+  pairs.forEach((p, i) => {
+    const q = typeof (p as { q?: unknown })?.q === 'string' ? (p as { q: string }).q.trim() : ''
+    const a = typeof (p as { a?: unknown })?.a === 'string' ? (p as { a: string }).a.trim() : ''
+    const n = i + 1
+    if ([...q].length < PRODUCT_FAQ.q.min || [...q].length > PRODUCT_FAQ.q.max) out.push(`question ${n} is ${[...q].length} characters; keep it ${PRODUCT_FAQ.q.min}–${PRODUCT_FAQ.q.max}`)
+    if (q && !/[?؟]$/.test(q)) out.push(`question ${n} must end with "?"`)
+    if ([...a].length < PRODUCT_FAQ.a.min || [...a].length > PRODUCT_FAQ.a.max) out.push(`answer ${n} is ${[...a].length} characters; keep it ${PRODUCT_FAQ.a.min}–${PRODUCT_FAQ.a.max}`)
+    if (/<[^>]+>/.test(q + a)) out.push(`question ${n}: plain text only (no HTML)`)
+    if (hasWideDash(q + ' ' + a)) out.push(`question ${n}: ${WIDE_DASH_RULE}`)
+    const key = q.replace(/\s+/g, ' ').toLowerCase()
+    if (key && seen.has(key)) out.push(`question ${n} repeats an earlier question`)
+    seen.add(key)
+  })
+  return out
+}
+
+/**
+ * Numbers in new product text that the catalog does not have. A product text
+ * may only state figures the catalog states (blend percentages, weights,
+ * sizes); a number that appears nowhere in the product's own data is how an
+ * invented claim ("roasted 48 hours ago", "fresh for 6 weeks") shows up.
+ */
+export function numbersNotInCatalog(text: string, catalog: string): string[] {
+  const nums = (s: string) => [...String(s).replace(/<[^>]+>/g, ' ').matchAll(/\d+(?:[.,]\d+)?/g)].map((m) => m[0].replace(',', '.'))
+  const have = new Set(nums(catalog).flatMap((n) => [n, String(Number(n))]))
+  return [...new Set(nums(text))].filter((n) => !have.has(n) && !have.has(String(Number(n))))
+}
+
 /**
  * Wrap the first occurrence of `anchor` in the post body with a link to
  * `href`, outside existing links, headings and tags. Returns the new HTML,

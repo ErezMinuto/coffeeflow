@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/strategist-brain/seo_site_logic_test.ts
-import { WIDE_DASH, hasWideDash, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
+import { WIDE_DASH, hasWideDash, faqProblems, numbersNotInCatalog, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -47,6 +47,24 @@ const sneaky = cleanCategoryText('<p><a href="//evil.com/x">a</a> <a href="javas
 check('category text drops //, javascript: and backslash links (keeps their words)', !/href/.test(sneaky.html) && sneaky.html.includes('a') && sneaky.html.includes('b'), sneaky.html)
 check('& in a link is encoded once', escAttr('/?a=1&b=2') === '/?a=1&amp;b=2' && escAttr('/?a=1&amp;b=2') === '/?a=1&amp;b=2' && escAttr('"x"') === '&quot;x&quot;')
 check('category text link with & stays valid', cleanCategoryText('<a href="/?a=1&b=2">x</a>').html === '<a href="/?a=1&amp;b=2">x</a>')
+
+// ── product FAQ and facts ──
+const goodFaq = [
+  { q: 'האם טריאסט מתאים לקפה עם חלב?', a: 'כן. התערובת עשירה בקרמה ובעלת גוף מלא, ולכן מתאימה במיוחד לקפוצ׳ינו ולמשקאות אספרסו עם חלב.' },
+  { q: 'מה ההרכב של התערובת?', a: 'התערובת מורכבת מ-80% ערביקה ו-20% רובוסטה, מפולים מדרום אמריקה והודו.' },
+  { q: 'אפשר לקנות את הקפה טחון?', a: 'כן. אפשר לבחור פולים שלמים או טחינה לאספרסו, לקפה שחור, למקינטה, לפילטר או לפרנץ׳ פרס.' },
+]
+check('a good 3-question FAQ passes', faqProblems(goodFaq).length === 0, faqProblems(goodFaq).join('; '))
+check('too few questions refused', faqProblems(goodFaq.slice(0, 2)).some((p) => p.includes('give 3')))
+check('a question without "?" refused', faqProblems([...goodFaq.slice(0, 2), { q: 'ספרו על התערובת', a: goodFaq[2].a }]).some((p) => p.includes('end with')))
+check('a one-line answer refused', faqProblems([...goodFaq.slice(0, 2), { q: 'זה טרי?', a: 'כן.' }]).some((p) => p.includes('answer 3')))
+check('a wide dash in an answer refused', faqProblems([...goodFaq.slice(0, 2), { q: 'זה טרי?', a: 'כן – נקלה במקום ונארז מיד לשמירה על טריות.' }]).some((p) => p.includes('wide dashes')))
+check('a repeated question refused', faqProblems([goodFaq[0], goodFaq[1], goodFaq[0]]).some((p) => p.includes('repeats')))
+check('not a list refused', faqProblems('x').length === 1)
+const catalog = 'פולי קפה מדרום אמריקה והודו, 80% ערביקה ו-20% רובוסטה. 330 גר. מחיר ל-100 גר׳: 17.88 ₪'
+check('catalog numbers are allowed', numbersNotInCatalog('<p>80% ערביקה, 20% רובוסטה, שקית 330 גרם</p>', catalog).length === 0)
+check('an invented number is caught', numbersNotInCatalog('<p>נקלה לפני 48 שעות, טרי ל-6 שבועות</p>', catalog).join(',') === '48,6')
+check('17.88 and 17,88 both match the catalog', numbersNotInCatalog('17,88 ₪ ל-100 גרם', catalog).length === 0)
 
 // ── internal links ──
 const post = '<h2>מה זה פולי קפה</h2><p>כאן תמצאו <a href="/x/">פולי קפה</a> ועוד מידע על פולי קפה טריים.</p>'
