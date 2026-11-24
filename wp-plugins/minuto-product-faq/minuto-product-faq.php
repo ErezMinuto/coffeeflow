@@ -2,10 +2,14 @@
 /**
  * Plugin Name:       Minuto Product FAQ
  * Description:       Per-product AND per-post FAQ rendering + FAQPage JSON-LD for AI/SEO discoverability.
- * Version:           0.5.0
+ * Version:           0.6.0
  * Author:            Minuto Cafe
  * Requires at least: 6.0
  * Requires PHP:      7.4
+ *
+ * v0.6.0: Rank Math title / description / focus keyword over REST for posts,
+ * products and product categories (includes/seo-meta.php), so CoffeeFlow can
+ * back them up, change them after approval, and undo them.
  *
  * v0.1 scope: render-only + admin meta box.
  *   - Render Hebrew FAQ accordion below product short description.
@@ -189,6 +193,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once __DIR__ . '/includes/seo-meta.php';
 
 if ( ! defined( 'MINUTO_FAQ_META_KEY' ) ) {
 	define( 'MINUTO_FAQ_META_KEY', '_minuto_faq_published' );

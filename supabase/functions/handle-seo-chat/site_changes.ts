@@ -22,7 +22,9 @@ import {
   type ChangeContext, type ChangeRow,
 } from '../_shared/site_change_log.ts'
 import {
-  cleanFaq, pickPostFields, readPost, readPostFaq, readProduct, siteEnv, writePostFields,
+  cleanFaq, isProductStatus, pickPostFields, pickSeoFields, readPost, readPostFaq, readProduct, readProductStatus,
+  readSeoMeta, readTermDescription, seoSubset, siteEnv, writePostFields, writeProductStatus, writeSeoMeta,
+  writeTermDescription,
 } from '../_shared/site_io.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -55,11 +57,53 @@ export async function readCurrent(row: Pick<ChangeRow, 'target_type' | 'target_i
     case 'product_faq':         return (await readProduct(env, row.target_id)).faq
     case 'product_description': return (await readProduct(env, row.target_id)).description
     case 'post_featured_image': return (await readPost(env, row.target_id)).featured_media
+    case 'seo_meta':
+    case 'term_seo_meta': {
+      const fields = pickSeoFields(row.after) ?? {}
+      return seoSubset((await readSeoMeta(env, row.target_type === 'seo_meta' ? 'post' : 'product_cat', row.target_id)).meta, fields)
+    }
+    case 'term_description': return (await readTermDescription(env, row.target_id)).description
+    case 'product_status':   return (await readProductStatus(env, row.target_id)).status
     case 'post_content': {
       const p = await readPost(env, row.target_id)
       return pickPostFields(p, (row.after ?? {}) as Record<string, unknown>)
     }
   }
+}
+
+/**
+ * The one order every write follows: read the current value, save it
+ * (beginChange; no backup → no write), write, read back what the site stored,
+ * finishChange. `read` returns the backup; `write` returns the stored value.
+ */
+async function loggedWrite(
+  row: Pick<ChangeRow, 'target_type' | 'target_id' | 'target_url' | 'target_title'>,
+  value: unknown,
+  read: () => Promise<{ before: unknown; url?: string | null; title?: string | null; source: string }>,
+  write: () => Promise<unknown>,
+  ctx: ChangeContext,
+): Promise<{ ok: true; change_id: string } | { ok: false; error: string; change_id?: string }> {
+  let changeId: string
+  try {
+    const cur = await read()
+    changeId = await beginChange({
+      target_type: row.target_type, target_id: row.target_id,
+      target_url: cur.url || row.target_url, target_title: cur.title || row.target_title,
+      before: cur.before, before_source: cur.source, after: value, source_fn: 'handle-seo-chat', ctx,
+    })
+  } catch (e) {
+    return { ok: false, error: `not written: could not back up the current value first (${(e as Error).message})` }
+  }
+  let stored: unknown
+  try {
+    stored = await write()
+  } catch (e) {
+    const error = (e as Error).message
+    await finishChange(changeId, { ok: false, error })
+    return { ok: false, error, change_id: changeId }
+  }
+  await finishChange(changeId, { ok: true, after: stored })
+  return { ok: true, change_id: changeId }
 }
 
 /** Writes `value` to the change's target, logging it under `ctx`. Returns the new change row id. */
@@ -82,6 +126,32 @@ async function writeValue(
     case 'product_description':
       if (typeof value !== 'string') return { ok: false, error: 'product description value must be text' }
       return viaWriter('update-product-description', { product_id: row.target_id, description: value })
+    case 'seo_meta':
+    case 'term_seo_meta': {
+      const fields = pickSeoFields(value)
+      if (!fields) return { ok: false, error: 'SEO value must be { title?, description?, focus_keyword? } with text values' }
+      const env = siteEnv(), kind = row.target_type === 'seo_meta' ? 'post' as const : 'product_cat' as const
+      return await loggedWrite(row, value, async () => {
+        const cur = await readSeoMeta(env, kind, row.target_id)
+        return { before: seoSubset(cur.meta, fields), url: cur.url, title: cur.name, source: 'wp_plugin' }
+      }, async () => seoSubset((await writeSeoMeta(env, kind, row.target_id, fields)).meta, fields), ctx)
+    }
+    case 'term_description': {
+      if (typeof value !== 'string') return { ok: false, error: 'category text must be text' }
+      const env = siteEnv()
+      return await loggedWrite(row, value, async () => {
+        const cur = await readTermDescription(env, row.target_id)
+        return { before: cur.description, url: row.target_url, title: cur.name, source: 'woo_rest' }
+      }, async () => (await writeTermDescription(env, row.target_id, value)).description, ctx)
+    }
+    case 'product_status': {
+      if (!isProductStatus(value)) return { ok: false, error: 'product status must be publish, draft, pending or private' }
+      const env = siteEnv()
+      return await loggedWrite(row, value, async () => {
+        const cur = await readProductStatus(env, row.target_id)
+        return { before: cur.status, url: cur.permalink || row.target_url, title: cur.name, source: 'woo_rest' }
+      }, async () => await writeProductStatus(env, row.target_id, value), ctx)
+    }
     case 'post_content':
     case 'post_featured_image': {
       const env = siteEnv()
