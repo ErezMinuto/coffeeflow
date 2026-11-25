@@ -89,3 +89,16 @@ export async function applySells(supabase: RpcClient, sells: SellToApply[], note
     adjustments,
   };
 }
+
+/**
+ * A run that failed only because MFlow itself was down (5xx, or still rate
+ * limited after retries) gets the code "mflow_unavailable". The run still ends
+ * as an error, but health-watchdog treats an error with a code as a handled
+ * refusal, not a crash. The next cron run (every 15 minutes) picks up the same
+ * sells, since applied sells are claimed once. Any other failure: no code.
+ */
+export function upstreamFailureCode(out: unknown): string | undefined {
+  const http = (out as { http?: unknown } | null)?.http;
+  if (typeof http !== "number") return undefined;
+  return http >= 500 || http === 429 ? "mflow_unavailable" : undefined;
+}

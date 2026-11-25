@@ -10,7 +10,7 @@
 // The last checks read index.ts and fail if the handler goes back to moving
 // stock and recording sells in separate requests.
 
-import { applySells, channelOfSell, toEventRows, type SellToApply } from "./sells.ts";
+import { applySells, channelOfSell, toEventRows, upstreamFailureCode, type SellToApply } from "./sells.ts";
 import { buildUnloggedEmail } from "./alerts.ts";
 
 let failures = 0;
@@ -118,6 +118,17 @@ const sell = (id: number, delta: Record<number, number>): SellToApply => ({
     { id: 2, product_id: 9, alert_date: "d", units_unlogged: 3, sell_ids: [2], first_sell_at: null, last_sell_at: null, product_name: "B", product_size: null, packed_stock_now: 0 },
   ]);
   check("multi-coffee subject", two.subject.includes("4 bags across 2 coffees"), two.subject);
+}
+
+// MFlow outages get a code (watchdog: handled, not a crash); other failures do not.
+{
+  check("502 → mflow_unavailable", upstreamFailureCode({ ok: false, http: 502 }) === "mflow_unavailable");
+  check("429 → mflow_unavailable", upstreamFailureCode({ ok: false, http: 429 }) === "mflow_unavailable");
+  check("401 → no code", upstreamFailureCode({ ok: false, http: 401 }) === undefined);
+  check("no http → no code", upstreamFailureCode({ ok: false, error: "boom" }) === undefined);
+  check("null → no code", upstreamFailureCode(null) === undefined);
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  check("runLogged sets summary.code from upstreamFailureCode", /const code = upstreamFailureCode\(out\);\s*if \(code\) summary\.code = code;/.test(src));
 }
 
 // The handler must not split the claim from the stock move again.
