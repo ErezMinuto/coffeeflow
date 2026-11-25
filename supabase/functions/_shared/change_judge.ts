@@ -21,6 +21,23 @@ export function pageStats(rows: ReadonlyArray<{ page: string; clicks: number; im
   return { clicks, impressions, position: impressions ? Math.round((pos / impressions) * 10) / 10 : null }
 }
 
+/** Every page's stats in one pass over a window (key → stats), for many lookups. */
+export function pageStatsIndex(rows: ReadonlyArray<{ page: string; clicks: number; impressions: number; position: number }>, keyOf: (url: string) => string): Map<string, PageStats> {
+  const acc = new Map<string, { clicks: number; impressions: number; pos: number }>()
+  for (const r of rows) {
+    const k = keyOf(r.page); const a = acc.get(k) ?? { clicks: 0, impressions: 0, pos: 0 }
+    const imp = Number(r.impressions) || 0
+    a.clicks += Number(r.clicks) || 0; a.impressions += imp; a.pos += (Number(r.position) || 0) * imp
+    acc.set(k, a)
+  }
+  const out = new Map<string, PageStats>()
+  for (const [k, a] of acc) out.set(k, { clicks: a.clicks, impressions: a.impressions, position: a.impressions ? Math.round((a.pos / a.impressions) * 10) / 10 : null })
+  return out
+}
+const EMPTY: PageStats = { clicks: 0, impressions: 0, position: null }
+/** One page's stats from an index (zeros when Search Console has no rows for it). */
+export const statsFor = (idx: ReadonlyMap<string, PageStats>, key: string): PageStats => idx.get(key) ?? EMPTY
+
 export interface Judgement { verdict: Verdict; expected_clicks: number; click_delta: number; site_factor: number; note: string }
 
 /**

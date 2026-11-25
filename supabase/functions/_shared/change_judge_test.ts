@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/_shared/change_judge_test.ts
-import { checkDate, judge, pageStats } from './change_judge.ts'
+import { checkDate, judge, pageStats, pageStatsIndex, statsFor } from './change_judge.ts'
 
 let failed = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -17,6 +17,9 @@ const key = (u: string) => new URL(u).pathname.replace(/\/?$/, '/')
 const s = pageStats(rows, '/product/a/', key)
 check('page stats sum one page, weighted position', s.clicks === 4 && s.impressions === 400 && s.position === 7, JSON.stringify(s))
 check('a page with no rows → zeros, no position', JSON.stringify(pageStats(rows, '/product/z/', key)) === JSON.stringify({ clicks: 0, impressions: 0, position: null }))
+
+const ix = pageStatsIndex(rows, key)
+check('index gives the same stats as a single-page pass', JSON.stringify(statsFor(ix, '/product/a/')) === JSON.stringify(s) && JSON.stringify(statsFor(ix, '/product/z/')) === JSON.stringify({ clicks: 0, impressions: 0, position: null }))
 
 const B = { clicks: 20, impressions: 1000, position: 6 }
 check('too little data', judge({ clicks: 1, impressions: 30, position: 9 }, { clicks: 2, impressions: 40, position: 9 }, 1000, 1000).verdict === 'too_little_data')
