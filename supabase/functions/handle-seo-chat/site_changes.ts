@@ -24,8 +24,7 @@ import {
 import {
   cleanFaq, isProductStatus, pickPostFields, pickSeoFields, readPost, readPostFaq, readProduct, readProductStatus,
   readSeoMeta, readTermDescription, seoSubset, siteEnv, writePostFields, writeProductStatus, writeSeoMeta,
-  writeTermDescription,
-} from '../_shared/site_io.ts'
+  writeTermDescription, readProductShortDescription, writeProductShortDescription } from '../_shared/site_io.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -64,6 +63,7 @@ export async function readCurrent(row: Pick<ChangeRow, 'target_type' | 'target_i
     }
     case 'term_description': return (await readTermDescription(env, row.target_id)).description
     case 'product_status':   return (await readProductStatus(env, row.target_id)).status
+    case 'product_short_description': return (await readProductShortDescription(env, row.target_id)).short_description
     case 'post_content': {
       const p = await readPost(env, row.target_id)
       return pickPostFields(p, (row.after ?? {}) as Record<string, unknown>)
@@ -151,6 +151,14 @@ async function writeValue(
         const cur = await readProductStatus(env, row.target_id)
         return { before: cur.status, url: cur.permalink || row.target_url, title: cur.name, source: 'woo_rest' }
       }, async () => await writeProductStatus(env, row.target_id, value), ctx)
+    }
+    case 'product_short_description': {
+      if (typeof value !== 'string') return { ok: false, error: 'product short description must be text' }
+      const env = siteEnv()
+      return await loggedWrite(row, value, async () => {
+        const cur = await readProductShortDescription(env, row.target_id)
+        return { before: cur.short_description, url: cur.permalink || row.target_url, title: cur.name, source: 'woo_rest' }
+      }, async () => await writeProductShortDescription(env, row.target_id, value), ctx)
     }
     case 'post_content':
     case 'post_featured_image': {
