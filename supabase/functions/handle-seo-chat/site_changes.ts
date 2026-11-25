@@ -17,10 +17,10 @@
 // featured images, through _shared/site_io.ts here — every one saves the old
 // value first (_shared/site_change_log.ts).
 
+import { releaseSettings } from '../_shared/site_release.ts'
 import {
   beginChange, finishChange, getChange, proposeChange, rejectChange, undoBlocker,
-  type ChangeContext, type ChangeRow,
-} from '../_shared/site_change_log.ts'
+  type ChangeContext, type ChangeRow, queueChange } from '../_shared/site_change_log.ts'
 import {
   cleanFaq, isProductStatus, pickPostFields, pickSeoFields, readPost, readPostFaq, readProduct, readProductStatus,
   readSeoMeta, readTermDescription, seoSubset, siteEnv, writePostFields, writeProductStatus, writeSeoMeta,
@@ -30,7 +30,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 export const SITE_CHANGE_ACTIONS: ReadonlySet<string> = new Set([
-  'site_change.approve', 'site_change.reject', 'site_change.undo', 'faq_task.approve',
+  'site_change.approve', 'site_change.publish_now', 'site_change.reject', 'site_change.undo', 'faq_task.approve',
 ])
 
 export interface ActionResult { status: number; body: Record<string, unknown> }
@@ -107,7 +107,7 @@ async function loggedWrite(
 }
 
 /** Writes `value` to the change's target, logging it under `ctx`. Returns the new change row id. */
-async function writeValue(
+export async function writeValue(
   row: Pick<ChangeRow, 'target_type' | 'target_id' | 'target_url' | 'target_title'>,
   value: unknown,
   ctx: ChangeContext,
@@ -242,9 +242,22 @@ export async function handleSiteChangeAction(
         : err(409, `this change is ${row.status}, not waiting for approval`)
     }
 
-    if (action === 'site_change.approve') {
-      if (row.status !== 'proposed') return err(409, `this change is ${row.status}, not waiting for approval`)
-      const w = await writeValue(row, row.after, { change_id: row.id, approved_by: approver })
+    // Approve: with the weekly release on, the change joins the queue for the
+    // next release; with it off (or publish_now), it is written at once.
+    // Publish now: a proposed change, or one already queued, is written at once.
+    if (action === 'site_change.approve' || action === 'site_change.publish_now') {
+      const now = action === 'site_change.publish_now' || body.publish_now === true
+      if (row.status !== 'proposed' && !(now && row.status === 'queued')) return err(409, `this change is ${row.status}, not waiting for approval`)
+      if (!now && row.status === 'proposed') {
+        const { data } = await supabase.from('ops_profile').select('value').eq('key', 'seo_weekly_release').maybeSingle()
+        const rs = releaseSettings(data?.value)
+        if (rs.enabled) {
+          return (await queueChange(row.id, approver))
+            ? ok({ change_id: row.id, status: 'queued', release: { weekday: rs.weekday, hour: rs.hour, tz: rs.tz } })
+            : err(409, 'this change is no longer waiting for approval')
+        }
+      }
+      const w = await writeValue(row, row.after, { change_id: row.id, approved_by: row.approved_by ?? approver })
       return w.ok ? ok({ change_id: row.id, status: 'applied' }) : err(502, w.error, { change_id: row.id })
     }
 

@@ -17,6 +17,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { validateNewTask } from '../seo-agent/taskValidation.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runRelease, type ReleaseReport } from './release.ts'
 import { runLogged } from '../_shared/run_logged.ts'
 import { claimRecs, finishRec, sweepStaleDrafting } from './ledger.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
@@ -604,12 +605,24 @@ serve(runLogged('strategist-executor', async (req, _log) => {
   if (!(await isServiceCaller(req))) return unauthorized(CORS)
   const supabase = createSupabase()
   const workerId = `exec-${crypto.randomUUID().slice(0, 8)}`
+  // The weekly release of approved site changes. ?release=dry_run reports
+  // what it would publish now (writes nothing to the site); otherwise it runs
+  // on its own schedule, at most once per release date.
+  const releaseParam = new URL(req.url).searchParams.get('release')
+  if (releaseParam === 'dry_run') {
+    try { return json({ ok: true, release: await runRelease(supabase, { dryRun: true, force: true }) }) }
+    catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500) }
+  }
+  let release: ReleaseReport | { ran: false; error: string }
+  try { release = await runRelease(supabase) }
+  catch (e) { release = { ran: false, error: e instanceof Error ? e.message : String(e) } }
+  const releaseOut = release.ran || 'error' in release ? release : undefined
   try {
     const cfg = await readLoopConfig(supabase)
     const swept = (await sweepStaleDrafting(supabase)) + (await sweepStaleLoop(supabase))
     const loop = await runLoop(supabase, cfg, workerId)
     const recs = await claimRecs(supabase, workerId, SUPPORTED, BATCH)
-    if (recs.length === 0 && loop.results.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft', swept_stale: swept || undefined })
+    if (recs.length === 0 && loop.results.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft', swept_stale: swept || undefined, release: releaseOut })
     const results: Array<Record<string, unknown>> = []
     // Critic on for this type → draft for review; otherwise the original path.
     for (const rec of recs) results.push(critiqueOn(cfg, rec.action_type) ? await draftForCritique(supabase, rec, workerId) : await draftRec(supabase, rec, workerId))
@@ -622,6 +635,7 @@ serve(runLogged('strategist-executor', async (req, _log) => {
       swept_stale: swept || undefined,
       results,
       loop: loop.results.length ? loop.results : undefined,
+      release: releaseOut,
     })
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
@@ -636,8 +650,12 @@ serve(runLogged('strategist-executor', async (req, _log) => {
         idle: out?.idle ? true : undefined, drafted: out?.drafted, for_critique: out?.for_critique,
         failed: out?.failed, unrecorded: out?.unrecorded, swept_stale: out?.swept_stale,
         loop_results: Array.isArray(out?.loop) ? out.loop.length : undefined,
+        release_published: out?.release?.published?.length, release_deferred: out?.release?.deferred?.length,
+        release_failed: out?.release?.failed?.length, release_dry_run: out?.release?.dry_run,
       },
       warnings: [
+        ...(out?.release?.error ? [['release.error', `weekly release failed: ${String(out.release.error).slice(0, 200)}`, {}] as [string, string, Record<string, unknown>]] : []),
+        ...(Number(out?.release?.failed?.length ?? 0) > 0 ? [['release.failed', `${out.release.failed.length} change(s) in the weekly release failed`, { failed: out.release.failed.length }] as [string, string, Record<string, unknown>]] : []),
         ...(failed > 0 ? [['drafts.failed', `${failed} recommendation draft(s) failed`, { failed }] as [string, string, Record<string, unknown>]] : []),
         ...(Number(out?.unrecorded ?? 0) > 0 ? [['drafts.unrecorded', `${out.unrecorded} draft(s) created but not recorded`, { unrecorded: out.unrecorded }] as [string, string, Record<string, unknown>]] : []),
       ],

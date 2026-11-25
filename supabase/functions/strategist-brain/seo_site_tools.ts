@@ -65,8 +65,8 @@ export async function gate(supabase: Db, ctx: Ctx, targets: Array<{ target_type:
   const { count } = await supabase.from('site_change_log').select('id', { count: 'exact', head: true }).eq('requested_by', requester(ctx))
   if ((count ?? 0) + targets.length > s.max) return `this run may file at most ${s.max} proposals (already ${count ?? 0}, this call adds ${targets.length}): keep the most valuable ones`
   for (const t of targets) {
-    const { data: open } = await supabase.from('site_change_log').select('id').eq('target_type', t.target_type).eq('target_id', t.target_id).eq('status', 'proposed').limit(1)
-    if (open?.length) return `a proposal for this ${t.target_type} is already waiting for the owner (${open[0].id}); do not file another`
+    const { data: open } = await supabase.from('site_change_log').select('id').eq('target_type', t.target_type).eq('target_id', t.target_id).in('status', ['proposed', 'queued']).limit(1)
+    if (open?.length) return `a change for this ${t.target_type} is already waiting (for approval or for the weekly release: ${open[0].id}); do not file another`
   }
   return null
 }

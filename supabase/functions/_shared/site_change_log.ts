@@ -29,7 +29,7 @@ export type ChangeTargetType =
   | 'product_status'    // WooCommerce product status (publish / draft / …)
   | 'product_short_description' // WooCommerce product short description (next to the price)
 
-export type ChangeStatus = 'proposed' | 'applying' | 'applied' | 'rejected' | 'failed' | 'undone'
+export type ChangeStatus = 'proposed' | 'queued' | 'applying' | 'applied' | 'rejected' | 'failed' | 'undone'
 
 export interface ChangeRow {
   id:            string
@@ -184,12 +184,13 @@ export async function beginChange(p: {
     ...(p.target_title != null ? { target_title: p.target_title } : {}),
   }
   if (p.ctx.change_id) {
-    // Conditional update: only a still-'proposed' row for the same target.
+    // Conditional update: only a still-pending row for the same target: proposed,
+    // or approved and queued for the weekly release.
     const rows = await rest(d,
-      `site_change_log?id=eq.${p.ctx.change_id}&status=eq.proposed&target_type=eq.${p.target_type}&target_id=eq.${p.target_id}&select=id`,
+      `site_change_log?id=eq.${p.ctx.change_id}&status=in.(proposed,queued)&target_type=eq.${p.target_type}&target_id=eq.${p.target_id}&select=id`,
       { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(common) },
     ) as Array<{ id: string }>
-    if (!rows[0]) throw new Error(`change ${p.ctx.change_id} is not a pending proposal for this ${p.target_type} ${p.target_id}`)
+    if (!rows[0]) throw new Error(`change ${p.ctx.change_id} is not a pending (proposed or queued) change for this ${p.target_type} ${p.target_id}`)
     return rows[0].id
   }
   const rows = await rest(d, 'site_change_log?select=id', {
@@ -245,9 +246,23 @@ export async function finishChange(
 /** Owner rejected a proposal. Only a still-'proposed' row changes. */
 export async function rejectChange(id: string, by: string, reason: string, opts: DbOpts = {}): Promise<boolean> {
   const now = new Date().toISOString()
-  const rows = await rest(db(opts), `site_change_log?id=eq.${id}&status=eq.proposed&select=id`, {
+  const rows = await rest(db(opts), `site_change_log?id=eq.${id}&status=in.(proposed,queued)&select=id`, {
     method: 'PATCH', prefer: 'return=representation',
     body: JSON.stringify({ status: 'rejected', reject_reason: reason.slice(0, 2000), approved_by: by, approved_at: now, updated_at: now }),
+  }) as Array<{ id: string }>
+  return rows.length > 0
+}
+
+/**
+ * The owner approved a proposal for the weekly release: it waits as 'queued'
+ * (approved_by / approved_at recorded) until the release publishes it. Only a
+ * still-proposed row moves; returns false otherwise.
+ */
+export async function queueChange(id: string, by: string, opts: DbOpts = {}): Promise<boolean> {
+  const now = new Date().toISOString()
+  const rows = await rest(db(opts), `site_change_log?id=eq.${id}&status=eq.proposed&select=id`, {
+    method: 'PATCH', prefer: 'return=representation',
+    body: JSON.stringify({ status: 'queued', approved_by: by, approved_at: now, updated_at: now }),
   }) as Array<{ id: string }>
   return rows.length > 0
 }

@@ -23,5 +23,7 @@ check("no description → find/replace expected", JSON.stringify(await wholeDesc
 check("undo and approval together → refused", "error" in await wholeDescription("<p>new text</p>", { undo_of: ID, change_id: ID }, 65189, lookup(proposal)));
 check("target id returned as text still matches", JSON.stringify(await wholeDescription("<p>new text</p>", { change_id: ID }, 65189, lookup({ ...proposal, target_id: "65189" }))) === JSON.stringify({ text: "<p>new text</p>" }));
 
+check("change queued for the weekly release → whole text", JSON.stringify(await wholeDescription("<p>new text</p>", { change_id: ID }, 65189, lookup({ ...proposal, status: "queued" }))) === JSON.stringify({ text: "<p>new text</p>" }));
+
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1); }
 console.log("\nall passed");
