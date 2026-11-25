@@ -6,7 +6,7 @@
       "preview/**": true
     }
   },
-  "ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- .",
+  "ignoreCommand": "B=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\"; git cat-file -e \"$B^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$B\" HEAD -- .; c=$?; [ \"$c\" -le 1 ] && exit \"$c\"; exit 1",
   "rewrites": [
     {
       "source": "/(.*)",
