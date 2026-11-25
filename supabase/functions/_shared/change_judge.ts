@@ -38,6 +38,16 @@ const EMPTY: PageStats = { clicks: 0, impressions: 0, position: null }
 /** One page's stats from an index (zeros when Search Console has no rows for it). */
 export const statsFor = (idx: ReadonlyMap<string, PageStats>, key: string): PageStats => idx.get(key) ?? EMPTY
 
+/** Several pages as one (a merge: the page kept plus the page redirected into it). Position weighted by impressions. */
+export function combineStats(parts: ReadonlyArray<PageStats>): PageStats {
+  let clicks = 0, impressions = 0, pos = 0, posImp = 0
+  for (const p of parts) {
+    clicks += p.clicks; impressions += p.impressions
+    if (p.position != null) { pos += p.position * p.impressions; posImp += p.impressions }
+  }
+  return { clicks, impressions, position: posImp > 0 ? Math.round((pos / posImp) * 10) / 10 : null }
+}
+
 export interface Judgement { verdict: Verdict; expected_clicks: number; click_delta: number; site_factor: number; note: string }
 
 /**

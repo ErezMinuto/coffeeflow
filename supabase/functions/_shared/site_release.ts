@@ -39,16 +39,29 @@ export function pageKey(targetType: string, targetId: number): string {
   return (targetType === 'term_seo_meta' || targetType === 'term_description' ? 'term:' : 'post:') + targetId
 }
 
-export interface QueuedChange { id: string; target_type: string; target_id: number; approved_at: string | null }
+export interface QueuedChange { id: string; target_type: string; target_id: number; approved_at: string | null; bundle_id?: string | null; bundle_seq?: number | null }
 
-/** One change per page, oldest approval first; the rest wait for the next release. */
+/**
+ * One change per page, oldest approval first; the rest wait for the next
+ * release. The steps of a merge (same bundle_id) are one unit: they go out
+ * together, in bundle_seq order, or all wait (a merge may touch the same page
+ * twice: the redirect and the status of the post it retires).
+ */
 export function pickRelease<T extends QueuedChange>(queued: readonly T[]): { publish: T[]; defer: T[] } {
-  const sorted = [...queued].sort((a, b) => String(a.approved_at ?? '').localeCompare(String(b.approved_at ?? '')) || a.id.localeCompare(b.id))
+  const units = new Map<string, T[]>()
+  for (const c of queued) {
+    const k = c.bundle_id ? `bundle:${c.bundle_id}` : `change:${c.id}`
+    units.set(k, [...(units.get(k) ?? []), c])
+  }
+  const first = (u: T[]) => u.reduce((m, c) => (String(c.approved_at ?? '') < m ? String(c.approved_at ?? '') : m), String(u[0].approved_at ?? ''))
+  const ordered = [...units.values()]
+    .map((u) => [...u].sort((a, b) => Number(a.bundle_seq ?? 0) - Number(b.bundle_seq ?? 0)))
+    .sort((a, b) => first(a).localeCompare(first(b)) || a[0].id.localeCompare(b[0].id))
   const seen = new Set<string>(), publish: T[] = [], defer: T[] = []
-  for (const c of sorted) {
-    const k = pageKey(c.target_type, c.target_id)
-    if (seen.has(k)) defer.push(c)
-    else { seen.add(k); publish.push(c) }
+  for (const u of ordered) {
+    const keys = new Set(u.map((c) => pageKey(c.target_type, c.target_id)))
+    if ([...keys].some((k) => seen.has(k))) { defer.push(...u); continue }
+    keys.forEach((k) => seen.add(k)); publish.push(...u)
   }
   return { publish, defer }
 }

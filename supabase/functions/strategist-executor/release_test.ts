@@ -8,7 +8,7 @@ function check(name: string, ok: boolean, detail = '') {
   if (!ok) failures++
 }
 
-type Row = { id: string; target_type: string; target_id: number; approved_at: string; status: string; after: unknown; approved_by: string; release_id?: string }
+type Row = { id: string; target_type: string; target_id: number; approved_at: string; status: string; after: unknown; approved_by: string; release_id?: string; bundle_id?: string; bundle_seq?: number }
 function fakeDb(opts: { enabled?: boolean; rows: Row[]; releasedToday?: boolean; insertConflict?: boolean }) {
   const releases: Array<Record<string, unknown>> = opts.releasedToday ? [{ id: 'old', release_date: '2026-11-29', dry_run: false }] : []
   const db = {
@@ -77,6 +77,26 @@ function deps(rs: Row[], failId?: string) {
 { const rs = rows(); rs[0].status = 'rejected'; const x = deps(rs)
   const db = fakeDb({ rows: rs }); const r = await runRelease(db as any, { now: SUNDAY_10 }, x.d as any)
   check('a change cancelled before the release is not written', !x.written.some((w) => w.id === 'a'), JSON.stringify(r)) }
+
+// A merge (bundle) goes out whole, in step order, through applyBundle.
+const merge = (): Row[] => [
+  { id: 'm2', target_type: 'redirect', target_id: 10, approved_at: '2026-11-25T08:00:00Z', status: 'queued', after: 'https://www.minuto.co.il/blog/keep/', approved_by: 'user_1', bundle_id: 'B', bundle_seq: 2 },
+  { id: 'm1', target_type: 'post_content', target_id: 20, approved_at: '2026-11-25T08:00:00Z', status: 'queued', after: { content: 'x' }, approved_by: 'user_1', bundle_id: 'B', bundle_seq: 1 },
+  { id: 'm3', target_type: 'post_status', target_id: 10, approved_at: '2026-11-25T08:00:00Z', status: 'queued', after: 'draft', approved_by: 'user_1', bundle_id: 'B', bundle_seq: 3 },
+]
+{ const rs = [...merge(), ...rows()], x = deps(rs)
+  const d = { ...x.d, getBundle: async (b: string) => rs.filter((r) => r.bundle_id === b).sort((p, q) => (p.bundle_seq ?? 0) - (q.bundle_seq ?? 0)) as any }
+  const r = await runRelease(fakeDb({ rows: rs }) as any, { now: SUNDAY_10 }, d as any)
+  check('merge: all three steps, in step order, then the other changes', x.written.map((w) => w.id).join(',') === 'm1,m2,m3,a,c', JSON.stringify(x.written))
+  check('merge: steps recorded as published', ['m1', 'm2', 'm3'].every((id) => r.published?.includes(id)), JSON.stringify(r)) }
+{ const rs = merge(), x = deps(rs, 'm2')
+  const d = { ...x.d, getBundle: async (b: string) => rs.filter((r) => r.bundle_id === b).sort((p, q) => (p.bundle_seq ?? 0) - (q.bundle_seq ?? 0)) as any }
+  const r = await runRelease(fakeDb({ rows: rs }) as any, { now: SUNDAY_10 }, d as any)
+  check('merge: a failed redirect stops it; the post is NOT taken offline', x.written.map((w) => w.id).join(',') === 'm1' && rs.find((q) => q.id === 'm3')?.status === 'queued' && r.failed?.[0]?.change_id === 'm2', JSON.stringify({ w: x.written, r })) }
+{ const rs = merge(); rs[0].status = 'rejected'; const x = deps(rs)
+  const d = { ...x.d, getBundle: async (b: string) => rs.filter((r) => r.bundle_id === b) as any }
+  await runRelease(fakeDb({ rows: rs }) as any, { now: SUNDAY_10 }, d as any)
+  check('merge: a step rejected in the meantime → nothing of it is written', x.written.length === 0, JSON.stringify(x.written)) }
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')

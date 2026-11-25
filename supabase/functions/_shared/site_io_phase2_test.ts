@@ -32,7 +32,7 @@ check('non-text SEO value refused', pickSeoFields({ title: 5 }) === null)
 check('empty SEO change refused', pickSeoFields({}) === null && pickSeoFields(null) === null && pickSeoFields('x') === null)
 check('before/after compare only the touched fields', JSON.stringify(seoSubset({ title: 'A', description: 'B', focus_keyword: 'C' }, { description: 'x' })) === JSON.stringify({ description: 'B' }))
 check('product statuses', isProductStatus('draft') && isProductStatus('publish') && !isProductStatus('trash') && !isProductStatus(1))
-check('change log accepts the four new types', ['seo_meta', 'term_seo_meta', 'term_description', 'product_status'].every(isTargetType) && !isTargetType('redirect'))
+check('change log accepts the four new types', ['seo_meta', 'term_seo_meta', 'term_description', 'product_status'].every(isTargetType) && !isTargetType('delete_page'))
 
 // ── Rank Math SEO fields through the plugin ──
 {

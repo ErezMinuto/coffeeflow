@@ -32,5 +32,20 @@ const r = pickRelease(q)
 check('one change per page, the oldest approval goes first', r.publish.map((c) => c.id).join(',') === 'a,c,d' && r.defer.map((c) => c.id).join(',') === 'b', JSON.stringify(r))
 check('empty queue → nothing to do', pickRelease([]).publish.length === 0)
 
+// A merge (bundle) is one unit: whole, in step order, or all deferred.
+{
+  const q = [
+    { id: 'm3', target_type: 'post_status', target_id: 10, approved_at: '2026-11-25T09:00:00Z', bundle_id: 'B', bundle_seq: 3 },
+    { id: 'm1', target_type: 'post_content', target_id: 20, approved_at: '2026-11-25T09:00:00Z', bundle_id: 'B', bundle_seq: 1 },
+    { id: 'm2', target_type: 'redirect', target_id: 10, approved_at: '2026-11-25T09:00:00Z', bundle_id: 'B', bundle_seq: 2 },
+    { id: 'x', target_type: 'seo_meta', target_id: 30, approved_at: '2026-11-25T10:00:00Z' },
+  ]
+  const r1 = pickRelease(q)
+  check('merge goes out whole, in step order, though it touches post 10 twice', r1.publish.map((c) => c.id).join(',') === 'm1,m2,m3,x', JSON.stringify(r1.publish.map((c) => c.id)))
+  const r2 = pickRelease([{ id: 'early', target_type: 'seo_meta', target_id: 20, approved_at: '2026-11-24T09:00:00Z' }, ...q])
+  check('merge waits whole when an earlier change has one of its pages', r2.publish.map((c) => c.id).join(',') === 'early,x' && r2.defer.map((c) => c.id).sort().join(',') === 'm1,m2,m3', JSON.stringify(r2))
+  check('redirect and post_status share the post page key', pageKey('redirect', 10) === 'post:10' && pageKey('post_status', 10) === 'post:10')
+}
+
 if (failed) { console.error(`\n${failed} FAILED`); Deno.exit(1) }
 console.log('\nall passed')

@@ -28,6 +28,8 @@ export type ChangeTargetType =
   | 'term_description'  // product category text
   | 'product_status'    // WooCommerce product status (publish / draft / …)
   | 'product_short_description' // WooCommerce product short description (next to the price)
+  | 'redirect'          // 301 from a page (target_id/target_url) to another URL (after; null = none), minuto-product-faq v0.7.0
+  | 'post_status'       // a blog post's status (publish / draft)
 
 export type ChangeStatus = 'proposed' | 'queued' | 'applying' | 'applied' | 'rejected' | 'failed' | 'undone'
 
@@ -53,6 +55,8 @@ export interface ChangeRow {
   undo_of:       string | null
   undone_at:     string | null
   undone_by:     string | null
+  bundle_id?:    string | null   // the steps of one merge share it; applied in bundle_seq order
+  bundle_seq?:   number | null
 }
 
 /** What a writer function accepts in its request body under `change`. */
@@ -64,7 +68,7 @@ export interface ChangeContext {
   undo_of?:      string   // the applied change this write reverses
 }
 
-const TARGET_TYPES: ReadonlySet<string> = new Set(['post_faq', 'product_faq', 'product_description', 'post_content', 'post_featured_image', 'seo_meta', 'term_seo_meta', 'term_description', 'product_status', 'product_short_description'])
+const TARGET_TYPES: ReadonlySet<string> = new Set(['post_faq', 'product_faq', 'product_description', 'post_content', 'post_featured_image', 'seo_meta', 'term_seo_meta', 'term_description', 'product_status', 'product_short_description', 'redirect', 'post_status'])
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function isTargetType(v: unknown): v is ChangeTargetType {
@@ -143,6 +147,8 @@ export async function proposeChange(p: {
   source_fn:     string
   requested_by?: string
   reason?:       string
+  bundle_id?:    string
+  bundle_seq?:   number
 }, opts: DbOpts = {}): Promise<ChangeRow> {
   const rows = await rest(db(opts), 'site_change_log?select=*', {
     method: 'POST',
@@ -150,6 +156,12 @@ export async function proposeChange(p: {
     body: JSON.stringify({ ...p, status: 'proposed' }),
   }) as ChangeRow[]
   return rows[0]
+}
+
+/** Every step of a merge bundle, in the order they are applied. */
+export async function getBundle(bundleId: string, opts: DbOpts = {}): Promise<ChangeRow[]> {
+  if (!UUID_RE.test(bundleId)) return []
+  return await rest(db(opts), `site_change_log?bundle_id=eq.${bundleId}&select=*&order=bundle_seq.asc`) as ChangeRow[]
 }
 
 /**

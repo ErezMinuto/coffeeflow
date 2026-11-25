@@ -8,9 +8,9 @@
 // Switch: ops_profile 'seo_weekly_release' (enabled:false → never runs).
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { getChange } from '../_shared/site_change_log.ts'
+import { getBundle, getChange } from '../_shared/site_change_log.ts'
 import { localNow, pickRelease, releaseDue, releaseSettings, type QueuedChange } from '../_shared/site_release.ts'
-import { writeValue } from '../handle-seo-chat/site_changes.ts'
+import { applyBundle, writeValue } from '../handle-seo-chat/site_changes.ts'
 
 export interface ReleaseReport {
   ran: boolean
@@ -28,11 +28,11 @@ export interface ReleaseReport {
  * test). A real release happens at most once per release date: the unique
  * index on site_releases(release_date) for real runs is claimed before any write.
  */
-type Deps = { getChange: typeof getChange; writeValue: typeof writeValue }
+type Deps = { getChange: typeof getChange; writeValue: typeof writeValue; getBundle?: typeof getBundle }
 // deno-lint-ignore no-explicit-any
 type Db = SupabaseClient | { from(t: string): any }
 
-export async function runRelease(supabase: Db, opts: { dryRun?: boolean; force?: boolean; now?: Date } = {}, deps: Deps = { getChange, writeValue }): Promise<ReleaseReport> {
+export async function runRelease(supabase: Db, opts: { dryRun?: boolean; force?: boolean; now?: Date } = {}, deps: Deps = { getChange, writeValue, getBundle }): Promise<ReleaseReport> {
   const { data: cfg } = await supabase.from('ops_profile').select('value').eq('key', 'seo_weekly_release').maybeSingle()
   const s = releaseSettings(cfg?.value)
   const now = opts.now ?? new Date()
@@ -45,7 +45,7 @@ export async function runRelease(supabase: Db, opts: { dryRun?: boolean; force?:
     if (done?.length) return { ran: false, reason: `already released on ${date}` }
   }
 
-  const { data: rows, error } = await supabase.from('site_change_log').select('id, target_type, target_id, approved_at').eq('status', 'queued').order('approved_at', { ascending: true })
+  const { data: rows, error } = await supabase.from('site_change_log').select('id, target_type, target_id, approved_at, bundle_id, bundle_seq').eq('status', 'queued').order('approved_at', { ascending: true })
   if (error) throw new Error(`read queue: ${error.message}`)
   const plan = pickRelease((rows ?? []) as QueuedChange[])
 
@@ -60,7 +60,23 @@ export async function runRelease(supabase: Db, opts: { dryRun?: boolean; force?:
   if (dryRun) return { ran: true, dry_run: true, release_date: date, release_id: releaseId, published: plan.publish.map((c) => c.id), deferred: plan.defer.map((c) => c.id), failed: [] }
 
   const published: string[] = [], failed: Array<{ change_id: string; error: string }> = []
+  const doneBundles = new Set<string>()
   for (const c of plan.publish) {
+    if (c.bundle_id) {
+      // A merge goes out whole, in order, stopping at the first failed step.
+      if (doneBundles.has(c.bundle_id)) continue
+      doneBundles.add(c.bundle_id)
+      try {
+        const rows = await (deps.getBundle ?? getBundle)(c.bundle_id)
+        if (!rows.length || rows.some((r) => !['queued', 'applied'].includes(r.status))) continue // changed in the meantime
+        const r = await applyBundle(rows, 'service', { writeValue: deps.writeValue })
+        published.push(...r.applied)
+        if (!r.ok) failed.push({ change_id: r.failed, error: r.error })
+      } catch (e) {
+        failed.push({ change_id: c.id, error: e instanceof Error ? e.message : String(e) })
+      }
+      continue
+    }
     const row = await deps.getChange(c.id)
     if (!row || row.status !== 'queued') continue // cancelled or published in the meantime
     try {
