@@ -272,6 +272,10 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
     crawl: crawl ? { finished_at: crawl.finished_at, pages: pages.length, ...crawlIssues(pages) } : { error: 'no finished crawl yet — the weekly job has not run' },
     search: end ? { window_end: end, window_days: 28, ...searchTotals(cur, prev), by_page_type: byType } : { error: 'no Search Console per search + page data yet' },
     page_speed: speed ?? [],
+    // How past site changes did (Phase 3 verdicts, last 90 days): repeat what worked, avoid what did not.
+    recent_change_results: await supabase.from('site_change_log').select('target_type, target_title, target_url, verdict, judged_at, result')
+      .not('verdict', 'is', null).gte('judged_at', new Date(Date.now() - 90 * 864e5).toISOString()).order('judged_at', { ascending: false }).limit(30)
+      .then(({ data }: { data: Array<Record<string, any>> | null }) => (data ?? []).map((r) => ({ type: r.target_type, page: r.target_title || r.target_url, verdict: r.verdict, judged: String(r.judged_at).slice(0, 10), note: r.result?.note })), () => []),
     // Product pages to improve this week: propose a better description and FAQ for a few of them.
     product_pages_to_improve: await productCandidates(supabase, cur),
     shopping: await shoppingStatus(supabase).catch((e) => ({ error: `unavailable: ${e instanceof Error ? e.message : String(e)}` })),
