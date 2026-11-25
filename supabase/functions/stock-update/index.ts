@@ -21,7 +21,7 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
-import { applySells, channelOfSell, type ApplySellsResult, type SellChannel } from "./sells.ts";
+import { applySells, channelOfSell, upstreamFailureCode, type ApplySellsResult, type SellChannel } from "./sells.ts";
 import { sendPendingUnloggedAlerts } from "./alerts.ts";
 import { createLogger } from "../_shared/logger.ts";
 
@@ -688,6 +688,9 @@ async function runLogged(action: string, body: any, run: () => Promise<Response>
 
     const failed = !res.ok || out?.ok === false || (out?.error !== undefined && out?.ok !== true);
     if (failed) {
+      // MFlow down (5xx / 429) → a code, so health-watchdog counts it as handled, not a crash.
+      const code = upstreamFailureCode(out);
+      if (code) summary.code = code;
       // `http` is MFlow's status on a failed sells fetch; `error` is the handler's own message.
       log.error(`${action}.fail`, String(out?.error ?? `HTTP ${res.status}`).slice(0, 500),
         { ...summary, mflow_http: out?.http ?? null });
