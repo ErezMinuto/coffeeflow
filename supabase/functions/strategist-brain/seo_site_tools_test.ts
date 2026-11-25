@@ -17,6 +17,7 @@ function fakeDb(opts: { value?: unknown; filed?: number; pending?: Array<[string
       const q: any = {
         select: () => q,
         eq: (k: string, v: unknown) => { filters[k] = v; return q },
+        in: (k: string, v: unknown) => { filters[k] = v; return q },
         limit: () => q,
         maybeSingle: async () => ({ data: table === 'ops_profile' && opts.value !== undefined ? { value: opts.value } : null }),
         then: (resolve: (v: unknown) => void) => {

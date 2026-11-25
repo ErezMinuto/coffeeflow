@@ -17,7 +17,7 @@
 
 import { toast } from 'sonner'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Undo2 } from 'lucide-react'
+import { Check, X, MessageSquare, ExternalLink, ChevronLeft, AlertCircle, Undo2, Zap, CalendarClock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { PanelHead, RefreshButton, LoadingRows, Empty, Tag } from './seoUi'
 import { ImageLightbox } from '../../components/shared/ImageLightbox'
@@ -155,7 +155,7 @@ const hasUnpublishedFaq = (it: InboxItem) => Array.isArray(it.raw.result_data?.p
 
 /** One line under the buttons saying what Accept really does for this task type. */
 function acceptNote(it: InboxItem): string | null {
-  if (it.kind === 'change') return 'אישור מעלה את השינוי לאתר החי (עם בקשת אישור לפני). הגרסה הקודמת נשמרת, ואפשר לבטל מ"שינויים אחרונים באתר".'
+  if (it.kind === 'change') return 'אישור מכניס את השינוי לשחרור השבועי (יום ראשון 10:00), או מעלה אותו מיד כשהשחרור השבועי כבוי. "פרסום עכשיו" מעלה מיד. הגרסה הקודמת נשמרת, ואפשר לבטל מ"שינויים אחרונים באתר".'
   if (it.kind !== 'task') return null
   if (it.raw.task_type === 'technical_seo') return hasUnpublishedFaq(it)
     ? 'הוספה לעמוד מעלה את השאלות והתשובות שבפרטים לעמוד החי (עם בקשת אישור לפני). ה-FAQ הקודם נשמר, ואפשר לבטל מ"שינויים אחרונים באתר". לשינוי הניסוח: הנחיה לסוכן.'
@@ -255,13 +255,21 @@ async function rejectItem(it: InboxItem, reason: string): Promise<void> {
   if (res.error) throw res.error
 }
 
+/** Publish now = approve and write at once, skipping the weekly release (urgent fixes). */
+async function publishNowItem(id: string): Promise<void> {
+  if (!window.confirm('לפרסם את השינוי באתר החי עכשיו, בלי לחכות לשחרור השבועי? הגרסה הקודמת נשמרת ואפשר לבטל.')) return
+  await siteAction({ action: 'site_change.publish_now', change_id: id })
+  toast.success('השינוי עלה לאתר')
+}
+
 /** Approve = the item's existing "yes" (never publishes, except IG which confirms). */
 async function approveItem(it: InboxItem): Promise<void> {
   const now = new Date().toISOString()
   if (it.kind === 'change') {
-    if (!window.confirm('להעלות את השינוי הזה לאתר החי עכשיו? הגרסה הקודמת נשמרת ואפשר לבטל.')) return
-    await siteAction({ action: 'site_change.approve', change_id: it.id })
-    toast.success('השינוי עלה לאתר')
+    // With the weekly release on, approving queues the change for the next
+    // release (Sunday 10:00); with it off, the change goes live at once.
+    const r = await siteAction({ action: 'site_change.approve', change_id: it.id })
+    toast.success(r.status === 'queued' ? 'אושר: השינוי ייכנס לשחרור השבועי הקרוב (יום ראשון 10:00)' : 'השינוי עלה לאתר')
     return
   }
   if (it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it)) {
@@ -306,7 +314,7 @@ function approveLabel(it: InboxItem): string | null {
     const fresh = Date.now() - new Date(it.raw.result_data?.prepared_at ?? it.created).getTime() < IG_CONTAINER_TTL_MS
     return it.raw.result_data?.ig_creation_id && fresh ? 'פרסום' : null   // expired container: only reject makes sense
   }
-  if (it.kind === 'change') return 'אישור והעלאה'
+  if (it.kind === 'change') return 'אישור'
   if (it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it)) return 'הוספה לעמוד'
   // These only clear the review flag; the label must not suggest a fix is applied.
   if (it.kind === 'task' && (it.raw.task_type === 'technical_seo' || it.raw.task_type === 'visual_generation')) return 'סימון כנבדק'
@@ -359,7 +367,7 @@ const CHANGE_LABEL: Record<string, string> = {
 }
 const SEO_FIELD_LABEL: Record<string, string> = { title: 'כותרת לגוגל', description: 'תיאור לגוגל', focus_keyword: 'מילת מפתח' }
 const PRODUCT_STATUS_LABEL: Record<string, string> = { publish: 'פורסם', draft: 'טיוטה', pending: 'ממתין לבדיקה', private: 'פרטי' }
-const CHANGE_STATUS: Record<string, string> = { applied: 'עלה לאתר', undone: 'בוטל', failed: 'נכשל', rejected: 'נדחה', applying: 'בתהליך' }
+const CHANGE_STATUS: Record<string, string> = { queued: 'ממתין לשחרור', applied: 'עלה לאתר', undone: 'בוטל', failed: 'נכשל', rejected: 'נדחה', applying: 'בתהליך' }
 
 /** Approve / reject / undo a live site change. Signed-in admin only: the
  *  function refuses anything else, so the click itself is the approval. */
@@ -407,6 +415,47 @@ function ChangeDetails({ c }: { c: Record<string, any> }) {
 }
 
 /** Changes made to the live site in the last 30 days, each with an Undo. */
+/** Approved changes waiting for the weekly release, with publish now / remove from the release. */
+function QueuedChanges({ busy, run }: { busy: boolean; run: (fn: () => Promise<void>) => void }) {
+  const [rows, setRows] = useState<Record<string, any>[] | null>(null)
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from('site_change_log').select('*').eq('status', 'queued').order('approved_at', { ascending: true }).limit(200)
+    setRows(error ? [] : (data ?? []))
+  }, [])
+  useEffect(() => { load() }, [load, busy])
+  if (!rows || rows.length === 0) return null
+  const remove = (c: Record<string, any>) => run(async () => {
+    if (!window.confirm('להוציא את השינוי מהשחרור השבועי? הוא לא יעלה לאתר.')) return
+    await siteAction({ action: 'site_change.reject', change_id: c.id, reason: 'removed from the weekly release' })
+    toast.success('השינוי הוצא מהשחרור')
+  })
+  return (
+    <section className="border-t border-surface-200">
+      <h3 className="flex items-center gap-1.5 min-h-[44px] px-4 bg-surface-50 border-b border-surface-200 text-[13px] font-semibold text-surface-700">
+        <CalendarClock size={15} aria-hidden="true" /> ממתינים לשחרור השבועי (יום ראשון 10:00): {rows.length}
+      </h3>
+      <p className="px-4 pt-2 text-[12.5px] text-surface-500">בכל שחרור עולה שינוי אחד לכל עמוד, לפי סדר האישור. השאר מחכים לשחרור הבא.</p>
+      <ul className="divide-y divide-surface-200">
+        {rows.map(c => (
+          <li key={c.id} className="px-4 pt-3 pb-2">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0 text-[14px] leading-snug text-surface-900 break-words" dir="auto">
+                {CHANGE_LABEL[c.target_type] ?? c.target_type}: {clip(c.target_title || (c.target_url ? readableUrl(c.target_url) : `#${c.target_id}`))}
+              </div>
+              <span className="text-[12px] text-surface-400 shrink-0 pt-0.5">אושר {ageLabel(c.approved_at ?? c.created_at)}</span>
+            </div>
+            <ChangeDetails c={c} />
+            <div className="flex flex-wrap items-center gap-0.5 -ms-2.5">
+              <button type="button" onClick={() => run(() => publishNowItem(c.id))} disabled={busy} className="act"><Zap size={16} aria-hidden="true" /> פרסום עכשיו</button>
+              <button type="button" onClick={() => remove(c)} disabled={busy} className="act danger"><X size={16} aria-hidden="true" /> הוצאה מהשחרור</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function RecentChanges({ busy, run }: { busy: boolean; run: (fn: () => Promise<void>) => void }) {
   const [rows, setRows] = useState<Record<string, any>[] | null>(null)
   const [missing, setMissing] = useState(false)
@@ -586,6 +635,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                           {it.kind === 'change' && <ChangeDetails c={it.raw} />}
                           <div className="flex flex-wrap items-center gap-0.5 mt-1 -ms-2.5">
                             {ok && <button type="button" onClick={() => run(() => approveItem(it))} disabled={busy} className="act primary"><Check size={16} aria-hidden="true" /> {ok}</button>}
+                            {it.kind === 'change' && <button type="button" onClick={() => run(() => publishNowItem(it.id))} disabled={busy} className="act"><Zap size={16} aria-hidden="true" /> פרסום עכשיו</button>}
                             <button type="button" onClick={() => reject([it])} disabled={busy} className="act danger"><X size={16} aria-hidden="true" /> דחייה</button>
                             <button type="button" onClick={() => onGuide(guidePrompt(it))} className="act"><MessageSquare size={16} aria-hidden="true" /> הנחיה לסוכן</button>
                             {it.link && <a href={it.link} className="act"><ExternalLink size={16} aria-hidden="true" /> פתיחה</a>}
@@ -600,6 +650,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
             </section>
           )
         })}
+        {items && <QueuedChanges busy={busy} run={run} />}
         {items && <RecentChanges busy={busy} run={run} />}
       </div>
       {viewing && <ImageLightbox images={viewing.images} label={viewing.label} onClose={() => setViewing(null)} />}
