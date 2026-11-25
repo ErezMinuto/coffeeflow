@@ -86,6 +86,23 @@ function countWords(text) {
 }
 
 /** Everything the audit needs from one HTML page. */
+/** Known tracking endpoints, by host and path prefix. */
+const TRACKING = [
+  ['facebook.com', '/tr'], ['google-analytics.com', '/'], ['googleads.g.doubleclick.net', '/'],
+  ['bat.bing.com', '/action'], ['analytics.tiktok.com', '/'],
+]
+
+/** An invisible tracking image: a 1x1 (or 0) size, or a known tracking endpoint (matched on the host, never on a path). */
+export function isTrackingPixel(img) {
+  const tiny = (v) => v != null && /^\s*[01](px)?\s*$/i.test(v)
+  if (tiny(img.getAttribute('width')) && tiny(img.getAttribute('height'))) return true
+  const src = (img.getAttribute('src') ?? img.getAttribute('data-src') ?? '').trim()
+  let u
+  try { u = new URL(src, 'https://www.minuto.co.il/') } catch { return false }
+  const host = u.hostname.toLowerCase().replace(/^www\./, '')
+  return TRACKING.some(([h, path]) => (host === h || host.endsWith('.' + h)) && u.pathname.startsWith(path))
+}
+
 export function extractPage(html, pageUrl, siteHost) {
   const root = parse(html, { comment: false, blockTextElements: { script: true, style: true, noscript: true, pre: true } })
   const meta = (name) => root.querySelector(`meta[name="${name}"]`)?.getAttribute('content')?.trim() ?? null
@@ -106,7 +123,10 @@ export function extractPage(html, pageUrl, siteHost) {
   }
   const relNext = root.querySelector('link[rel="next"]')?.getAttribute('href')?.trim() || null
 
-  const imgs = root.querySelectorAll('img')
+  // Tracking pixels (Meta's <noscript> 1x1 image and the like) are invisible
+  // and correctly carry an empty alt: they are not images for Google or for
+  // screen readers, so they never count as missing alt text.
+  const imgs = root.querySelectorAll('img').filter((i) => !isTrackingPixel(i))
   const missingAlt = imgs.filter((i) => !(i.getAttribute('alt') ?? '').trim()).length
 
   // Visible words in the main content: <main>, else <article>, else <body>

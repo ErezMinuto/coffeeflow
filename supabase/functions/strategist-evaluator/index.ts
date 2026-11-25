@@ -18,6 +18,7 @@ import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot
 import { STRATEGIST_MODEL, STRATEGIST_EFFORT, estimateUsd } from '../seo-agent/strategistConfig.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { judgeChanges } from './judge_changes.ts'
 import { runLogged } from '../_shared/run_logged.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { critiqueDrafts } from './critique.ts'
@@ -182,6 +183,12 @@ serve(runLogged('strategist-evaluator', async (req, _log) => {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
     const action = (body as { action?: unknown })?.action ?? new URL(req.url).searchParams.get('action')
     if (action === 'critique_draft') return json(await critiqueDrafts(supabase))
+    // judge_changes_dry_run: measure and report the site-change judgements, write nothing.
+    if (action === 'judge_changes_dry_run') return json({ ok: true, change_judge: await judgeChanges(supabase, { dryRun: true }) })
+    // Daily tick: judge applied site changes (Phase 3), then grade theses as before.
+    // A failure in judging never blocks the thesis grading.
+    try { const r = await judgeChanges(supabase); if (r.ran) console.log(`[strategist-evaluator] change judge: baselines=${r.baselines} judged=${r.judged?.length} undo=${r.undo_proposals} waiting=${r.waiting}`) }
+    catch (e) { console.warn(`[strategist-evaluator] change judge failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`) }
     return await evaluate(supabase)
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
@@ -190,7 +197,7 @@ serve(runLogged('strategist-evaluator', async (req, _log) => {
   scope: async (req) => {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
     const action = (body as { action?: unknown })?.action ?? new URL(req.url).searchParams.get('action')
-    return { action: action === 'critique_draft' ? 'critique_draft' : 'evaluate' }
+    return { action: action === 'critique_draft' ? 'critique_draft' : action === 'judge_changes_dry_run' ? 'judge_changes_dry_run' : 'evaluate' }
   },
   judge: (out, _res, scope) => {
     // Counts only: results carry thesis text and draft detail.

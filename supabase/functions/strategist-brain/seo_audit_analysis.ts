@@ -836,3 +836,30 @@ export function normaliseSeoAudit(
   findings.sort((a, b) => (b.est_monthly_value_ils ?? -1) - (a.est_monthly_value_ils ?? -1))
   return { ok: true, audit: { findings, blind_spots, area_verdicts: verdicts, dismissed_signals: dismissed, signals_checked: ctx?.signals.length ?? 0 } }
 }
+
+/** A product the weekly run may improve: thin description, real search demand, not changed recently. */
+export interface ProductPageCandidate { url: string; name: string; description_words: number; impressions: number; clicks: number }
+
+/**
+ * Products worth a better description and FAQ, most search demand first:
+ * visible in the shop, in stock, under 200 words of description, at least 20
+ * Google impressions in 28 days, and no description or FAQ change applied,
+ * queued or waiting in the last 60 days.
+ */
+export function productPagesToImprove(
+  products: ReadonlyArray<{ woo_id: number; name: string; permalink: string | null; description: string | null; stock_status: string | null; catalog_visibility: string | null }>,
+  clicks: ReadonlyMap<string, { clicks: number; impressions: number }>,
+  recentlyChanged: ReadonlySet<number>,
+  limit = 10,
+): ProductPageCandidate[] {
+  const words = (h: string) => h.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length
+  return products
+    .filter((p) => p.permalink && p.catalog_visibility !== 'hidden' && p.stock_status === 'instock' && !recentlyChanged.has(p.woo_id))
+    .map((p) => {
+      const c = clicks.get(pageKey(p.permalink)) ?? { clicks: 0, impressions: 0 }
+      return { url: p.permalink!, name: p.name, description_words: words(p.description ?? ''), impressions: c.impressions, clicks: c.clicks }
+    })
+    .filter((p) => p.description_words < 200 && p.impressions >= 20)
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, limit)
+}

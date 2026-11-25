@@ -9,7 +9,7 @@ import { selectAll } from '../_shared/select_all.ts'
 import {
   AUDIT_AREAS, CRAWL_ISSUES, SEARCH_VIEWS, coverage, crawlIssues, inlinkCounts, materialSignals, pageKey, pagesWithIssue,
   searchTotals, searchView, summarizeShopping, valuePerSession,
-  type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal, type PaidClicks } from './seo_audit_analysis.ts'
+  type CoverageRow, type CrawlPage, type DataState, type QpRow, type SearchView, type Signal, type PaidClicks, productPagesToImprove } from './seo_audit_analysis.ts'
 
 const CRAWL_COLS = 'url, page_type, status, final_url, redirects, title, meta_description, h1, h1_count, canonical, robots_meta, x_robots_tag, word_count, schema_types, internal_links, images, images_missing_alt, response_ms, listing_pages, listing_issue'
 const DAY = 864e5
@@ -78,6 +78,18 @@ async function paidClicks(supabase: SupabaseClient, end: string | null): Promise
     }
   } catch { /* the audit works without it */ }
   return out
+}
+
+/** Products the weekly run may improve next (see productPagesToImprove). Best effort: [] on error. */
+async function productCandidates(supabase: SupabaseClient, cur: readonly QpRow[]) {
+  try {
+    const since = new Date(Date.now() - 60 * 864e5).toISOString()
+    const [products, changed] = await Promise.all([
+      selectAll<{ woo_id: number; name: string; permalink: string | null; description: string | null; stock_status: string | null; catalog_visibility: string | null }>((from, to) => supabase.from('woo_products').select('woo_id, name, permalink, description, stock_status, catalog_visibility').order('woo_id').range(from, to), { label: 'woo_products candidates' }),
+      selectAll<{ target_id: number }>((from, to) => supabase.from('site_change_log').select('target_id').in('target_type', ['product_description', 'product_faq']).neq('status', 'rejected').gte('created_at', since).order('created_at').range(from, to), { label: 'recent product changes' }),
+    ])
+    return productPagesToImprove(products, clicksByPage(cur), new Set(changed.map((r) => Number(r.target_id))))
+  } catch { return [] }
 }
 
 /** Product pages hidden from the shop in WooCommerce (catalog visibility 'hidden'), as page keys. */
@@ -260,6 +272,12 @@ export async function getSeoAuditOverview(supabase: SupabaseClient) {
     crawl: crawl ? { finished_at: crawl.finished_at, pages: pages.length, ...crawlIssues(pages) } : { error: 'no finished crawl yet — the weekly job has not run' },
     search: end ? { window_end: end, window_days: 28, ...searchTotals(cur, prev), by_page_type: byType } : { error: 'no Search Console per search + page data yet' },
     page_speed: speed ?? [],
+    // How past site changes did (Phase 3 verdicts, last 90 days): repeat what worked, avoid what did not.
+    recent_change_results: await supabase.from('site_change_log').select('target_type, target_title, target_url, verdict, judged_at, result')
+      .not('verdict', 'is', null).gte('judged_at', new Date(Date.now() - 90 * 864e5).toISOString()).order('judged_at', { ascending: false }).limit(30)
+      .then(({ data }: { data: Array<Record<string, any>> | null }) => (data ?? []).map((r) => ({ type: r.target_type, page: r.target_title || r.target_url, verdict: r.verdict, judged: String(r.judged_at).slice(0, 10), note: r.result?.note })), () => []),
+    // Product pages to improve this week: propose a better description and FAQ for a few of them.
+    product_pages_to_improve: await productCandidates(supabase, cur),
     shopping: await shoppingStatus(supabase).catch((e) => ({ error: `unavailable: ${e instanceof Error ? e.message : String(e)}` })),
     index_status: { inspected: inspected.length, by_coverage_state: coverageStates, not_indexed: inspected.filter((r) => !r.error && r.verdict && r.verdict !== 'PASS').slice(0, 20), canonical_mismatch: inspected.filter((r) => r.google_canonical && r.user_canonical && pageKey(r.google_canonical) !== pageKey(r.user_canonical)).slice(0, 20) },
     // Every one of these must be answered in seo_audit: inside a finding's
