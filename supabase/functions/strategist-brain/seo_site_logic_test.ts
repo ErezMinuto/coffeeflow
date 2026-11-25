@@ -1,5 +1,5 @@
 // deno run -A supabase/functions/strategist-brain/seo_site_logic_test.ts
-import { WIDE_DASH, PRICE_IN_TEXT, hasWideDash, faqProblems, numbersNotInCatalog, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
+import { appendSection, carryOverSection, mergeEvidence, WIDE_DASH, PRICE_IN_TEXT, hasWideDash, faqProblems, numbersNotInCatalog, classifyUrl, cleanCategoryText, escAttr, insertLink, isSiteLink, proposalReason, seoProblems, visibleWords } from './seo_site_logic.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -83,6 +83,39 @@ check('already linked to that page → refused', 'error' in insertLink('<p><a hr
 const reason = proposalReason({ reason: 'thin text', expected_result: 'top 10 for פולי קפה', check_after_days: 28, today: '2026-11-24' })
 check('reason carries why, expected result and a check date', reason === 'Why: thin text\nExpected: top 10 for פולי קפה\nCheck on: 2026-12-22', reason)
 check('check date kept between 7 and 90 days', proposalReason({ reason: 'a', expected_result: 'b', check_after_days: 400, today: '2026-11-24' }).endsWith('2027-02-22'))
+
+// ── merges ──
+{
+  const key = (u: string) => decodeURIComponent(new URL(u).pathname).toLowerCase()
+  const H = 'https://www.minuto.co.il'
+  const A = H + '/blog/%D7%90/', B = H + '/blog/%D7%91/'
+  const rows = [
+    { page: A, clicks: 0, impressions: 1506, position: 11.5 },
+    { page: B, clicks: 0, impressions: 570, position: 10.9 },
+    { page: H + '/', clicks: 0, impressions: 19, position: 30 },
+  ]
+  const ok = mergeEvidence(rows, key(B), key(A), key)
+  check('merge evidence: two posts split the search (macchiato case)', !('error' in ok) && ok.total === 2095 && ok.loser.impressions === 570 && ok.winner.position === 11.5, JSON.stringify(ok))
+  check('merge evidence: page URL case does not matter (GSC upper-cases %XX)', !('error' in mergeEvidence(rows, key(B.toLowerCase()), key(A), key)))
+  const thin = mergeEvidence([{ page: A, clicks: 0, impressions: 60, position: 9 }, { page: B, clicks: 0, impressions: 30, position: 9 }], key(B), key(A), key)
+  check('merge evidence: under 100 impressions refused', 'error' in thin && /100/.test(thin.error))
+  const share = mergeEvidence([{ page: A, clicks: 5, impressions: 950, position: 4 }, { page: B, clicks: 0, impressions: 50, position: 20 }], key(B), key(A), key)
+  check('merge evidence: a page under 10% does not split the search', 'error' in share && /10%/.test(share.error))
+  const wrong = mergeEvidence([{ page: A, clicks: 1, impressions: 500, position: 12 }, { page: B, clicks: 9, impressions: 400, position: 6 }], key(B), key(A), key)
+  check('merge evidence: refuses retiring the stronger page', 'error' in wrong && /stronger/.test(wrong.error))
+  const missing = mergeEvidence(rows, key(H + '/blog/other/'), key(A), key)
+  check('merge evidence: a page with no rows for the search is refused', 'error' in missing)
+}
+{
+  const body = 'מקיאטו הוא אספרסו עם כתם קטן של קצף חלב. '.repeat(6)
+  const sec = carryOverSection(`<h2>ההבדל בין מקיאטו לקורטדו</h2><p>${body}</p><script>x</script>`)
+  check('carry-over: cleaned, starts with h2, script removed', !('error' in sec) && sec.html.startsWith('<h2>') && !sec.html.includes('script'), JSON.stringify(sec))
+  check('carry-over: needs an h2 heading', 'error' in carryOverSection(`<p>${body}</p>`))
+  check('carry-over: too short refused', 'error' in carryOverSection('<h2>כותרת</h2><p>קצר מדי</p>'))
+  check('carry-over: wide dash refused', 'error' in carryOverSection(`<h2>כותרת</h2><p>${body} — סוף</p>`))
+  check('carry-over: price refused', 'error' in carryOverSection(`<h2>כותרת</h2><p>${body} רק 30 ₪</p>`))
+  check('append: section added at the end, rest unchanged', appendSection('<p>a</p>\n\n', '<h2>b</h2>') === '<p>a</p>\n\n<h2>b</h2>\n')
+}
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')

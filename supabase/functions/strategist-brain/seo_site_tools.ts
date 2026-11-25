@@ -9,10 +9,12 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { proposeChange } from '../_shared/site_change_log.ts'
 import {
-  cleanFaq, readPost, readProduct, readProductStatus, readSeoMeta, readTermDescription, siteEnv, type SeoMeta, type SiteEnv,
+  cleanFaq, readPost, readProduct, readProductStatus, readRedirect, readSeoMeta, readTermDescription, siteEnv, type SeoMeta, type SiteEnv,
 } from '../_shared/site_io.ts'
+import { pageKey } from './seo_audit_analysis.ts'
 import {
-  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, SHORT_TEXT_WORDS, faqProblems, numbersNotInCatalog, PRICE_IN_TEXT, PRICE_RULE } from './seo_site_logic.ts'
+  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, SHORT_TEXT_WORDS, faqProblems, numbersNotInCatalog, PRICE_IN_TEXT, PRICE_RULE,
+  appendSection, carryOverSection, mergeEvidence } from './seo_site_logic.ts'
 
 interface Ctx { runId: string }
 
@@ -224,6 +226,79 @@ async function proposeInternalLink(supabase: SupabaseClient, ctx: Ctx, input: Re
   return { ok: true, filed: [{ id: row.id, target_type: 'post_content' }], note: 'Filed in the owner\'s approvals inbox; only the link is added, the rest of the post is unchanged.' }
 }
 
+// ── propose_merge (cannibalization) ─────────────────────────────────────────
+/** An ILIKE pattern that matches exactly this text, case-insensitive (Search Console upper-cases %XX in URLs, WordPress lower-cases them). */
+const likeExact = (t: string) => t.replace(/[%_\\]/g, (c) => '\\' + c)
+
+async function mergeEnabled(supabase: Db): Promise<boolean> {
+  const { data } = await supabase.from('ops_profile').select('value').eq('key', 'seo_merge_proposals').maybeSingle()
+  return (data?.value as { enabled?: unknown } | null)?.enabled === true
+}
+
+/**
+ * Files ONE merge as a bundle of proposals the owner approves, rejects and
+ * undoes together: (1) optional section carried over into the page that stays
+ * (a blog post), (2) a 301 from the retired post to it, (3) the retired post
+ * taken offline. Proof is required from Search Console: both pages split the
+ * search in the latest 28-day window, and the retired post is not the stronger.
+ */
+async function proposeMerge(supabase: SupabaseClient, ctx: Ctx, input: Record<string, unknown>) {
+  if (!(await mergeEnabled(supabase))) return { error: 'merges are switched off (ops_profile seo_merge_proposals.enabled is not true): use propose_site_change (retitle the weaker page) and propose_internal_link instead, or report the merge in the brief' }
+  const query = String(input.query ?? '').trim()
+  if (!query) return { error: 'query (the search the two pages split) is required' }
+  const why = String(input.reason ?? '').trim(), expected = String(input.expected_result ?? '').trim()
+  if (why.length < 20 || expected.length < 10) return { error: 'reason (the evidence, with numbers) and expected_result (what should move, by how much) are required' }
+  const [loser, winner] = await Promise.all([resolve(String(input.retire_url ?? '')), resolve(String(input.keep_url ?? ''))])
+  if ('error' in loser) return { error: `retire_url: ${loser.error}` }
+  if ('error' in winner) return { error: `keep_url: ${winner.error}` }
+  if (loser.kind !== 'post') return { error: 'retire_url must be a blog post: products and categories are never merged away (variants of a product are real products)' }
+  if (loser.id === winner.id && loser.kind === winner.kind) return { error: 'retire_url and keep_url are the same page' }
+
+  // Proof: the latest 28-day window of Search Console per search + page.
+  const { data: ends } = await supabase.from('gsc_query_page').select('period_end').eq('period_days', 28).order('period_end', { ascending: false }).limit(1)
+  const end = ends?.[0]?.period_end
+  if (!end) return { error: 'no Search Console per-page window to check the evidence against' }
+  const { data: qRows } = await supabase.from('gsc_query_page').select('page, clicks, impressions, position').eq('period_days', 28).eq('period_end', end).ilike('query', likeExact(query)).limit(500)
+  const ev = mergeEvidence(qRows ?? [], pageKey(loser.url), pageKey(winner.url), pageKey)
+  if ('error' in ev) return { error: ev.error }
+  const { data: allLoser } = await supabase.from('gsc_query_page').select('clicks, impressions').eq('period_days', 28).eq('period_end', end).ilike('page', likeExact(loser.url)).limit(2000)
+  const loserTotal = (allLoser ?? []).reduce((a: { clicks: number; impressions: number }, r: { clicks: number; impressions: number }) => ({ clicks: a.clicks + (Number(r.clicks) || 0), impressions: a.impressions + (Number(r.impressions) || 0) }), { clicks: 0, impressions: 0 })
+
+  const env = siteEnv()
+  const lp = await readPost(env, loser.id)
+  if (lp.status !== 'publish') return { error: `the post to retire is ${lp.status}, not published` }
+  let existing: string | null
+  try { existing = (await readRedirect(env, loser.url)).target } catch (e) { return { error: (e as Error).message } }
+  if (existing) return { error: `the post to retire already redirects to ${decodeURI(existing)}` }
+  const wr = await env.fetchFn(winner.url, { method: 'GET', redirect: 'manual', headers: { 'User-Agent': 'MinutoStrategist/1.0' } })
+  await wr.body?.cancel()
+  if (wr.status !== 200) return { error: `keep_url answers ${wr.status}, not 200: merge only into a live page` }
+
+  type Step = { target_type: 'post_content' | 'redirect' | 'post_status'; target_id: number; target_url: string; target_title: string; after: unknown; before: unknown }
+  const steps: Step[] = []
+  if (input.carry_over_html !== undefined && String(input.carry_over_html).trim()) {
+    if (winner.kind !== 'post') return { error: 'carry_over_html can only be added to a blog post; for a category, merge without it (category text goes through propose_site_change)' }
+    const sec = carryOverSection(String(input.carry_over_html))
+    if ('error' in sec) return { error: sec.error }
+    const wp = await readPost(env, winner.id)
+    steps.push({ target_type: 'post_content', target_id: winner.id, target_url: winner.url, target_title: wp.title, after: { content: appendSection(wp.content, sec.html) }, before: { content_words: visibleWords(wp.content) } })
+  }
+  steps.push({ target_type: 'redirect', target_id: loser.id, target_url: loser.url, target_title: lp.title, after: winner.url, before: null })
+  steps.push({ target_type: 'post_status', target_id: loser.id, target_url: loser.url, target_title: lp.title, after: 'draft', before: 'publish' })
+
+  const blocked = await gate(supabase, ctx, steps.map((st) => ({ target_type: st.target_type, target_id: st.target_id })))
+  if (blocked) return { error: blocked, filed: [] }
+  const evidence = `"${query}" (${ev.total} impressions, 28 days to ${end}) is split: the page kept has ${ev.winner.impressions} impressions, ${ev.winner.clicks} clicks, position ${ev.winner.position ?? '-'}; the post retired has ${ev.loser.impressions} impressions, ${ev.loser.clicks} clicks, position ${ev.loser.position ?? '-'} (all its searches: ${loserTotal.clicks} clicks, ${loserTotal.impressions} impressions).`
+  const reason = proposalReason({ reason: `Merge ${decodeURI(loser.url)} into ${decodeURI(winner.url)}. ${evidence} ${why}`, expected_result: expected, check_after_days: Number(input.check_after_days ?? 42), today: today() })
+  const bundleId = crypto.randomUUID()
+  const filed: Array<{ id: string; target_type: string; step: number }> = []
+  for (const [i, st] of steps.entries()) {
+    const row = await proposeChange({ target_type: st.target_type, target_id: st.target_id, target_url: st.target_url, target_title: st.target_title, after: st.after, source_fn: 'strategist-brain', requested_by: requester(ctx), reason, bundle_id: bundleId, bundle_seq: i + 1 })
+    filed.push({ id: row.id, target_type: st.target_type, step: i + 1 })
+  }
+  return { ok: true, bundle_id: bundleId, filed, evidence, note: 'Filed as ONE merge in the owner\'s approvals inbox: approved, rejected and undone together. Nothing changes on the site before the owner approves.' }
+}
+
 export const SEO_SITE_TOOL_DEFS = [
   {
     name: 'read_site_fields',
@@ -259,6 +334,23 @@ export const SEO_SITE_TOOL_DEFS = [
       required: ['post_url', 'anchor_text', 'target_url', 'reason', 'expected_result'],
     },
   },
+  {
+    name: 'propose_merge',
+    description: 'FILE A MERGE (cannibalization fix; the owner approves, rejects or undoes it as one). Use when two of our pages split one search and the weaker one is a BLOG POST that adds nothing the other page lacks (e.g. two posts answering the same question). It files: an optional section carried over into the page that stays (carry_over_html, blog post only: <h2> heading + 40–400 words, Hebrew, plain tags, no prices, no wide dashes), a 301 redirect from the retired post to keep_url, and the retired post taken offline (draft). Code checks the latest 28-day Search Console window: both pages must each hold at least 10% of the search (100+ impressions), and the retired post must not be the stronger. NEVER merge products (colors and sizes are real products), categories, the homepage, or brand searches (sitelinks). When the two pages answer different needs (a guide vs a category to buy from), do not merge: retitle the post toward its own question with propose_site_change and link it to the category with propose_internal_link. check_after_days defaults to 42.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'the search the two pages split, exactly as in Search Console' },
+        retire_url: { type: 'string', description: 'the blog post to retire (redirected and taken offline)' },
+        keep_url: { type: 'string', description: 'the page that should win the search (blog post, product category or product)' },
+        carry_over_html: { type: 'string' },
+        reason: { type: 'string' },
+        expected_result: { type: 'string' },
+        check_after_days: { type: 'number' },
+      },
+      required: ['query', 'retire_url', 'keep_url', 'reason', 'expected_result'],
+    },
+  },
 ] as const
 
 export async function dispatchSeoSiteTool(supabase: SupabaseClient, ctx: Ctx, name: string, input: Record<string, unknown>): Promise<unknown | undefined> {
@@ -266,6 +358,7 @@ export async function dispatchSeoSiteTool(supabase: SupabaseClient, ctx: Ctx, na
     case 'read_site_fields':      return await readSiteFields(input as { url?: string })
     case 'propose_site_change':   return await proposeSiteChange(supabase, ctx, input)
     case 'propose_internal_link': return await proposeInternalLink(supabase, ctx, input)
+    case 'propose_merge':         return await proposeMerge(supabase, ctx, input)
     default:                      return undefined
   }
 }

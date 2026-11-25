@@ -64,7 +64,7 @@ check('undefined equals null', sameValue(undefined, null))
   const r = fakeRest([[{ id: ID }]])
   await beginChange({ target_type: 'post_faq', target_id: 7, before: [], before_source: 'wp_plugin', after: [], source_fn: 'x', ctx: { change_id: ID, approved_by: 'user_1' } }, r.opts)
   check('proposal patched, not inserted', r.calls[0].method === 'PATCH')
-  check('only a still-proposed row', r.calls[0].url.includes('status=eq.proposed'))
+  check('only a still-pending row (proposed, or queued for the weekly release)', r.calls[0].url.includes('status=in.(proposed,queued)'))
   check('only for the same target', r.calls[0].url.includes('target_type=eq.post_faq') && r.calls[0].url.includes('target_id=eq.7'))
   check('approver recorded', r.calls[0].body.approved_by === 'user_1')
 

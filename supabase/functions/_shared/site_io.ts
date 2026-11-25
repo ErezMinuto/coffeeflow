@@ -8,6 +8,8 @@
 //   product_description string                          (Woo long description, HTML)
 //   post_content        { title?: string; content?: string }  (raw, as WP stores it)
 //   post_featured_image number                          (media id, 0 = none)
+//   redirect            string | null                   (301 target from the page, null = none)
+//   post_status         'publish' | 'draft'
 //
 // Credentials come from the same secrets the existing writers use:
 // WOO_URL (canonical, with www), WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS
@@ -301,4 +303,54 @@ export async function writeProductShortDescription(env: SiteEnv, id: number, sho
   const j = await readJson(res, `update product ${id}`)
   if (typeof j.id !== 'number') throw new Error(`update product ${id}: ${JSON.stringify(j).slice(0, 300)}`)
   return String(j.short_description ?? '')
+}
+
+// ── Redirects (minuto-product-faq v0.7.0) ───────────────────────────────────
+//   redirect  string | null   absolute target URL of the 301 from a page, null = none
+
+async function pluginJson(res: Response, what: string): Promise<Record<string, unknown>> {
+  if (res.status === 404) {
+    const j = await res.json().catch(() => ({})) as Record<string, unknown>
+    // rest_no_route = the plugin on the site is older than v0.7.0.
+    throw new Error(j.code === 'rest_no_route' ? 'redirects need minuto-product-faq v0.7.0 on the site' : `${what}: ${String(j.message ?? 'not found')}`)
+  }
+  return await readJson(res, what)
+}
+
+export async function readRedirect(env: SiteEnv, sourceUrl: string): Promise<{ source: string; target: string | null }> {
+  const res = await env.fetchFn(`${env.wpUrl}/wp-json/minuto-faq/v1/redirect?source=${encodeURIComponent(sourceUrl)}`, { headers: { Authorization: wpAuth(env) }, redirect: 'manual' })
+  const j = await pluginJson(res, 'read redirect')
+  return { source: String(j.source ?? ''), target: typeof j.target === 'string' && j.target ? j.target : null }
+}
+
+/** Sets (target) or removes (null) the 301 from sourceUrl. Returns what the site stored. */
+export async function writeRedirect(env: SiteEnv, sourceUrl: string, target: string | null): Promise<string | null> {
+  const res = await env.fetchFn(`${env.wpUrl}/wp-json/minuto-faq/v1/redirect`, {
+    method: 'POST', headers: { Authorization: wpAuth(env), 'Content-Type': 'application/json' }, redirect: 'manual',
+    body: JSON.stringify({ source: sourceUrl, target: target ?? '' }),
+  })
+  const j = await pluginJson(res, 'write redirect')
+  return typeof j.target === 'string' && j.target ? j.target : null
+}
+
+// ── Blog post status ────────────────────────────────────────────────────────
+//   post_status  'publish' | 'draft'   (blog posts only; products use product_status)
+
+export const POST_STATUSES = ['publish', 'draft'] as const
+export type PostStatus = typeof POST_STATUSES[number]
+export const isPostStatus = (v: unknown): v is PostStatus => typeof v === 'string' && (POST_STATUSES as readonly string[]).includes(v)
+
+export async function readPostStatus(env: SiteEnv, id: number): Promise<{ id: number; title: string; link: string; status: string }> {
+  const p = await readPost(env, id)
+  if (p.type !== 'post') throw new Error(`#${id} is a ${p.type}, not a blog post`)
+  return { id: p.id, title: p.title, link: p.link, status: p.status }
+}
+
+export async function writePostStatus(env: SiteEnv, id: number, status: PostStatus): Promise<string> {
+  const res = await env.fetchFn(`${env.wpUrl}/wp-json/wp/v2/posts/${id}`, {
+    method: 'POST', headers: { Authorization: wpAuth(env), 'Content-Type': 'application/json' }, redirect: 'manual',
+    body: JSON.stringify({ status }),
+  })
+  const j = await readJson(res, `update post ${id} status`)
+  return String(j.status ?? '')
 }

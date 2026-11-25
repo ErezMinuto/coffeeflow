@@ -25,3 +25,7 @@ $wpdb->delete(
 	array( 'meta_key' => '_minuto_faq_published' ),
 	array( '%s' )
 );
+
+// v0.7.0: the redirects this plugin served (they stop working once it is gone;
+// each one is still recorded in CoffeeFlow's site_change_log).
+delete_option( 'minuto_redirects' );

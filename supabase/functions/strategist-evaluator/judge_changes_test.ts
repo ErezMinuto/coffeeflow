@@ -64,5 +64,32 @@ const base = { window_end: '2026-11-23', page: { clicks: 20, impressions: 1000, 
   proposals.length = 0; const r = await judgeChanges(db as any, { today: '2026-12-29', dryRun: true }, deps)
   check('dry run (even when off): reports the verdict, writes nothing', r.judged?.[0]?.verdict === 'loss' && db.updates.length === 0 && db.learnings.length === 0 && proposals.length === 0 && !c.verdict) }
 
+// A merge: judged once, on its redirect step, by both pages together.
+{
+  const R = 'https://www.minuto.co.il/blog/retired/', K = 'https://www.minuto.co.il/blog/kept/'
+  const red = change({ id: 'r', target_type: 'redirect', target_id: 10, target_url: R, after: K, bundle_id: 'B', before: null, before_source: 'wp_plugin',
+    baseline: { window_end: '2026-11-23', page: { clicks: 10, impressions: 1500, position: 11 }, site_clicks: 1000, ga4_28d_before: { sessions: 0, conversions: 0 } } })
+  const st = change({ id: 's', target_type: 'post_status', target_id: 10, target_url: R, after: 'draft', bundle_id: 'B', before: 'publish', before_source: 'wp_rest' })
+  // After: the retired post has no clicks (redirected), the kept post has more than both had together.
+  const db = fakeDb({ fileUndo: true, latestEnd: '2026-12-28', window: [{ page: K, clicks: 30, impressions: 1800, position: 6 }, { page: 'https://www.minuto.co.il/x/', clicks: 970, impressions: 9000, position: 9 }], changes: [red, st] })
+  proposals.length = 0
+  const r = await judgeChanges(db as any, { today: '2026-12-29' }, deps)
+  check('merge: judged on both pages together → a win, not a loss for the retired post', r.judged?.length === 1 && r.judged[0].change_id === 'r' && r.judged[0].verdict === 'win', JSON.stringify(r))
+  check('merge: its other step is marked as part of it, not judged alone', (st as any).judged_at && (st as any).result?.part_of_merge === 'B' && !(st as any).verdict)
+  check('merge: the lesson names the merge', /merge of/.test((db.learnings.at(-1) as any)?.insight ?? ''))
+  // A losing merge never files a single-step undo (undo the merge as a whole from the inbox).
+  const red2 = change({ id: 'r2', target_type: 'redirect', target_id: 11, target_url: R, after: K, bundle_id: 'C', before: null, before_source: 'wp_plugin',
+    baseline: { window_end: '2026-11-23', page: { clicks: 40, impressions: 1500, position: 8 }, site_clicks: 1000, ga4_28d_before: { sessions: 0, conversions: 0 } } })
+  const db2 = fakeDb({ fileUndo: true, latestEnd: '2026-12-28', window: [{ page: K, clicks: 5, impressions: 900, position: 14 }], changes: [red2] })
+  await judgeChanges(db2 as any, { today: '2026-12-29' }, deps)
+  check('merge: a loss files no single-step undo proposal', (red2 as any).verdict === 'loss' && proposals.length === 0, JSON.stringify(proposals))
+  // Baseline of a new merge sums both pages.
+  const red3 = change({ id: 'r3', target_type: 'redirect', target_id: 12, target_url: R, after: K, bundle_id: 'D', before: null, before_source: 'wp_plugin', baseline: null })
+  const db3 = fakeDb({ latestEnd: '2026-11-23', window: [{ page: R, clicks: 3, impressions: 570, position: 10.9 }, { page: K, clicks: 2, impressions: 1506, position: 11.5 }], changes: [red3] })
+  await judgeChanges(db3 as any, { today: '2026-11-25' }, deps)
+  const b3 = (red3 as any).baseline
+  check('merge: baseline counts both pages', b3?.page.clicks === 5 && b3?.page.impressions === 2076 && b3?.pages?.length === 2, JSON.stringify(b3))
+}
+
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')

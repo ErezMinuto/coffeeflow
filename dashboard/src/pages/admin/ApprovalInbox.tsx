@@ -194,10 +194,20 @@ async function loadInbox(): Promise<InboxItem[]> {
   // table doesn't exist, and the rest of the inbox must still load.
   const changes = await supabase.from('site_change_log').select('*')
     .eq('status', 'proposed').order('created_at', { ascending: false }).limit(200)
+  const bundles = new Map<string, any[]>()
   for (const c of (changes.error ? [] : changes.data ?? []) as any[]) {
+    if (c.bundle_id) { bundles.set(c.bundle_id, [...(bundles.get(c.bundle_id) ?? []), c]); continue }
     out.push({ key: `change:${c.id}`, kind: 'change', id: c.id, group: 'שינויים באתר החי: ממתינים לאישור',
       title: `${CHANGE_LABEL[c.target_type] ?? c.target_type}: ${clip(c.target_title || (c.target_url ? readableUrl(c.target_url) : `#${c.target_id}`))}`,
       detail: c.reason ?? '', status: c.status, created: c.created_at, targetUrl: safeHref(c.target_url) ?? undefined, raw: c })
+  }
+  // A merge is one item: approving, rejecting or publishing it acts on every step.
+  for (const rows of bundles.values()) {
+    const steps = [...rows].sort((a, b) => (a.bundle_seq ?? 0) - (b.bundle_seq ?? 0))
+    const first = steps[0]
+    out.push({ key: `change:${first.id}`, kind: 'change', id: first.id, group: 'שינויים באתר החי: ממתינים לאישור',
+      title: mergeTitle(steps), detail: first.reason ?? '', status: first.status, created: first.created_at,
+      targetUrl: safeHref(first.target_url) ?? undefined, raw: { ...first, bundle: steps } })
   }
   for (const r of (recs.data ?? []) as any[]) {
     const group = r.status === 'proposed' ? 'רעיונות של האסטרטג: אישור יוצר טיוטה'
@@ -364,6 +374,15 @@ const CHANGE_LABEL: Record<string, string> = {
   post_content: 'תוכן מאמר', post_featured_image: 'תמונה ראשית למאמר',
   seo_meta: 'כותרת ותיאור לגוגל', term_seo_meta: 'כותרת ותיאור לגוגל (קטגוריה)',
   term_description: 'טקסט קטגוריה', product_status: 'סטטוס מוצר', product_short_description: 'תיאור קצר של מוצר',
+  redirect: 'הפניה 301', post_status: 'סטטוס מאמר',
+}
+const POST_STATUS_LABEL: Record<string, string> = { publish: 'פורסם באתר', draft: 'טיוטה (ירד מהאתר)' }
+
+/** "Merge: X into Y" for the steps of one merge (bundle). */
+function mergeTitle(rows: Record<string, any>[]): string {
+  const r = rows.find(x => x.target_type === 'redirect') ?? rows[0]
+  const into = typeof r.after === 'string' ? readableUrl(r.after) : ''
+  return `מיזוג עמודים: ${clip(r.target_title || (r.target_url ? readableUrl(r.target_url) : `#${r.target_id}`))}${into ? ` ← לתוך ${clip(into)}` : ''}`
 }
 const SEO_FIELD_LABEL: Record<string, string> = { title: 'כותרת לגוגל', description: 'תיאור לגוגל', focus_keyword: 'מילת מפתח' }
 const PRODUCT_STATUS_LABEL: Record<string, string> = { publish: 'פורסם', draft: 'טיוטה', pending: 'ממתין לבדיקה', private: 'פרטי' }
@@ -396,10 +415,29 @@ function ChangeValue({ type, v }: { type: string; v: unknown }) {
     return <Fields obj={obj} />
   }
   if (type === 'product_status') return <span>{PRODUCT_STATUS_LABEL[String(v)] ?? String(v ?? '')}</span>
+  if (type === 'post_status') return <span>{POST_STATUS_LABEL[String(v)] ?? String(v ?? '')}</span>
+  if (type === 'redirect') return v ? <span dir="auto" className="break-all">{readableUrl(String(v))}</span> : <span className="text-surface-400">ללא הפניה</span>
   return <div className="whitespace-pre-wrap break-words max-h-64 overflow-y-auto" dir="auto">{String(v ?? '')}</div>
 }
 
 function ChangeDetails({ c }: { c: Record<string, any> }) {
+  if (Array.isArray(c.bundle) && c.bundle.length > 1) {
+    return (
+      <details className="mt-1 text-[12.5px] leading-relaxed text-surface-700">
+        <summary className="inline-flex items-center gap-1 min-h-8 text-surface-500 hover:text-surface-800 select-none">
+          <ChevronLeft size={14} aria-hidden="true" className="chev" /> {c.bundle.length} שלבים, מאושרים ומבוטלים יחד
+        </summary>
+        <ol className="mt-1 mb-1 space-y-2.5 rounded-lg border border-surface-200 bg-surface-50 p-3 list-decimal ps-7">
+          {c.bundle.map((r: Record<string, any>) => (
+            <li key={r.id}>
+              <div className="text-surface-500 mb-1">{CHANGE_LABEL[r.target_type] ?? r.target_type}: <span dir="auto">{clip(r.target_title || readableUrl(r.target_url ?? ''))}</span></div>
+              {r.target_type === 'post_content' ? <span>נוסף פרק בסוף המאמר</span> : <ChangeValue type={r.target_type} v={r.after} />}
+            </li>
+          ))}
+        </ol>
+      </details>
+    )
+  }
   return (
     <details className="mt-1 text-[12.5px] leading-relaxed text-surface-700">
       <summary className="inline-flex items-center gap-1 min-h-8 text-surface-500 hover:text-surface-800 select-none">
@@ -471,7 +509,7 @@ function RecentChanges({ busy, run }: { busy: boolean; run: (fn: () => Promise<v
   if (missing || !rows || rows.length === 0) return null
 
   const undo = (c: Record<string, any>) => run(async () => {
-    if (!window.confirm('לבטל את השינוי ולהחזיר את הגרסה הקודמת לאתר?')) return
+    if (!window.confirm(c.bundle_id ? 'לבטל את כל המיזוג? ההפניה תוסר, המאמר יחזור לאתר, והפרק שנוסף יוסר.' : 'לבטל את השינוי ולהחזיר את הגרסה הקודמת לאתר?')) return
     try {
       await siteAction({ action: 'site_change.undo', change_id: c.id })
     } catch (e: any) {
@@ -497,7 +535,8 @@ function RecentChanges({ busy, run }: { busy: boolean; run: (fn: () => Promise<v
             </div>
             {(c.reason || c.error) && <div className="text-[13px] text-surface-500 mt-1 line-clamp-2" dir="auto">{c.error ?? c.reason}</div>}
             <ChangeDetails c={c} />
-            {c.status === 'applied' && c.before_source !== 'none' && (
+            {c.bundle_id && <div className="text-[12px] text-surface-500 mt-0.5">חלק ממיזוג עמודים (שלב {c.bundle_seq})</div>}
+            {c.status === 'applied' && c.before_source !== 'none' && (!c.bundle_id || c.target_type === 'redirect') && (
               <div className="-ms-2.5"><button type="button" onClick={() => undo(c)} disabled={busy} className="act"><Undo2 size={16} aria-hidden="true" /> ביטול השינוי</button></div>
             )}
           </li>

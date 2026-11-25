@@ -10,6 +10,9 @@
 //   { action: 'site_change.approve', change_id }
 //   { action: 'site_change.reject',  change_id, reason }
 //   { action: 'site_change.undo',    change_id, force? }
+//   A change that is one step of a merge (bundle_id) is approved, rejected,
+//   published and undone together with the other steps: applied in bundle_seq
+//   order, stopping at the first failure; undone in reverse order.
 //   { action: 'faq_task.approve',    task_id, edited_faq? }   (a technical_seo FAQ proposal)
 //
 // Writes go through the same functions as before (set-post-faq,
@@ -19,12 +22,13 @@
 
 import { releaseSettings } from '../_shared/site_release.ts'
 import {
-  beginChange, finishChange, getChange, proposeChange, rejectChange, undoBlocker,
+  beginChange, finishChange, getBundle, getChange, proposeChange, rejectChange, undoBlocker,
   type ChangeContext, type ChangeRow, queueChange } from '../_shared/site_change_log.ts'
 import {
   cleanFaq, isProductStatus, pickPostFields, pickSeoFields, readPost, readPostFaq, readProduct, readProductStatus,
   readSeoMeta, readTermDescription, seoSubset, siteEnv, writePostFields, writeProductStatus, writeSeoMeta,
-  writeTermDescription, readProductShortDescription, writeProductShortDescription } from '../_shared/site_io.ts'
+  writeTermDescription, readProductShortDescription, writeProductShortDescription,
+  isPostStatus, readPostStatus, readRedirect, writePostStatus, writeRedirect } from '../_shared/site_io.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -49,7 +53,7 @@ async function callWriter(fn: string, payload: Record<string, unknown>): Promise
 }
 
 /** The site's current value for a change's target, in the shape the log stores. */
-export async function readCurrent(row: Pick<ChangeRow, 'target_type' | 'target_id' | 'after'>): Promise<unknown> {
+export async function readCurrent(row: Pick<ChangeRow, 'target_type' | 'target_id' | 'after'> & { target_url?: string | null }): Promise<unknown> {
   const env = siteEnv()
   switch (row.target_type) {
     case 'post_faq':            return (await readPostFaq(env, row.target_id)).faq
@@ -64,6 +68,8 @@ export async function readCurrent(row: Pick<ChangeRow, 'target_type' | 'target_i
     case 'term_description': return (await readTermDescription(env, row.target_id)).description
     case 'product_status':   return (await readProductStatus(env, row.target_id)).status
     case 'product_short_description': return (await readProductShortDescription(env, row.target_id)).short_description
+    case 'redirect':         return (await readRedirect(env, String((row as { target_url?: string | null }).target_url ?? ''))).target
+    case 'post_status':      return (await readPostStatus(env, row.target_id)).status
     case 'post_content': {
       const p = await readPost(env, row.target_id)
       return pickPostFields(p, (row.after ?? {}) as Record<string, unknown>)
@@ -160,6 +166,31 @@ export async function writeValue(
         return { before: cur.short_description, url: cur.permalink || row.target_url, title: cur.name, source: 'woo_rest' }
       }, async () => await writeProductShortDescription(env, row.target_id, value), ctx)
     }
+    case 'redirect': {
+      // value: the absolute URL to send the page to, or null to remove the redirect (undo).
+      const source = row.target_url
+      if (!source) return { ok: false, error: 'a redirect needs the address of the page it moves (target_url)' }
+      if (value !== null && typeof value !== 'string') return { ok: false, error: 'redirect value must be the target address, or null to remove it' }
+      const env = siteEnv()
+      if (typeof value === 'string') {
+        // Never send visitors to a page that is not live (checked again at the moment of writing).
+        const r = await env.fetchFn(value, { method: 'GET', redirect: 'manual', headers: { 'User-Agent': 'MinutoSeoChanges/1.0' } })
+        await r.body?.cancel()
+        if (r.status !== 200) return { ok: false, error: `not written: the redirect target answers ${r.status}, not 200 (${decodeURI(value)})` }
+      }
+      return await loggedWrite(row, value, async () => {
+        const cur = await readRedirect(env, source)
+        return { before: cur.target, url: source, title: row.target_title, source: 'wp_plugin' }
+      }, async () => await writeRedirect(env, source, value as string | null), ctx)
+    }
+    case 'post_status': {
+      if (!isPostStatus(value)) return { ok: false, error: 'post status must be publish or draft' }
+      const env = siteEnv()
+      return await loggedWrite(row, value, async () => {
+        const cur = await readPostStatus(env, row.target_id)
+        return { before: cur.status, url: row.target_url || cur.link, title: cur.title, source: 'wp_rest' }
+      }, async () => await writePostStatus(env, row.target_id, value), ctx)
+    }
     case 'post_content':
     case 'post_featured_image': {
       const env = siteEnv()
@@ -234,6 +265,7 @@ export async function handleSiteChangeAction(
     const changeId = typeof body.change_id === 'string' ? body.change_id : ''
     const row = changeId ? await getChange(changeId) : null
     if (!row) return err(404, 'change not found')
+    if (row.bundle_id) return await bundleAction(action, body, approver, supabase, row.bundle_id)
 
     if (action === 'site_change.reject') {
       const reason = typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim() : 'rejected in the approvals inbox'
@@ -281,6 +313,89 @@ export async function handleSiteChangeAction(
   } catch (e) {
     return err(500, (e as Error).message)
   }
+}
+
+const PENDING = new Set(['proposed', 'queued'])
+
+/**
+ * The steps of a merge go together. Approve/publish: every pending step, in
+ * bundle_seq order, stopping at the first failure (the steps after it stay
+ * pending, and approving again continues from there). Reject: every pending
+ * step. Undo: every applied step, newest first, after checking all of them.
+ */
+async function bundleAction(action: string, body: Record<string, unknown>, approver: string, supabase: { from: (t: string) => any }, bundleId: string): Promise<ActionResult> {
+  const rows = await getBundle(bundleId)
+  if (!rows.length) return err(404, 'merge not found')
+  const pending = rows.filter((r) => PENDING.has(r.status))
+
+  if (action === 'site_change.reject') {
+    if (!pending.length) return err(409, 'no step of this merge is waiting for approval')
+    const reason = typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim() : 'rejected in the approvals inbox'
+    const rejected: string[] = []
+    for (const r of pending) if (await rejectChange(r.id, approver, reason)) rejected.push(r.id)
+    return ok({ bundle_id: bundleId, rejected, status: 'rejected' })
+  }
+
+  if (action === 'site_change.approve' || action === 'site_change.publish_now') {
+    if (rows.some((r) => r.status === 'rejected' || r.status === 'undone')) return err(409, 'this merge was rejected or undone; it cannot be applied')
+    if (rows.some((r) => r.status === 'applying')) return err(409, 'this merge is being applied right now')
+    const now = action === 'site_change.publish_now' || body.publish_now === true
+    const proposed = pending.filter((r) => r.status === 'proposed')
+    if (!now && proposed.length && proposed.length === pending.length) {
+      const { data } = await supabase.from('ops_profile').select('value').eq('key', 'seo_weekly_release').maybeSingle()
+      const rs = releaseSettings(data?.value)
+      if (rs.enabled) {
+        const queued: string[] = []
+        for (const r of proposed) if (await queueChange(r.id, approver)) queued.push(r.id)
+        return queued.length === proposed.length
+          ? ok({ bundle_id: bundleId, queued, status: 'queued', release: { weekday: rs.weekday, hour: rs.hour, tz: rs.tz } })
+          : err(409, 'part of this merge is no longer waiting for approval', { queued })
+      }
+    }
+    if (!pending.length) return err(409, 'every step of this merge is already applied')
+    if (!now && !proposed.length) return err(409, 'this merge is already approved and waiting for the weekly release')
+    const r = await applyBundle(rows, approver)
+    return r.ok ? ok({ bundle_id: bundleId, applied: r.applied, status: 'applied' }) : err(502, r.error, { bundle_id: bundleId, applied: r.applied, failed_step: r.failed })
+  }
+
+  if (action === 'site_change.undo') {
+    const applied = rows.filter((r) => r.status === 'applied').sort((a, b) => Number(b.bundle_seq ?? 0) - Number(a.bundle_seq ?? 0))
+    if (!applied.length) return err(409, 'no step of this merge is applied')
+    // Check every step first: half an undo would leave the site in a state nobody approved.
+    const blocked: Array<{ change_id: string; error: string; can_force: boolean }> = []
+    for (const r of applied) {
+      const b = undoBlocker(r, await readCurrent(r))
+      if (b) blocked.push({ change_id: r.id, error: b, can_force: r.before_source !== 'none' })
+    }
+    if (blocked.length && !(body.force === true && blocked.every((b) => b.can_force))) {
+      return err(409, blocked.map((b) => b.error).join('; '), { can_force: blocked.every((b) => b.can_force), blocked })
+    }
+    const undone: string[] = []
+    for (const r of applied) {
+      const w = await writeValue(r, r.before, {
+        undo_of: r.id, approved_by: approver, requested_by: 'undo',
+        reason: `undo of change ${r.id} (merge ${bundleId})${body.force === true ? ' (forced: page had changed since)' : ''}`,
+      })
+      if (!w.ok) return err(502, `undo stopped at step ${r.bundle_seq} (${r.target_type}): ${w.error}`, { undone, change_id: w.change_id })
+      undone.push(r.id)
+    }
+    return ok({ bundle_id: bundleId, undid: undone })
+  }
+
+  return err(400, `unknown action ${action}`)
+}
+
+/** Writes the pending steps of a merge in order; stops at the first failure. */
+export async function applyBundle(rows: ChangeRow[], approver: string, deps: { writeValue: typeof writeValue } = { writeValue }): Promise<{ ok: true; applied: string[] } | { ok: false; applied: string[]; failed: string; error: string }> {
+  const applied: string[] = []
+  for (const r of [...rows].sort((a, b) => Number(a.bundle_seq ?? 0) - Number(b.bundle_seq ?? 0))) {
+    if (r.status === 'applied') continue
+    if (!PENDING.has(r.status)) return { ok: false, applied, failed: r.id, error: `step ${r.bundle_seq} (${r.target_type}) is ${r.status}` }
+    const w = await deps.writeValue(r, r.after, { change_id: r.id, approved_by: r.approved_by ?? approver })
+    if (!w.ok) return { ok: false, applied, failed: r.id, error: `step ${r.bundle_seq} (${r.target_type}) failed, the steps after it were not applied: ${w.error}` }
+    applied.push(r.id)
+  }
+  return { ok: true, applied }
 }
 
 /** Files a proposal from a technical_seo FAQ task and applies it — the admin's click is the approval. */

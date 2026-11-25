@@ -197,3 +197,58 @@ export function proposalReason(p: { reason: string; expected_result: string; che
   const check = new Date(Date.parse(p.today + 'T00:00:00Z') + days * 864e5).toISOString().slice(0, 10)
   return `Why: ${p.reason.trim()}\nExpected: ${p.expected_result.trim()}\nCheck on: ${check}`
 }
+
+// ── Merges (cannibalization) ────────────────────────────────────────────────
+
+export interface PageQueryStats { clicks: number; impressions: number; position: number | null }
+
+/**
+ * Proof from Search Console (one 28-day window, rows of ONE search) that the
+ * two pages really split that search, and that the page to retire is not the
+ * stronger one. Each must hold at least 10% of the search's impressions, the
+ * search at least 100 impressions.
+ */
+export function mergeEvidence(
+  rows: ReadonlyArray<{ page: string; clicks: number; impressions: number; position: number }>,
+  loserKey: string, winnerKey: string, keyOf: (url: string) => string,
+): { error: string } | { total: number; loser: PageQueryStats; winner: PageQueryStats } {
+  const acc = new Map<string, { clicks: number; impressions: number; pos: number }>()
+  let total = 0
+  for (const r of rows) {
+    const k = keyOf(r.page), a = acc.get(k) ?? { clicks: 0, impressions: 0, pos: 0 }
+    const imp = Number(r.impressions) || 0
+    a.clicks += Number(r.clicks) || 0; a.impressions += imp; a.pos += (Number(r.position) || 0) * imp; total += imp
+    acc.set(k, a)
+  }
+  const stats = (k: string): PageQueryStats => {
+    const a = acc.get(k)
+    return a ? { clicks: a.clicks, impressions: a.impressions, position: a.impressions ? Math.round((a.pos / a.impressions) * 10) / 10 : null } : { clicks: 0, impressions: 0, position: null }
+  }
+  if (total < 100) return { error: `this search has ${total} impressions in the latest 28-day window; merge only for a search with at least 100` }
+  const loser = stats(loserKey), winner = stats(winnerKey)
+  for (const [name, s] of [['the post to retire', loser], ['the page to keep', winner]] as const) {
+    if (s.impressions < total * 0.1) return { error: `${name} has ${s.impressions} of the search's ${total} impressions (under 10%): these two pages do not split this search` }
+  }
+  if (loser.clicks > winner.clicks && loser.position != null && winner.position != null && loser.position < winner.position) {
+    return { error: `the post to retire is the stronger page for this search (${loser.clicks} clicks at position ${loser.position} vs ${winner.clicks} at ${winner.position}): keep it and merge the other way, or retitle instead` }
+  }
+  return { total, loser, winner }
+}
+
+export const CARRY_OVER_WORDS = { min: 40, max: 400 }
+
+/** The section carried over into the page that stays: cleaned HTML, or the problems. */
+export function carryOverSection(html: string): { html: string; words: number } | { error: string } {
+  const raw = String(html ?? '')
+  if (hasWideDash(raw)) return { error: `carry_over_html: ${WIDE_DASH_RULE}` }
+  if (PRICE_IN_TEXT.test(raw)) return { error: `carry_over_html: ${PRICE_RULE}` }
+  const c = cleanCategoryText(raw)
+  if (!/^<h2>/i.test(c.html)) return { error: 'carry_over_html must start with an <h2> heading for the section' }
+  if (c.words < CARRY_OVER_WORDS.min || c.words > CARRY_OVER_WORDS.max) return { error: `carry_over_html has ${c.words} words; write between ${CARRY_OVER_WORDS.min} and ${CARRY_OVER_WORDS.max}` }
+  return c
+}
+
+/** The post's content with the section added at the end (the rest unchanged). */
+export function appendSection(content: string, section: string): string {
+  return `${String(content ?? '').replace(/\s+$/, '')}\n\n${section}\n`
+}
