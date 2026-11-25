@@ -1,7 +1,7 @@
 // node --test   (from scripts/seo)
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { extractPage, internalPath, isSitemapIndex, listingIssue, listingPageNumber, mapLimit, pageType, robotsSitemaps, schemaTypes, sitemapLocs } from './crawl_lib.mjs'
+import { extractPage, isTrackingPixel, internalPath, isSitemapIndex, listingIssue, listingPageNumber, mapLimit, pageType, robotsSitemaps, schemaTypes, sitemapLocs } from './crawl_lib.mjs'
 
 const HOST = 'www.minuto.co.il'
 
@@ -70,6 +70,30 @@ test('extractPage reads the SEO fields', () => {
   assert.equal(p.images_missing_alt, 2)
   // main only: "כותרת ראשית" (2) + "שלוש מילים כאן" (3) + "עוד" (1) + link texts "a" "a again" "ig" (4) = 10; script excluded
   assert.equal(p.word_count, 10)
+})
+
+test('tracking pixels never count as images missing alt', () => {
+  const html = `<html><body><main><h1>x</h1>
+    <img src="/a.jpg" alt="פולי קפה">
+    <img src="/b.jpg" alt="">
+    <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1&ev=PageView&noscript=1"/></noscript>
+    <img src="https://www.google-analytics.com/collect?v=1" alt="">
+  </main></body></html>`
+  const p = extractPage(html, 'https://www.minuto.co.il/x/', HOST)
+  assert.equal(p.images, 2)
+  assert.equal(p.images_missing_alt, 1)
+})
+
+test('isTrackingPixel', () => {
+  const img = (attrs) => ({ getAttribute: (k) => attrs[k] ?? null })
+  assert.equal(isTrackingPixel(img({ width: '1', height: '1', src: '/x.gif' })), true)
+  assert.equal(isTrackingPixel(img({ src: 'https://www.facebook.com/tr?id=1' })), true)
+  assert.equal(isTrackingPixel(img({ src: '/wp-content/uploads/coffee.jpg', width: '600', height: '400' })), false)
+  assert.equal(isTrackingPixel(img({ src: '/logo.svg', width: '1' })), false)
+  assert.equal(isTrackingPixel(img({ src: '/uploads/google-analytics.com/logo.png' })), false)
+  assert.equal(isTrackingPixel(img({ src: 'https://www.minuto.co.il/x/facebook.com/tr/a.jpg' })), false)
+  assert.equal(isTrackingPixel(img({ src: 'https://www.google-analytics.com/collect?v=1' })), true)
+  assert.equal(isTrackingPixel(img({ src: 'https://facebook.com/tr/?id=1' })), true)
 })
 
 test('mapLimit keeps order and limits concurrency', async () => {
