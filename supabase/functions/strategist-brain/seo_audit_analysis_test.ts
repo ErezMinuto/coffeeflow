@@ -1,5 +1,5 @@
 // deno run supabase/functions/strategist-brain/seo_audit_analysis_test.ts
-import {
+import { productPagesToImprove,
   AUDIT_AREA_KEYS, coverage, materialSignals, crawlIssues, expectedCtr, inlinkCounts, normaliseSeoAudit, pageKey, pagesWithIssue,
   searchTotals, searchView, summarizeShopping, valuePerSession, issueCtx, citedNumbers, evidenceIndex, inEvidence, dismissalNumberProblems, PRIORITY_CATEGORY_PATH, type CrawlPage, type QpRow, sitelinkRows } from './seo_audit_analysis.ts'
 import { clicksByPage } from './seo_audit_tools.ts'
@@ -286,6 +286,25 @@ check('value per session: no sessions → null', valuePerSession(100, 0) === nul
   check('a gap bigger than our ad clicks stays, net of them, and says so', !!g && g.size === 120 && g.summary.includes('own Google Ads ad'), JSON.stringify(g))
   const cann = searchView('cannibalization', [...brand, Q('מינוטו קפה', H + '/blog/x/', 5, 300, 6)], []) as Array<{ query: string; pages: unknown[] }>
   check('real competing page next to sitelinks still counts as cannibalization', cann.some((c) => c.query === 'מינוטו קפה' && c.pages.length === 2), JSON.stringify(cann))
+}
+
+// ── Product pages the weekly run may improve ──
+{
+  const H = 'https://www.minuto.co.il/product/'
+  const prods = [
+    { woo_id: 1, name: 'thin, busy', permalink: H + 'a/', description: '<p>' + 'מילה '.repeat(60) + '</p>', stock_status: 'instock', catalog_visibility: 'visible' },
+    { woo_id: 2, name: 'thin, quiet', permalink: H + 'b/', description: '<p>קצר</p>', stock_status: 'instock', catalog_visibility: 'visible' },
+    { woo_id: 3, name: 'full', permalink: H + 'c/', description: '<p>' + 'מילה '.repeat(250) + '</p>', stock_status: 'instock', catalog_visibility: 'visible' },
+    { woo_id: 4, name: 'out of stock', permalink: H + 'd/', description: '<p>קצר</p>', stock_status: 'outofstock', catalog_visibility: 'visible' },
+    { woo_id: 5, name: 'hidden', permalink: H + 'e/', description: '<p>קצר</p>', stock_status: 'instock', catalog_visibility: 'hidden' },
+    { woo_id: 6, name: 'changed recently', permalink: H + 'f/', description: '<p>קצר</p>', stock_status: 'instock', catalog_visibility: 'visible' },
+    { woo_id: 7, name: 'thin, busier', permalink: H + 'g/', description: '<p>קצר</p>', stock_status: 'instock', catalog_visibility: 'visible' },
+  ]
+  const clicks = new Map([['/product/a/', { clicks: 2, impressions: 100 }], ['/product/b/', { clicks: 0, impressions: 5 }], ['/product/c/', { clicks: 0, impressions: 500 }],
+    ['/product/d/', { clicks: 0, impressions: 500 }], ['/product/e/', { clicks: 0, impressions: 500 }], ['/product/f/', { clicks: 0, impressions: 500 }], ['/product/g/', { clicks: 1, impressions: 300 }]])
+  const got = productPagesToImprove(prods, clicks, new Set([6]))
+  check('product candidates: thin, in stock, visible, demand >= 20, not recently changed, busiest first', got.map((p) => p.name).join('|') === 'thin, busier|thin, busy', JSON.stringify(got.map((p) => p.name)))
+  check('product candidates carry words and impressions', got[1].description_words === 60 && got[1].impressions === 100)
 }
 
 // ── Numbers in a dismissal must come from the data ──
