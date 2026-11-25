@@ -10,7 +10,7 @@
 // Switch: ops_profile 'seo_change_judge' (enabled:false → does nothing).
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { checkDate, judge, pageStats, type Verdict } from '../_shared/change_judge.ts'
+import { checkDate, judge, pageStatsIndex, statsFor, type Verdict } from '../_shared/change_judge.ts'
 import { proposeChange } from '../_shared/site_change_log.ts'
 import { selectAll } from '../_shared/select_all.ts'
 import { pageKey } from '../strategist-brain/seo_audit_analysis.ts'
@@ -28,19 +28,23 @@ async function window(supabase: Db, end: string): Promise<Qp[]> {
   return await selectAll<Qp>((from, to) => supabase.from('gsc_query_page').select('page, clicks, impressions, position').eq('period_days', 28).eq('period_end', end).order('query').order('page').range(from, to), { label: 'gsc window', maxRows: 150_000 })
 }
 
-/** GA4 organic sessions and conversions per page for a date range; each range is read once per run. */
-function organicReader(supabase: Db) {
-  const cache = new Map<string, Promise<Map<string, { sessions: number; conversions: number }>>>()
-  const load = async (from: string, to: string) => {
-    const rows = await selectAll<{ page_path: string; sessions: number; conversions: number }>((f, t) => supabase.from('ga4_pages_daily').select('page_path, sessions, conversions').eq('channel_group', 'Organic Search').gte('date', from).lte('date', to).order('date').order('page_path').range(f, t), { label: 'ga4 window', maxRows: 200_000 })
-    const m = new Map<string, { sessions: number; conversions: number }>()
-    for (const r of rows) { const k = pageKey(r.page_path); const v = m.get(k) ?? { sessions: 0, conversions: 0 }; v.sessions += Number(r.sessions) || 0; v.conversions += Number(r.conversions) || 0; m.set(k, v) }
-    return m
+/**
+ * GA4 organic sessions and conversions for the pages being judged: ONE read of
+ * the whole span (earliest baseline to today), kept per page per day for just
+ * those pages, then summed for any date range without another query.
+ */
+async function organicReader(supabase: Db, keys: ReadonlySet<string>, from: string, to: string) {
+  const byKey = new Map<string, Array<[string, number, number]>>()
+  const rows = await selectAll<{ date: string; page_path: string; sessions: number; conversions: number }>((f, t) => supabase.from('ga4_pages_daily').select('date, page_path, sessions, conversions').eq('channel_group', 'Organic Search').gte('date', from).lte('date', to).order('date').order('page_path').range(f, t), { label: 'ga4 span', maxRows: 300_000 })
+  for (const r of rows) {
+    const k = pageKey(r.page_path)
+    if (!keys.has(k)) continue
+    const list = byKey.get(k) ?? []; list.push([r.date, Number(r.sessions) || 0, Number(r.conversions) || 0]); byKey.set(k, list)
   }
-  return async (key: string, from: string, to: string) => {
-    const id = `${from}|${to}`
-    if (!cache.has(id)) cache.set(id, load(from, to))
-    return (await cache.get(id)!).get(key) ?? { sessions: 0, conversions: 0 }
+  return (key: string, a: string, b: string) => {
+    let sessions = 0, conversions = 0
+    for (const [d, s, c] of byKey.get(key) ?? []) if (d >= a && d <= b) { sessions += s; conversions += c }
+    return { sessions, conversions }
   }
 }
 
@@ -61,9 +65,12 @@ export async function judgeChanges(supabase: Db, opts: { dryRun?: boolean; today
   const changes = (rows ?? []) as Array<Record<string, any>>
   if (!changes.length) return { ran: true, dry_run: dryRun, baselines: 0, judged: [], undo_proposals: 0, waiting: 0 }
 
-  const organic = organicReader(supabase)
+  const keys = new Set(changes.map((c) => pageKey(c.target_url)))
+  const earliest = changes.reduce((m, c) => (day(c.applied_at) < m ? day(c.applied_at) : m), today)
+  const organic = await organicReader(supabase, keys, addDays(earliest, -28), today)
   const latest = await window(supabase, latestEnd)
   const siteLatest = latest.reduce((s, r) => s + (Number(r.clicks) || 0), 0)
+  const idx = pageStatsIndex(latest, pageKey) // one pass over the window, then cheap lookups per change
   let baselines = 0, undoCount = 0, waiting = 0
   const judged: JudgeReport['judged'] = []
 
@@ -72,14 +79,14 @@ export async function judgeChanges(supabase: Db, opts: { dryRun?: boolean; today
     // 1. Baseline (from the latest window when first seen: it ends at or before the change, give or take a week).
     let baseline = c.baseline as Record<string, any> | null
     if (!baseline) {
-      baseline = { window_end: latestEnd, page: pageStats(latest, key, pageKey), site_clicks: siteLatest, ga4_28d_before: await organic(key, addDays(applied, -28), addDays(applied, -1)) }
+      baseline = { window_end: latestEnd, page: statsFor(idx, key), site_clicks: siteLatest, ga4_28d_before: organic(key, addDays(applied, -28), addDays(applied, -1)) }
       baselines++
       if (!dryRun) await supabase.from('site_change_log').update({ baseline }).eq('id', c.id)
     }
     // 2. Judge once a full 28-day window after the change exists and the check date has passed.
     const due = checkDate(c.reason, c.applied_at)
     if (due > today || latestEnd < addDays(applied, 28) || baseline.window_end >= latestEnd) { waiting++; continue }
-    const after = { window_end: latestEnd, page: pageStats(latest, key, pageKey), site_clicks: siteLatest, ga4_28d_after: await organic(key, applied, addDays(applied, 27)) }
+    const after = { window_end: latestEnd, page: statsFor(idx, key), site_clicks: siteLatest, ga4_28d_after: organic(key, applied, addDays(applied, 27)) }
     const j = judge(baseline.page, after.page, Number(baseline.site_clicks) || 0, siteLatest)
     judged.push({ change_id: c.id, verdict: j.verdict, note: j.note })
     if (dryRun) continue
