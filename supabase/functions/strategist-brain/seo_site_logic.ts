@@ -118,6 +118,8 @@ export const PRICE_IN_TEXT = /₪|(^|[^\u0590-\u05FF])(ש["״]ח|שקלים|שק
 export const PRICE_RULE = 'no prices in page text (the product page already shows the price and the price per 100 g)'
 
 export const PRODUCT_TEXT_WORDS = { min: 150, max: 700 }
+/** The short description sits next to the price: a sentence or two. */
+export const SHORT_TEXT_WORDS = { min: 8, max: 80 }
 export const PRODUCT_FAQ = { min: 3, max: 8, q: { min: 8, max: 160 }, a: { min: 30, max: 700 } }
 
 /** Problems with a proposed product FAQ ([] = fine): 3–8 plain-text pairs, each a real question with a real answer. */

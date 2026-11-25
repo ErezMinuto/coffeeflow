@@ -12,7 +12,7 @@ import {
   cleanFaq, readPost, readProduct, readProductStatus, readSeoMeta, readTermDescription, siteEnv, type SeoMeta, type SiteEnv,
 } from '../_shared/site_io.ts'
 import {
-  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, faqProblems, numbersNotInCatalog, PRICE_IN_TEXT, PRICE_RULE } from './seo_site_logic.ts'
+  CATEGORY_TEXT_WORDS, classifyUrl, cleanCategoryText, insertLink, proposalReason, seoProblems, visibleWords, hasWideDash, WIDE_DASH_RULE, PRODUCT_TEXT_WORDS, SHORT_TEXT_WORDS, faqProblems, numbersNotInCatalog, PRICE_IN_TEXT, PRICE_RULE } from './seo_site_logic.ts'
 
 interface Ctx { runId: string }
 
@@ -119,7 +119,7 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
   if (why.length < 20 || expected.length < 10) return { error: 'reason (the evidence, with numbers) and expected_result (what should move, by how much) are required' }
   const reason = proposalReason({ reason: why, expected_result: expected, check_after_days: Number(input.check_after_days ?? 28), today: today() })
   const env = siteEnv()
-  const planned: Array<{ target_type: 'seo_meta' | 'term_seo_meta' | 'term_description' | 'product_status' | 'product_description' | 'product_faq'; after: unknown; before: unknown }> = []
+  const planned: Array<{ target_type: 'seo_meta' | 'term_seo_meta' | 'term_description' | 'product_status' | 'product_description' | 'product_faq' | 'product_short_description'; after: unknown; before: unknown }> = []
 
   if (input.seo !== undefined) {
     const seo = (input.seo ?? {}) as Record<string, unknown>
@@ -150,8 +150,8 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
     if (cur === st) return { error: `the product is already ${st}` }
     planned.push({ target_type: 'product_status', after: st, before: cur })
   }
-  if (input.product_description !== undefined || input.product_faq !== undefined) {
-    if (r.kind !== 'product') return { error: 'product_description and product_faq are only for product addresses' }
+  if (input.product_description !== undefined || input.product_faq !== undefined || input.product_short_description !== undefined) {
+    if (r.kind !== 'product') return { error: 'product_description, product_short_description and product_faq are only for product addresses' }
     const facts = await productFacts(env, r.id)
     const catalog = catalogText(facts)
     if (input.product_description !== undefined) {
@@ -165,6 +165,17 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
       if (facts.description.trim() === c.html) return { error: 'product_description is what the page already has' }
       planned.push({ target_type: 'product_description', after: c.html, before: facts.description })
     }
+    if (input.product_short_description !== undefined) {
+      const raw = String(input.product_short_description ?? '')
+      if (hasWideDash(raw)) return { error: `product_short_description: ${WIDE_DASH_RULE}` }
+      if (PRICE_IN_TEXT.test(raw)) return { error: `product_short_description: ${PRICE_RULE}` }
+      const c = cleanCategoryText(raw)
+      if (c.words < SHORT_TEXT_WORDS.min || c.words > SHORT_TEXT_WORDS.max) return { error: `product_short_description has ${c.words} words; write between ${SHORT_TEXT_WORDS.min} and ${SHORT_TEXT_WORDS.max}` }
+      const extra = numbersNotInCatalog(c.html, catalog)
+      if (extra.length) return { error: `product_short_description states numbers the catalog does not have (${extra.join(', ')}): use only facts from read_site_fields, or leave the figure out` }
+      if (facts.short_description.trim() === c.html) return { error: 'product_short_description is what the page already has' }
+      planned.push({ target_type: 'product_short_description', after: c.html, before: facts.short_description })
+    }
     if (input.product_faq !== undefined) {
       const problems = faqProblems(input.product_faq)
       if (problems.length) return { error: `product_faq: ${problems.join('; ')}` }
@@ -175,7 +186,7 @@ async function proposeSiteChange(supabase: SupabaseClient, ctx: Ctx, input: Reco
       planned.push({ target_type: 'product_faq', after: faq, before: facts.faq })
     }
   }
-  if (!planned.length) return { error: 'nothing to propose: give seo, category_text, product_status, product_description and/or product_faq' }
+  if (!planned.length) return { error: 'nothing to propose: give seo, category_text, product_status, product_description, product_short_description and/or product_faq' }
 
   const blocked = await gate(supabase, ctx, planned.map((p) => ({ target_type: p.target_type, target_id: r.id })))
   if (blocked) return { error: blocked, filed: [] }
@@ -221,7 +232,7 @@ export const SEO_SITE_TOOL_DEFS = [
   },
   {
     name: 'propose_site_change',
-    description: 'FILE A PROPOSAL (the owner approves or rejects it in the dashboard; nothing changes on the site before that, and every approved change can be undone). Call read_site_fields first. Give any of: seo {title 15–65 chars, description 70–160 chars, focus_keyword} (category, product or post), category_text (category only: the HTML shown on the category page, 120–900 words, Hebrew, facts ONLY from the catalog and the data you read — never invent origins, prices or claims), product_status (publish|draft, product only), product_description (product only: the HTML of the product page description, 150–700 words, Hebrew; simple tags p/h2/h3/ul/li/strong only; facts ONLY from read_site_fields: every number must appear in the product catalog data), product_faq (product only: 3–8 {q, a} pairs in plain Hebrew, replacing the whole FAQ of the page; same fact rule). reason = the evidence with numbers; expected_result = what should move and by how much; check_after_days (default 28). At most a few per run, money first.',
+    description: 'FILE A PROPOSAL (the owner approves or rejects it in the dashboard; nothing changes on the site before that, and every approved change can be undone). Call read_site_fields first. Give any of: seo {title 15–65 chars, description 70–160 chars, focus_keyword} (category, product or post), category_text (category only: the HTML shown on the category page, 120–900 words, Hebrew, facts ONLY from the catalog and the data you read — never invent origins, prices or claims), product_status (publish|draft, product only), product_description (product only: the HTML of the product page description, 150–700 words, Hebrew; simple tags p/h2/h3/ul/li/strong only; facts ONLY from read_site_fields: every number must appear in the product catalog data), product_short_description (product only: the short text next to the price, 8–80 words, same fact rule), product_faq (product only: 3–8 {q, a} pairs in plain Hebrew, replacing the whole FAQ of the page; same fact rule). reason = the evidence with numbers; expected_result = what should move and by how much; check_after_days (default 28). At most a few per run, money first.',
     input_schema: {
       type: 'object',
       properties: {
@@ -230,6 +241,7 @@ export const SEO_SITE_TOOL_DEFS = [
         category_text: { type: 'string' },
         product_status: { type: 'string', enum: ['publish', 'draft'] },
         product_description: { type: 'string' },
+        product_short_description: { type: 'string' },
         product_faq: { type: 'array', items: { type: 'object', properties: { q: { type: 'string' }, a: { type: 'string' } }, required: ['q', 'a'] } },
         reason: { type: 'string' },
         expected_result: { type: 'string' },

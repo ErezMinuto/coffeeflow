@@ -355,7 +355,7 @@ const CHANGE_LABEL: Record<string, string> = {
   post_faq: 'FAQ במאמר', product_faq: 'FAQ במוצר', product_description: 'תיאור מוצר',
   post_content: 'תוכן מאמר', post_featured_image: 'תמונה ראשית למאמר',
   seo_meta: 'כותרת ותיאור לגוגל', term_seo_meta: 'כותרת ותיאור לגוגל (קטגוריה)',
-  term_description: 'טקסט קטגוריה', product_status: 'סטטוס מוצר',
+  term_description: 'טקסט קטגוריה', product_status: 'סטטוס מוצר', product_short_description: 'תיאור קצר של מוצר',
 }
 const SEO_FIELD_LABEL: Record<string, string> = { title: 'כותרת לגוגל', description: 'תיאור לגוגל', focus_keyword: 'מילת מפתח' }
 const PRODUCT_STATUS_LABEL: Record<string, string> = { publish: 'פורסם', draft: 'טיוטה', pending: 'ממתין לבדיקה', private: 'פרטי' }

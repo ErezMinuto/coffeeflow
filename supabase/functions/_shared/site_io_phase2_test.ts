@@ -2,7 +2,7 @@
 // Readers and writers for the Phase 2 change types, against a fake site.
 import {
   isProductStatus, pickSeoFields, readProductStatus, readSeoMeta, readTermDescription, seoSubset,
-  writeProductStatus, writeSeoMeta, writeTermDescription, type SiteEnv,
+  writeProductStatus, writeSeoMeta, writeTermDescription, readProductShortDescription, writeProductShortDescription, type SiteEnv,
 } from './site_io.ts'
 import { isTargetType } from './site_change_log.ts'
 
@@ -86,6 +86,22 @@ check('change log accepts the four new types', ['seo_meta', 'term_seo_meta', 'te
   let threw = false
   try { await writeProductStatus(env, 9, 'draft') } catch { threw = true }
   check('a refused write throws (so the change is logged as failed)', threw)
+}
+
+// ── product short description ──
+{
+  const { calls, env } = fakeSite([[200, { id: 68336, name: 'Solo', permalink: 'https://www.minuto.co.il/product/x/', short_description: '<p>old</p>' }], [200, { id: 68336, short_description: '<p>new</p>' }]])
+  const cur = await readProductShortDescription(env, 68336)
+  const stored = await writeProductShortDescription(env, 68336, '<p>new</p>')
+  check('short description read', cur.short_description === '<p>old</p>' && cur.name === 'Solo')
+  check('short description written as short_description (only that field)', calls[1].method === 'PUT' && JSON.stringify(calls[1].body) === JSON.stringify({ short_description: '<p>new</p>' }) && calls[1].url.includes('products/68336'), JSON.stringify(calls[1]))
+  check('Woo key sent in a header, never in the URL', !!calls[1].auth && !/consumer_key|ck=/.test(calls[1].url))
+  check('stored value returned', stored === '<p>new</p>')
+  check('product_short_description is a known change type', isTargetType('product_short_description'))
+  const { env: bad } = fakeSite([[401, { code: 'woocommerce_rest_cannot_edit' }]])
+  let threw = false
+  try { await writeProductShortDescription(bad, 68336, '<p>x</p>') } catch { threw = true }
+  check('a refused short description write throws (logged as failed)', threw)
 }
 
 if (failed) { console.error(`\n${failed} FAILED`); Deno.exit(1) }

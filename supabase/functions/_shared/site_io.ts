@@ -283,3 +283,22 @@ export async function writeProductStatus(env: SiteEnv, id: number, status: Produ
   if (typeof j.id !== 'number') throw new Error(`update product ${id}: ${JSON.stringify(j).slice(0, 300)}`)
   return String(j.status ?? '')
 }
+
+// ── Product short description (WooCommerce) ─────────────────────────────────
+//   product_short_description  string (HTML), shown next to the price
+
+export async function readProductShortDescription(env: SiteEnv, id: number): Promise<{ id: number; name: string; permalink: string; short_description: string }> {
+  const res = await env.fetchFn(wooUrl(env, `products/${id}`), { headers: wooHeaders(env), redirect: 'manual' })
+  const j = await readJson(res, `read product ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`read product ${id}: no id in response`)
+  return { id: j.id, name: String(j.name ?? ''), permalink: String(j.permalink ?? ''), short_description: String(j.short_description ?? '') }
+}
+
+export async function writeProductShortDescription(env: SiteEnv, id: number, shortDescription: string): Promise<string> {
+  const res = await env.fetchFn(wooUrl(env, `products/${id}`), {
+    method: 'PUT', headers: wooHeaders(env, { 'Content-Type': 'application/json' }), redirect: 'manual', body: JSON.stringify({ short_description: shortDescription }),
+  })
+  const j = await readJson(res, `update product ${id}`)
+  if (typeof j.id !== 'number') throw new Error(`update product ${id}: ${JSON.stringify(j).slice(0, 300)}`)
+  return String(j.short_description ?? '')
+}
