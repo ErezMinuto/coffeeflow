@@ -17,7 +17,7 @@ import { PHOTO_EXCLUDE } from './shot_library.ts'
 
 export const AD_MODEL = 'claude-opus-5-5'
 export const AD_CRITIC_MODEL = 'gemini-3.1-pro-preview'
-export const AD_PROMPT_VERSION = 'art-director-v4.1'
+export const AD_PROMPT_VERSION = 'art-director-v4.2'
 
 // Owner-approved 2026-11-07 ("List is right"). How each action REALLY looks;
 // the art director must follow it and the critic checks it.
@@ -37,7 +37,7 @@ export const ACTIONS: Record<string, string> = {
   cupping: "Rows of small cups of ground coffee on a table; someone breaks the crust with a spoon or sniffs the aroma.",
   cleaning_down: "End of day: the barista wipes the steam wand with a cloth or brushes the group head; cups stacked to dry.",
   // Owner, 2026-11-18: lifestyle images, coffee out in the world, not only the shop.
-  coffee_out_in_the_world: "A finished coffee (and, if it fits, a brewer or a small dish of roasted beans) rests on a stable flat surface away from Minuto: a breakfast table at home, a balcony ledge, a picnic blanket, a flat rock or a wooden camp table outdoors; every cup sits level on its surface; a drink topped with milk foam shows no steam; nothing is pouring.",
+  coffee_out_in_the_world: "A finished coffee (and, if it fits, a brewer or a small dish of roasted beans) rests on a stable flat surface away from Minuto: a breakfast table at home, a balcony ledge, a picnic blanket, a flat rock or a wooden camp table outdoors; every cup sits level on its surface; a served drink shows no steam; nothing is pouring.",
 }
 
 // Bags need their real packshot and the label check, which the bag-shot path
@@ -72,7 +72,7 @@ Real-world rules (hard rules; a brief that breaks one is rewritten before it is 
 - The image model draws a hand's grip, a tool's size and which way round it goes correctly only when a reference photo shows them. So a person's hand may hold or operate something only if one of your chosen references shows that same action (each photo's "actions" list says what its hands visibly do). Describe the hand doing exactly that, and nothing more: add no extra gestures, touches or resting hands. A hand with no such job stays out of frame. When no reference shows the action, frame the moment without the hand (the tool in its place, the machine at work) or choose another action.
 - Hot equipment (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust) is touched only by its handles, knobs and levers.
 - Every object rests on something or is held; liquid, steam and beans come only from where they really come from.
-- A served drink topped with milk foam (cappuccino, flat white, latte, cortado) shows no steam: the foam holds the heat in. Never write steam, vapour or a wisp rising from a milk drink; leave steam out of its description entirely.
+- A served drink in a cup or glass shows no steam: not a cappuccino, flat white, latte or cortado, and not an espresso or americano either. Never write steam, vapour or a wisp rising from a served drink; leave steam out of its description entirely. Steam belongs only to the steam wand, a kettle, a brewer being poured, or the roaster.
 - A scene that shows a machine at medium or wide framing uses a reference that shows that whole machine, so its parts stay attached. A close-up reference never sets an object's size in a wider shot.
 
 How you work:
@@ -228,10 +228,11 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
 // the trier's tube), so it blocks: a failure buys one re-render, and if the
 // last attempt still fails the owner sees it in red.
 export const HOT_EQUIPMENT_VETO = 'Is all skin clear of steam wands, group heads, kettle bodies, the roaster drum front and the metal tube of a sample trier, with hands touching that equipment only by handles, knobs or levers? (yes if no hands)'
-// Owner 2026-11-24: "cappuccino shouldnt have steam". A served milk drink
-// (foam on top) never shows visible steam; the art director kept writing "a
-// curl of steam rising from the drink" into flat-white briefs.
-export const MILK_DRINK_STEAM_VETO = 'Is every milk drink (a cup topped with white or pale milk foam or latte art) free of any steam, vapour or wisp rising from it? Black coffee, espresso and americano with brown crema are not milk drinks. (yes if no milk drink)'
+// Owner 2026-11-24: "cappuccino shouldnt have steam". Then 2026-11-26, about an
+// espresso with "a faint wisp of steam rising from the coffee": steam is
+// still wrong. No served drink in a cup or glass shows visible steam; the art
+// director kept writing a curl of steam into drink briefs.
+export const SERVED_DRINK_STEAM_VETO = 'Is every served drink in a cup or glass (espresso, americano, cappuccino, latte or any other coffee) free of any steam, vapour or wisp rising from it? Steam from a steam wand, kettle or roaster does not count. (yes if no served drink)'
 export const STRUCTURAL_NOTES = [
   'Is every steam wand, group head, portafilter and sample trier attached to its machine or held in a hand, with none floating or growing out of another object? (yes if none)',
   'Does steam come only from a steam wand tip, hot milk, a hot drink, a kettle, a brewer or the roaster, with none rising out of a drip tray, counter or machine panel? (yes if no steam)',
@@ -253,7 +254,7 @@ export const AD_BLOCKING_QUESTIONS = [
   'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
   'Is every object resting on a surface or held, with nothing visibly floating in the air?',
   HOT_EQUIPMENT_VETO,
-  MILK_DRINK_STEAM_VETO,
+  SERVED_DRINK_STEAM_VETO,
 ]
 
 // Subjective checks the owner reads as notes.
@@ -343,7 +344,7 @@ export const BRIEF_REVIEW_SYSTEM = `You are a head barista and head roaster with
 Flag:
 1. Any hand that holds, touches or operates something that none of the references' "actions" show being done that way, including extra gestures (a resting palm, a hand on a surface, a second hand added to a one-hand action).
 2. Skin touching hot equipment anywhere but its handles, knobs or levers (steam wand, group heads, kettle body, the roaster's drum front, door and exhaust).
-3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, steam rising from a served milk drink (cappuccino, flat white, latte, cortado), equipment in the wrong state for the moment, two parts of the brief that contradict each other.
+3. Anything a real professional would not do, or that could not happen: an object with nothing holding or supporting it, liquid, steam or beans coming from the wrong place, steam rising from a served drink in a cup or glass (espresso and milk drinks alike), equipment in the wrong state for the moment, two parts of the brief that contradict each other.
 4. A machine shown at medium or wide framing when no reference shows that whole machine, or a close-up reference used to set an object's size in a wider shot.
 5. Any logo, mark, brand name or lettering asked for on the espresso machine or the roaster (the references carry the real ones; asking for a mark makes the image model paint one on).
 6. Anything from another space: café furniture, cups, customers or the street window in a roastery scene; a roaster or production equipment in a bar scene; a machine in sharp focus in a product scene; an espresso machine, roaster or bar counter in a lifestyle scene.

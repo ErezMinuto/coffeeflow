@@ -1,5 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
+  lifestyleShotConflict,
   ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, shotProducts, normalizeProductNames, classifyIgImage, nextImageKind, weeklyMixInstructions, mixRefusal, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotFolders, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
@@ -290,4 +291,12 @@ Deno.test('weekly mix: 80% lifestyle, every 5th image a real bar/roastery one', 
   assertEquals(classifyIgImage({ shot_type: 'finished_drink', scene_brief: 'LIFESTYLE: a picnic in a pine forest' }), 'lifestyle')
   const text = weeklyMixInstructions({ lifestyle: 4, real_place: 0, other: 0 })
   assert(text.includes('80%') && text.includes("NEXT IG IMAGE: an image of Minuto's own place"))
+})
+
+Deno.test('lifestyleShotConflict: a bar/roastery shot with a LIFESTYLE: brief is a conflict', () => {
+  assertEquals(lifestyleShotConflict({ shot_type: 'bar_moment', scene_brief: 'LIFESTYLE: A wide shot of Minuto\'s espresso bar' }), true)
+  assertEquals(lifestyleShotConflict({ shot_type: 'roastery', scene_brief: '  lifestyle: x' }), true)
+  assertEquals(lifestyleShotConflict({ shot_type: 'bar_moment', scene_brief: 'Bar moment: a cup in hand.' }), false)
+  assertEquals(lifestyleShotConflict({ shot_type: 'finished_drink', scene_brief: 'LIFESTYLE: a picnic' }), false)
+  assertEquals(lifestyleShotConflict(null), false)
 })
