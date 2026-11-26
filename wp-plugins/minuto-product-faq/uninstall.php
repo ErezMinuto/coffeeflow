@@ -29,3 +29,4 @@ $wpdb->delete(
 // v0.7.0: the redirects this plugin served (they stop working once it is gone;
 // each one is still recorded in CoffeeFlow's site_change_log).
 delete_option( 'minuto_redirects' );
+delete_option( 'minuto_faq_sitemap_flushed_version' );
