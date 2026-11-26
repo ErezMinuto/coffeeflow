@@ -81,7 +81,7 @@ import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandG
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 import { noBagTail } from './no_bag_tail.ts'
 import {
-  SHOTS, classifyIgImage, isLifestyleHint, isShotType, normalizeShotChoice, shotChecklist, shotProducts, shotRouterPrompt, type WeekMixCounts,
+  REAL_PLACE_SHOTS, SHOTS, classifyIgImage, isLifestyleHint, isShotType, normalizeShotChoice, shotChecklist, shotProducts, shotRouterPrompt, type WeekMixCounts,
   type ShotDef, type ShotSlots,
 } from '../_shared/shot_library.ts'
 import { AD_PROMPT_VERSION, adUserMessage, isRealRejection, referenceCandidates, type OwnerVerdict, type RecentPost } from '../_shared/art_director.ts'
@@ -762,7 +762,10 @@ async function handleShot(
   if (ART_DIRECTOR_ENABLED && !shot.needs_product) {
     // A planner that wants a lifestyle image without a bag says so in
     // scene_brief ("LIFESTYLE: a picnic in the forest", owner 2026-11-18).
-    const lifestyle = isLifestyleHint(brief.scene_brief)
+    // The shot wins over a stray "LIFESTYLE:" on a bar/roastery shot: the
+    // caption was written for the shot (2026-11-23, a bar caption on a
+    // street-table image).
+    const lifestyle = isLifestyleHint(brief.scene_brief) && !REAL_PLACE_SHOTS.has(shot.id)
     const lifestyleHint = lifestyle ? ` (${String(brief.scene_brief).trim().slice(0, 200)})` : ''
     return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim() + lifestyleHint, lifestyle ? 'lifestyle' : undefined)
   }

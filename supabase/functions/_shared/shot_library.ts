@@ -320,7 +320,7 @@ export function bagScenePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): 
     'the bag on a breakfast table at home': `${bag} on a wooden kitchen table at home by a sunny window, beside a ceramic cup of coffee and a plate with a croissant, a linen napkin, morning sun casting soft window shadows across the table`,
     'the bag on a picnic in nature': `${bag} on a checked picnic blanket in a pine forest clearing, beside a ceramic cup of coffee, dappled late-afternoon sunlight through the trees, the forest softly out of focus behind`,
     'the bag on a balcony at sunrise': `${bag} on a small wooden balcony table beside a cup of coffee, potted herbs at the edge of the frame, the city rooftops softly out of focus behind in warm golden sunrise light`,
-    'the bag on a camping trip': `${bag} on a flat rock beside a steaming enamel camping mug, a small camping stove and a manual coffee grinder nearby, a misty valley softly out of focus behind in early-morning light`,
+    'the bag on a camping trip': `${bag} on a flat rock beside an enamel camping mug of coffee, a small camping stove and a manual coffee grinder nearby, a misty valley softly out of focus behind in early-morning light`,
     'the bag and a cup outdoors': `${bag} on a weathered wooden outdoor café table beside a freshly made cappuccino in a ceramic cup on its saucer, open shade, a leafy street softly out of focus behind`,
   }
   const moment = resolveMoment(shot, slots.moment)
@@ -332,17 +332,24 @@ export const BAG_PHOTO_STYLE = 'Shot by a professional lifestyle photographer on
   'real natural light with a clear direction and soft real shadows, shallow depth of field with the background gently blurred, ' +
   'true-to-life colours, believable everyday textures and small natural imperfections, subtle film grain. A real photograph, never a glossy CGI render.'
 
+// Owner 2026-11-24 and 11-26: no steam rising from a served drink, milk
+// drink or espresso alike.
+export const NO_DRINK_STEAM = 'Any cup or glass of coffee shows no steam or vapour rising from it.'
+export const DRINK_STEAM_CHECK = 'Is the drink free of any steam, vapour or wisp rising from it?'
+
 export function bagSceneRules(frame: string, count = 1): string {
   if (count > 1) {
     return `Hard rules: show all ${count} bags from the references, each exactly once, every bag SEALED and upright (never open, torn or spilling). ` +
       `Each bag keeps its exact proportions, stag logo, "MINUTO Café Roastery" wordmark and label artwork; do not redraw, simplify or invent label text. ` +
       `Every label faces the camera and is in sharp focus. Any loose coffee beans are medium-roasted, light-cinnamon brown, not black or oily. ` +
+      `${NO_DRINK_STEAM} ` +
       `No other bags or packaging, no people, no hands, no added text, numbers, prices, signs or logos anywhere except what is printed on the real bags. ` +
       `Premium, warm, natural photography for a specialty coffee roastery's Instagram. ${frame[0].toUpperCase()}${frame.slice(1)} frame.`
   }
   return `Hard rules: show the bag from the reference exactly once, SEALED and upright (never open, torn or spilling). ` +
     `It keeps its exact proportions, stag logo, "MINUTO Café Roastery" wordmark and label artwork; do not redraw, simplify or invent label text. ` +
     `The label faces the camera and is in sharp focus. Any loose coffee beans are medium-roasted, light-cinnamon brown, not black or oily. ` +
+    `${NO_DRINK_STEAM} ` +
     `No other bags or packaging, no people, no hands, no added text, numbers, prices, signs or logos anywhere except what is printed on the real bag. ` +
     `Premium, warm, natural photography for a specialty coffee roastery's Instagram. ${frame[0].toUpperCase()}${frame.slice(1)} frame.`
 }
@@ -421,14 +428,14 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
           `Are exactly ${names.length} Minuto coffee bags the main subject, each shown once?`,
           `Do the bags' printed labels read clearly as ${names.join(', ')}?`,
           'Are the bags sealed and upright, with no people, hands or other packaging in the image?',
-          ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bags?'] : [])]
+          ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bags?', DRINK_STEAM_CHECK] : [])]
       }
       // Packshots are studio images by design, so no "real photograph" question.
       return [ground, text,
         'Is exactly one Minuto coffee bag the main subject?',
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
         'Is the bag sealed and upright, with no people, hands or other packaging in the image?',
-        ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
+        ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?', DRINK_STEAM_CHECK] : [])]
     }
     case 'bar_moment':
       // A recreated STILL scene: no hands, nothing pouring, no invented marks
@@ -659,6 +666,17 @@ export const LIFESTYLE_BAG_MOMENTS: ReadonlySet<string> = new Set([
 
 /** A scene_brief that asks the art director for a lifestyle image without a bag. */
 export const isLifestyleHint = (sceneBrief: unknown): boolean => /^\s*lifestyle\s*:/i.test(String(sceneBrief ?? ''))
+
+/** Shots set in Minuto's own place, made from its real photos. */
+export const REAL_PLACE_SHOTS: ReadonlySet<string> = new Set(['bar_moment', 'roastery'])
+
+/** A brief that names a bar/roastery shot AND asks for a lifestyle image.
+ *  The caption is written for the shot ("good morning from Minuto's bar"), so
+ *  forcing lifestyle on it ships a street table under a bar caption
+ *  (visual cbfb53e2, 2026-11-23). */
+export function lifestyleShotConflict(brief: { shot_type?: unknown; scene_brief?: unknown } | null): boolean {
+  return typeof brief?.shot_type === 'string' && REAL_PLACE_SHOTS.has(brief.shot_type) && isLifestyleHint(brief?.scene_brief)
+}
 
 /** What kind of image an IG visual is. The art director's chosen space wins
  *  when it rendered the image; otherwise the planned shot decides. */

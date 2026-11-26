@@ -19,6 +19,7 @@ import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { runLogged } from '../_shared/run_logged.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { updateIfOwned } from './ownership.ts'
+import { visualReuseReason } from './visual_reuse.ts'
 import {
   callClaude,
   MODEL_ORCHESTRATOR,
@@ -51,7 +52,7 @@ import {
 } from '../seo-agent/services/sceneRepeat.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 import {
-  applyPlannedShot, classifyIgImage, mixRefusal, plannerShotInstructions, weeklyMixInstructions, withIgDestination, type WeekMixCounts,
+  applyPlannedShot, classifyIgImage, lifestyleShotConflict, mixRefusal, plannerShotInstructions, weeklyMixInstructions, withIgDestination, type WeekMixCounts,
 } from '../_shared/shot_library.ts'
 
 const CORS = {
@@ -156,26 +157,26 @@ async function parentVisualCaption(
   }
 }
 
-// Why a visual can't parent another instagram_post, or null if it can. A
-// lookup failure returns null — the guard fails open rather than blocking the
-// day's post on a transient read error.
+// Why a visual can't parent another instagram_post, or null if it can (the
+// rule lives in visual_reuse.ts). A lookup failure returns null — the guard
+// fails open rather than blocking the day's post on a transient read error.
 async function checkParentAlreadyPosted(
   supabase: ReturnType<typeof createSupabase>, parentId: string, postedThisStep: Set<string>,
 ): Promise<string | null> {
   if (postedThisStep.has(parentId)) return 'is already being posted in this step'
   try {
-    const { data, error } = await supabase
-      .from('seo_tasks')
-      .select('id, status, brief_data')
-      .eq('task_type', 'instagram_post')
-      .eq('parent_task_id', parentId)
-      .neq('status', 'failed')
-      .limit(1)
+    const [{ data: posts, error }, { data: vis }] = await Promise.all([
+      supabase.from('seo_tasks')
+        .select('id, status, brief_data')
+        .eq('task_type', 'instagram_post')
+        .eq('parent_task_id', parentId)
+        .limit(1),
+      supabase.from('seo_tasks').select('created_at').eq('id', parentId).maybeSingle(),
+    ])
     if (error) throw new Error(error.message)
-    const prior = (data ?? [])[0] as { id: string; brief_data: Record<string, unknown> | null } | undefined
-    if (!prior) return null
-    const mt = String(prior.brief_data?.media_type ?? 'post')
-    return `already has an instagram_post (${mt}, ${prior.id})`
+    const prior = ((posts ?? []) as Array<{ id: string; status: string; brief_data: Record<string, unknown> | null }>)
+      .map(p => ({ id: p.id, status: p.status, media_type: typeof p.brief_data?.media_type === 'string' ? p.brief_data.media_type as string : null }))
+    return visualReuseReason(prior, (vis as { created_at?: string } | null)?.created_at ?? null)
   } catch (e: any) {
     console.warn(`[mission-worker] parent-reuse check failed: ${e?.message ?? e}`)
     return null
@@ -408,6 +409,9 @@ serve(runLogged('mission-worker', async (req, log) => {
     // never queues a second post for the same image. Without this the list
     // showed a completed visual as just "(completed)", and the model kept
     // re-publishing it. (Rescued from production, where it ran outside git.)
+    // Any post spends it, cancelled ones included: a post the owner cancels
+    // in chat is marked failed, and skipping failed posts here is how one
+    // image became the story three times (2026-11-23..26).
     const postedVisuals = new Map<string, string>()
     const doneVisualIds = rows
       .filter(r => r.task_type === 'visual_generation' && r.status === 'completed')
@@ -417,7 +421,6 @@ serve(runLogged('mission-worker', async (req, log) => {
         .from('seo_tasks')
         .select('parent_task_id, created_at, brief_data')
         .eq('task_type', 'instagram_post')
-        .neq('status', 'failed')
         .in('parent_task_id', doneVisualIds)
       for (const p of (posts ?? []) as Array<{ parent_task_id: string; created_at: string; brief_data: any }>) {
         const mt = String(p.brief_data?.media_type ?? 'post')
@@ -783,6 +786,12 @@ serve(runLogged('mission-worker', async (req, log) => {
           // admin's explicit subject) wins over the mix for stories, so the
           // two rules can never deadlock the daily story.
           const isCarousel = Array.isArray((rawBrief as { slides?: unknown }).slides) && ((rawBrief as { slides: unknown[] }).slides).length > 0
+          // A bar/roastery shot with a "LIFESTYLE:" scene_brief: the caption
+          // was written for one place and the image would be made in another.
+          if (!isCarousel && lifestyleShotConflict(rawBrief as Parameters<typeof lifestyleShotConflict>[0])) {
+            newNotes.push(`(did NOT queue the IG visual — shot_type ${String((rawBrief as { shot_type?: unknown }).shot_type)} is Minuto's own bar/roastery, but scene_brief starts with "LIFESTYLE:". Pick ONE: a bar_moment/roastery image with a caption about that place, or a lifestyle image (finished_drink / brew_ritual with "LIFESTYLE:") with a caption that does not mention the bar or roastery.)`)
+            continue
+          }
           const mixKind = isCarousel ? 'other' as const : classifyIgImage(rawBrief as Parameters<typeof classifyIgImage>[0])
           if (isDailyIgCadence && cadence && !isCarousel && !(isStoryVisual && storyLock)) {
             const refusal = mixRefusal(cadence.weekMix, mixKind)
