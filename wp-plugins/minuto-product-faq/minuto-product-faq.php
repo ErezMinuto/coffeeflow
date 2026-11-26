@@ -2,10 +2,14 @@
 /**
  * Plugin Name:       Minuto Product FAQ
  * Description:       Per-product AND per-post FAQ rendering + FAQPage JSON-LD for AI/SEO discoverability.
- * Version:           0.7.0
+ * Version:           0.7.1
  * Author:            Minuto Cafe
  * Requires at least: 6.0
  * Requires PHP:      7.4
+ *
+ * v0.7.1: Rank Math rebuilds its sitemap when a page goes offline or online
+ * or a redirect changes (includes/sitemap-cache.php), so a merged post leaves
+ * the sitemap without a manual cache clear.
  *
  * v0.7.0: 301 redirects CoffeeFlow can set and undo (includes/redirects.php),
  * used when the owner approves merging two pages that compete for one search.
@@ -199,6 +203,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/includes/seo-meta.php';
 require_once __DIR__ . '/includes/redirects.php';
+require_once __DIR__ . '/includes/sitemap-cache.php';
 
 if ( ! defined( 'MINUTO_FAQ_META_KEY' ) ) {
 	define( 'MINUTO_FAQ_META_KEY', '_minuto_faq_published' );

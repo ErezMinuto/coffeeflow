@@ -181,5 +181,9 @@ function minuto_redirects_rest_set( WP_REST_Request $request ) {
 	if ( $post_id && function_exists( 'rocket_clean_post' ) ) {
 		rocket_clean_post( $post_id );
 	}
+	// The sitemap must drop (or regain) the page too (includes/sitemap-cache.php).
+	if ( function_exists( 'minuto_sitemap_invalidate' ) ) {
+		minuto_sitemap_invalidate();
+	}
 	return minuto_redirects_response( $v['source'] );
 }
